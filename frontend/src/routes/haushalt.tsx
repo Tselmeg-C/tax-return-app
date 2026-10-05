@@ -7,7 +7,11 @@ export const Route = createFileRoute("/haushalt")({
   head: () => ({
     meta: [
       { title: "Haushalt — belegbot" },
-      { name: "description", content: "Haushaltsmitglieder, Steuerklassen, Kinder und Veranlagungsart pro Jahr verwalten." },
+      {
+        name: "description",
+        content:
+          "Haushaltsmitglieder, Steuerklassen, Kinder und Veranlagungsart pro Jahr verwalten.",
+      },
       { property: "og:title", content: "Haushalt — belegbot" },
       { property: "og:description", content: "Mitglieder, Kinder und Steuerprofil des Haushalts." },
       { property: "og:type", content: "website" },
@@ -22,8 +26,16 @@ function Haushalt() {
     <AppShell>
       <h1 className="text-4xl">Haushalt</h1>
       <div className="sheet mt-6 grid gap-4 p-6 sm:grid-cols-4">
-        {[["Veranlagung", "Zusammen"], ["Bundesland", "Bayern"], ["Kirchensteuer", "keine"], ["Steuerjahr", "2025"]].map(([k, v]) => (
-          <div key={k}><p className="stamp text-muted-foreground">{k}</p><p className="mt-1 font-display text-xl">{v}</p></div>
+        {[
+          ["Veranlagung", "Zusammen"],
+          ["Bundesland", "Bayern"],
+          ["Kirchensteuer", "keine"],
+          ["Steuerjahr", "2025"],
+        ].map(([k, v]) => (
+          <div key={k}>
+            <p className="stamp text-muted-foreground">{k}</p>
+            <p className="mt-1 font-display text-xl">{v}</p>
+          </div>
         ))}
       </div>
 
@@ -36,7 +48,9 @@ function Haushalt() {
               </span>
               <div>
                 <p className="font-display text-xl">{m.name}</p>
-                <p className="num text-xs text-muted-foreground">geb. {new Date(m.dob).toLocaleDateString("de-DE")}</p>
+                <p className="num text-xs text-muted-foreground">
+                  geb. {new Date(m.dob).toLocaleDateString("de-DE")}
+                </p>
               </div>
             </div>
             <dl className="mt-5 space-y-2 border-t border-dashed pt-4 text-sm">
@@ -64,14 +78,23 @@ function Haushalt() {
       <div className="sheet mt-8 flex flex-wrap items-center justify-between gap-4 p-6">
         <div>
           <p className="font-display text-xl">Telegram verknüpfen</p>
-          <p className="text-sm text-muted-foreground">Sende diesen Code an den Bot: <span className="num">/link 482913</span></p>
+          <p className="text-sm text-muted-foreground">
+            Sende diesen Code an den Bot: <span className="num">/link 482913</span>
+          </p>
         </div>
-        <span className="num rounded-md bg-ink px-4 py-2 text-2xl tracking-widest text-paper">482 913</span>
+        <span className="num rounded-md bg-ink px-4 py-2 text-2xl tracking-widest text-paper">
+          482 913
+        </span>
       </div>
     </AppShell>
   );
 }
 
 function Row({ k, v }: { k: string; v: string }) {
-  return <div className="flex justify-between"><dt className="text-muted-foreground">{k}</dt><dd className="num">{v}</dd></div>;
+  return (
+    <div className="flex justify-between">
+      <dt className="text-muted-foreground">{k}</dt>
+      <dd className="num">{v}</dd>
+    </div>
+  );
 }

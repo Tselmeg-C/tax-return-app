@@ -1,0 +1,19 @@
+# Secrets / local env (copy .env.example to .env)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node (frontend/ has its own .gitignore too)
+node_modules/
+
+# Editors / OS
+.DS_Store
+.idea/

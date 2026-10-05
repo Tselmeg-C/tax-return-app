@@ -1,0 +1,41 @@
+# Dev environment: `workspace` (where you code) + `db` (Postgres 16).
+# From the workspace container the DB is reachable at host `db`, port 5432.
+# Credentials below are local-dev only placeholders, never used anywhere else.
+name: belegbot-dev
+
+services:
+  workspace:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/workspaces/tax-return-app:cached
+    command: sleep infinity
+    environment:
+      DATABASE_URL: postgresql+psycopg://belegbot:belegbot-local-dev@db:5432/belegbot
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: belegbot
+      PGPASSWORD: belegbot-local-dev
+      PGDATABASE: belegbot
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: belegbot
+      POSTGRES_PASSWORD: belegbot-local-dev
+      POSTGRES_DB: belegbot
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U belegbot -d belegbot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
