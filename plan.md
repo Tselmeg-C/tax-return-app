@@ -88,7 +88,7 @@ tax-return-app/                         # monorepo
 ├── .devcontainer/
 │   ├── devcontainer.json               # py3.12, uv, Node 22, Claude Code
 │   └── docker-compose.yml              # workspace + Postgres 16 (service `db`)
-├── .github/                            # issue + PR templates (CI comes in #2)
+├── .github/                            # issue + PR templates, workflows/ci.yml (CI, #2)
 ├── .env.example                        # every env var through M6, placeholders only
 ├── CLAUDE.md                           # conventions for Claude Code
 ├── plan.md

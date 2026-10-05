@@ -32,14 +32,15 @@ before starting a task.
 
 ## Commands
 
-Frontend (available now):
+Frontend:
 
 ```bash
 cd frontend
-npm ci            # install deps
-npm run dev       # dev server on http://localhost:3000
-npm test          # vitest
-npm run lint      # eslint
+npm ci              # install deps
+npm run dev         # dev server on http://localhost:3000
+npm test            # vitest
+npm run lint        # eslint
+npm run typecheck   # tsc --noEmit
 npm run build
 ```
 
@@ -50,17 +51,44 @@ psql -h db -U belegbot -d belegbot -c 'select 1'      # from the workspace conta
 docker compose -f .devcontainer/docker-compose.yml up -d db   # DB only, outside the devcontainer
 ```
 
-Backend (available after #2):
+Backend:
 
 ```bash
 cd backend
-uv sync                       # install deps
-uv run pytest                 # tests incl. tax golden tests
+uv sync                       # install deps (uv sync --locked in CI)
+uv run uvicorn app.api.main:app --reload --port 8000   # API: GET /health, GET /version
+uv run pytest                 # tests incl. tax golden tests (against belegbot_test)
 uv run ruff check . && uv run ruff format --check .
 uv run mypy app
-uv run alembic upgrade head   # migrations
-uv run python -m evals.run    # eval runner (see _docs/adlc.md)
+uv run alembic upgrade head   # migrations (URL from DATABASE_URL, never in alembic.ini)
+uv run alembic revision --autogenerate -m "..."   # new migration after changing models
+uv run python -m evals.run    # eval runner (see _docs/adlc.md; arrives with the first LLM feature)
 ```
+
+Test database: `uv run pytest` never touches `belegbot`. It uses `TEST_DATABASE_URL`,
+or `DATABASE_URL` with the database name replaced by `belegbot_test`; it creates that
+DB if missing and runs `alembic upgrade head` once per session. Each test runs in a
+transaction that is rolled back. pytest aborts before any test if the test DB name
+does not end in `_test`, and DB tests fail (not skip) when the DB is unreachable.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request (any base), on push to `main`
+and on `workflow_dispatch`:
+
+- `changes`: path filter. `backend` runs for `backend/**` or `.github/workflows/**`,
+  `frontend` for `frontend/**` or `.github/workflows/**`; both run on `main` and manual runs
+- `backend`: Postgres 16 service, `uv sync --locked`, ruff check, ruff format --check,
+  mypy, `alembic upgrade head` / `check` / `downgrade base` / `upgrade head`, pytest
+- `frontend`: `npm ci`, lint, typecheck, test, build
+- `ci-ok`: passes when every needed job succeeded or was skipped by the path filter,
+  fails on any failure or cancellation. This is the only check branch protection needs
+
+No repository secrets are used; the Postgres password in the workflow is a CI-only value.
+
+Branch protection (recommended, applied by the repo owner in GitHub settings, not by
+agents): protect `main`, require a pull request, require status check `ci-ok`, and
+require branches to be up to date before merging.
 
 ## Env
 
