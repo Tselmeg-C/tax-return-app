@@ -32,7 +32,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <select className="num rounded-md border bg-card px-2 py-1 text-sm" defaultValue="2025" aria-label="Steuerjahr">
+          <select
+            className="num rounded-md border bg-card px-2 py-1 text-sm"
+            defaultValue="2025"
+            aria-label="Steuerjahr"
+          >
             <option>2025</option>
             <option>2026</option>
           </select>

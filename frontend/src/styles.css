@@ -65,22 +65,38 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-image: repeating-linear-gradient(0deg, transparent 0 31px, oklch(0.9 0.02 85 / 0.5) 31px 32px);
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent 0 31px,
+      oklch(0.9 0.02 85 / 0.5) 31px 32px
+    );
   }
-  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
 }
 
-@utility num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
 @utility sheet {
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 1px 0 oklch(0.86 0.02 85), 0 8px 24px -16px oklch(0.22 0.02 260 / 0.25);
+  box-shadow:
+    0 1px 0 oklch(0.86 0.02 85),
+    0 8px 24px -16px oklch(0.22 0.02 260 / 0.25);
 }
 @utility stamp {
   font-family: var(--font-mono);
