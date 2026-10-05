@@ -3,8 +3,9 @@
 Python 3.12 backend (FastAPI, Postgres via SQLAlchemy 2.0 + psycopg 3, Alembic), managed with `uv`.
 
 - `app/api/` — FastAPI app (`app.api.main:app`)
-- `app/config.py` — `Settings` from env / optional `.env` (`DATABASE_URL`, `APP_ENV`, `LOG_LEVEL`, `GIT_SHA`)
-- `app/db/` — `base.py` (declarative base, naming convention), `session.py` (async engine/sessions), `migrations/` (Alembic)
+- `app/config.py` — `Settings` from env / optional `.env` (`DATABASE_URL`, `APP_ENV`, `LOG_LEVEL`, `GIT_SHA`, `FIELD_ENCRYPTION_KEY`)
+- `app/domain/enums.py` — domain enums (`Category`, `DocType`, …), `CATEGORY_GROUP`, `LABELS_DE`
+- `app/db/` — `base.py` (declarative base, naming convention, PII-free `repr`), `session.py` (async engine/sessions), `models/` (core tables), `types.py` / `crypto.py` (encrypted columns, enum type), `scope.py` (`HouseholdScope`), `audit.py` (audit helper), `seed.py` (dev seed), `migrations/` (Alembic)
 - `tests/` — pytest suite, incl. tax golden tests (later)
 - `evals/` — LLM eval sets and runner (see `_docs/adlc.md`)
 
@@ -55,4 +56,18 @@ uv run alembic check          # fails if models and migrations disagree
 uv run alembic downgrade base
 ```
 
-The URL comes from `Settings` (`DATABASE_URL`); `alembic.ini` holds no URL.
+The URL comes from `Settings` (`DATABASE_URL`); `alembic.ini` holds no URL. Rules for new
+tables (household_id, enums, encryption, indexes) are in `../CLAUDE.md`.
+
+## Dev seed
+
+```bash
+uv run alembic upgrade head
+uv run python -m app.db.seed                                 # fictional "Musterhaushalt"
+SEED_OWNER_EMAIL=you@example.org uv run python -m app.db.seed  # owner e-mail for local login
+```
+
+Creates 1 household, 3 persons, 2 users (`owner@example.com`, `member@example.com`), 9
+documents (no real files) and 9 tax items shaped like `frontend/src/lib/mock.ts`. Idempotent
+(a second run prints `seed: already present, nothing to do`), refuses `APP_ENV=production`,
+writes no audit rows and prints counts only. It needs no `FIELD_ENCRYPTION_KEY`.

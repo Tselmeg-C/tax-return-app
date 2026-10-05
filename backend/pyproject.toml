@@ -11,12 +11,7 @@ dependencies = [
     "sqlalchemy[asyncio]>=2",
     "psycopg[binary]>=3",
     "alembic",
-    "structlog>=26.1.0",
-    "honcho>=2.0.0",
-    "opentelemetry-sdk>=1.45.0",
-    "opentelemetry-exporter-otlp-proto-http>=1.45.0",
-    "opentelemetry-instrumentation-fastapi>=0.66b0",
-    "opentelemetry-instrumentation-sqlalchemy>=0.66b0",
+    "cryptography>=50.0.2",
 ]
 
 [dependency-groups]
