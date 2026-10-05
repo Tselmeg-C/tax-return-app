@@ -68,12 +68,14 @@
 
 **Railway services** (one monorepo, multiple services):
 
-| Service | Start cmd | Notes |
-|---|---|---|
-| `api` | `uvicorn app.api.main:app` | also hosts Telegram webhook `/bot/telegram/{secret}` |
-| `web` | Node server for `frontend/` (target defined in #3) | React/TanStack app from `frontend/`; serves the UI and a **same-origin `/api` proxy to `api`** over the Railway private network (no CORS, cookies stay first-party) |
-| `worker` | `python -m app.worker` | queue consumer; owns the volume mount |
-| `postgres` | Railway plugin | daily backups enabled |
+| Service | Start cmd | Health check | Notes |
+|---|---|---|---|
+| `api` | `honcho start --no-prefix -f Procfile` (`backend/Procfile`: uvicorn `app.api.main:app` + `python -m app.worker`) | `/health` (DB) | no public domain; pre-deploy `alembic upgrade head`; Telegram webhook route decided in #11 |
+| `web` | `node .output/server/index.mjs` (TanStack Start built with the Nitro node-server preset) | `/healthz` (no upstream) | React/TanStack app from `frontend/`; serves the UI and a **same-origin `/api` proxy to `api`** over the Railway private network (no CORS, cookies stay first-party) |
+| `worker` | process inside `api` in v1 (`python -m app.worker` via honcho) | – | queue consumer (#6); shares the `api` container, so the volume (#6) mounts on `api` |
+| `postgres` | Railway plugin | – | daily backups enabled |
+
+Config as code: `backend/railway.toml`, `frontend/railway.toml`; runbook in `_docs/deploy.md`.
 
 **Queue**: Postgres-based (`procrastinate` or `SELECT … FOR UPDATE SKIP LOCKED`) — no Redis needed at family scale.
 
@@ -276,13 +278,13 @@ Since there's no review queue, accuracy must be measured offline:
 ## 13. Dev workflow (Codespaces + Claude Code + Railway)
 
 - `.devcontainer/devcontainer.json` + `.devcontainer/docker-compose.yml`: Python 3.12, `uv`, Node 22 (frontend + Claude Code), Claude Code, Postgres 16 service `db` (healthcheck, named volume). `postCreateCommand` runs `npm ci` in `frontend/` and `uv sync` in `backend/` (once `backend/pyproject.toml` exists). Secrets via Codespaces secrets (`OPENAI_API_KEY`, `RESEND_API_KEY`, `TELEGRAM_BOT_TOKEN`, …); `.env.example` lists every variable.
-- Frontend dev: `cd frontend && npm run dev` (port 3000); `/api` is proxied to the FastAPI `api` service (real proxy in #3).
+- Frontend dev: `cd frontend && npm run dev` (port 3000); `/api` is proxied to the FastAPI `api` service (`API_INTERNAL_URL`, default `http://localhost:8000`).
 - ADLC for LLM features: evals are first-class from M1 — spec → eval set → build → eval gate → observe → iterate (`_docs/adlc.md`, labels `adlc:spec` / `adlc:eval-gate`).
 - Claude Code: note Claude **Pro** includes Claude Code usage; the app's own LLM calls use the separate OpenAI/Anthropic API key.
 - `CLAUDE.md`: stack, commands (`uv run pytest`, `ruff`, `alembic`), rule "tax/ is pure, every rule change needs a golden test", "never log document contents or Steuer-ID".
 - Telegram in dev: Codespaces forwarded port (public) as webhook URL, or polling mode with `BOT_MODE=polling`.
 - **CI (GitHub Actions)**: ruff, mypy, pytest (incl. tax golden tests), alembic migration check, frontend lint + tests. Evals run on demand (manual workflow) to control cost; LLM changes need an eval run before merge.
-- **CD**: Railway GitHub integration — auto-deploy `main`; PR preview environments; migrations run in Railway pre-deploy command `alembic upgrade head`.
+- **CD**: Railway GitHub integration — auto-deploy `main` (EU West) with **Wait for CI** (`ci-ok`); watch paths `/backend/**` → `api`, `/frontend/**` → `web`; PR environments with their own empty Postgres; migrations run only in the Railway pre-deploy command `alembic upgrade head` (never at startup), serialised by a Postgres advisory lock in `env.py`. CI's `deploy-smoke` job builds both images and smoke-tests them before any deploy. Runbook: `_docs/deploy.md`.
 
 ---
 

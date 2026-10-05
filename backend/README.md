@@ -6,6 +6,8 @@ Python 3.12 backend (FastAPI, Postgres via SQLAlchemy 2.0 + psycopg 3, Alembic),
 - `app/config.py` — `Settings` from env / optional `.env` (`DATABASE_URL`, `APP_ENV`, `LOG_LEVEL`, `GIT_SHA`, `FIELD_ENCRYPTION_KEY`)
 - `app/domain/enums.py` — domain enums (`Category`, `DocType`, …), `CATEGORY_GROUP`, `LABELS_DE`
 - `app/db/` — `base.py` (declarative base, naming convention, PII-free `repr`), `session.py` (async engine/sessions), `models/` (core tables), `types.py` / `crypto.py` (encrypted columns, enum type), `scope.py` (`HouseholdScope`), `audit.py` (audit helper), `seed.py` (dev seed), `migrations/` (Alembic)
+- `app/observability/` — structlog JSON logging + OpenTelemetry (`setup_observability`)
+- `app/worker/` — worker process (`python -m app.worker`; placeholder until #6)
 - `tests/` — pytest suite, incl. tax golden tests (later)
 - `evals/` — LLM eval sets and runner (see `_docs/adlc.md`)
 
@@ -30,6 +32,16 @@ uv run uvicorn app.api.main:app --reload --port 8000
 curl localhost:8000/health    # {"status":"ok","db":"ok"} or 503 {"status":"error","db":"error"}
 curl localhost:8000/version   # {"version":"0.1.0","commit":"<GIT_SHA|unknown>","env":"development"}
 ```
+
+As deployed (api + worker, see `Procfile`; JSON log lines, every response has `X-Trace-Id`):
+
+```bash
+PORT=8000 uv run honcho start -f Procfile
+OTEL_TRACES_EXPORTER=console uv run honcho start -f Procfile   # spans printed as JSON lines
+```
+
+Telemetry is exported only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Docker image:
+`Dockerfile`; Railway config: `railway.toml` (see `../_docs/deploy.md`).
 
 The app starts without a database; `/health` reports the DB state (`SELECT 1`, 2 s timeout).
 Startup fails if `DATABASE_URL` is missing.
@@ -56,7 +68,9 @@ uv run alembic check          # fails if models and migrations disagree
 uv run alembic downgrade base
 ```
 
-The URL comes from `Settings` (`DATABASE_URL`); `alembic.ini` holds no URL. Rules for new
+The URL comes from `Settings` (`DATABASE_URL`); `alembic.ini` holds no URL. In production
+migrations run only in Railway's pre-deploy step, never at startup; `env.py` takes a Postgres
+advisory lock so concurrent runs serialise. Rules for new
 tables (household_id, enums, encryption, indexes) are in `../CLAUDE.md`.
 
 ## Dev seed

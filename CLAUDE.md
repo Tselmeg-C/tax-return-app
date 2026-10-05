@@ -10,6 +10,8 @@ before starting a task.
 - allowed to create pull requests when the criteria met, but leave them for me to merge.
 - `backend/app/tax/` is pure (no I/O, no DB, no network); every tax rule change needs a golden test.
 - Never log document contents or the Steuer-ID (not in logs, traces, metrics, fixtures or error messages).
+- Never put request/response bodies, query strings, cookies, auth headers, the Steuer-ID or document contents in span attributes or log fields (spans are scrubbed and log keys redacted as a safety net only).
+- Never run migrations at app or worker startup; they run only in Railway's pre-deploy step.
 - Any LLM change (prompt, schema, model, provider, routing) needs an eval run; see `_docs/adlc.md`.
   Once #9 has merged, changing the `Category`, `DocType` or `PaymentMethod` enums
   (`backend/app/domain/enums.py`) is an LLM schema change and needs an eval run too.
@@ -47,7 +49,7 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
 - Bot: channel-agnostic core + Telegram adapter
 - E-mail: Resend (magic links)
 - Observability: OpenTelemetry → Grafana Cloud
-- Deploy: Railway (`api`, `web`, `worker`, `postgres`), auto-deploy from `main`
+- Deploy: Railway EU West (`api` = FastAPI + worker via honcho, `web` = Nitro node server, `Postgres`), auto-deploy from `main`
 - Dev env: Codespaces devcontainer (`.devcontainer/`), Postgres at host `db`, port 5432
 
 ## Layout
@@ -69,6 +71,7 @@ npm test            # vitest
 npm run lint        # eslint
 npm run typecheck   # tsc --noEmit
 npm run build
+PORT=3100 npm run start   # built node server (.output/server/index.mjs); /api → API_INTERNAL_URL
 ```
 
 Database (devcontainer):
@@ -84,6 +87,8 @@ Backend:
 cd backend
 uv sync                       # install deps (uv sync --locked in CI)
 uv run uvicorn app.api.main:app --reload --port 8000   # API: GET /health, GET /version
+PORT=8000 uv run honcho start -f Procfile   # api + worker as deployed (JSON logs)
+OTEL_TRACES_EXPORTER=console uv run honcho start -f Procfile   # also print spans to stdout
 uv run pytest                 # tests incl. tax golden tests (against belegbot_test)
 uv run ruff check . && uv run ruff format --check .
 uv run mypy app
@@ -110,6 +115,10 @@ and on `workflow_dispatch`:
 - `backend`: Postgres 16 service, `uv sync --locked`, ruff check, ruff format --check,
   mypy, `alembic upgrade head` / `check` / `downgrade base` / `upgrade head`, pytest
 - `frontend`: `npm ci`, lint, typecheck, test, build
+- `deploy-smoke`: (docker, GitHub runner only) builds both images, runs `alembic upgrade head`
+  twice concurrently against a throwaway Postgres 16, starts api + web and curls `/health`,
+  `/version`, `/healthz`, `/`, `/api/health`, `/api/version`, then 502 with the api stopped;
+  checks non-root users. Runs for `backend/**`, `frontend/**`, `.github/**` changes and on `main`
 - `ci-ok`: passes when every needed job succeeded or was skipped by the path filter,
   fails on any failure or cancellation. This is the only check branch protection needs
 
@@ -118,6 +127,20 @@ No repository secrets are used; the Postgres password in the workflow is a CI-on
 Branch protection (recommended, applied by the repo owner in GitHub settings, not by
 agents): protect `main`, require a pull request, require status check `ci-ok`, and
 require branches to be up to date before merging.
+
+## Deploy and observability
+
+- Every merge to `main` deploys to Railway after CI is green (watch paths: `/backend/**` →
+  `api`, `/frontend/**` → `web`). Runbook, variables and rollback: `_docs/deploy.md`.
+- Migrations run only in `backend/railway.toml`'s `preDeployCommand` (`alembic upgrade head`,
+  serialised by an advisory lock). A failed migration leaves the old deployment serving.
+  Downgrades never run automatically, so migrations must stay compatible with the previous
+  app version.
+- Observability: `app.observability.setup_observability(service_name)` (structlog JSON lines +
+  OTel). No `OTEL_EXPORTER_OTLP_ENDPOINT` = no export (local default); the web server has its
+  own traces-only setup (`frontend/src/server/telemetry.ts`).
+- Every api response has `X-Trace-Id`; search it in Grafana Explore → Tempo. The request log
+  line (`event: request`) carries the same `trace_id`.
 
 ## Env
 
