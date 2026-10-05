@@ -5,6 +5,7 @@ Only the settings the skeleton needs live here; later features add their own.
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 
 from pydantic import AliasChoices, Field, SecretStr, ValidationError, field_validator
@@ -65,6 +66,10 @@ class Settings(BaseSettings):
     @field_validator("git_sha", mode="after")
     @classmethod
     def _default_git_sha(cls, value: str) -> str:
+        # An empty GIT_SHA counts as unset: fall back to Railway's commit SHA.
+        value = value.strip()
+        if not value:
+            value = os.environ.get("RAILWAY_GIT_COMMIT_SHA", "").strip()
         return value or "unknown"
 
 

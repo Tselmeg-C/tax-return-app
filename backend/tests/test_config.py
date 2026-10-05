@@ -59,3 +59,12 @@ def test_git_sha_prefers_git_sha_then_railway(monkeypatch: pytest.MonkeyPatch) -
 def test_missing_database_url_names_the_variable() -> None:
     with pytest.raises(SettingsError, match="DATABASE_URL"):
         load_settings()
+
+
+def test_empty_git_sha_falls_back_to_railway(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_URL", PSYCOPG_URL)
+    monkeypatch.setenv("GIT_SHA", "")
+    monkeypatch.setenv("RAILWAY_GIT_COMMIT_SHA", "railway123")
+    assert Settings().git_sha == "railway123"
+    monkeypatch.setenv("RAILWAY_GIT_COMMIT_SHA", "")
+    assert Settings().git_sha == "unknown"

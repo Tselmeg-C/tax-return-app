@@ -1,5 +1,5 @@
 # api image for Railway: FastAPI (uvicorn) + worker, run together by honcho (Procfile).
-# Migrations are NOT run here; Railway runs `alembic upgrade head` as the pre-deploy step.
+# Migrations are NOT run here; Railway's pre-deploy step runs them (railway.toml).
 # No secrets in ARG/ENV: DATABASE_URL, OTEL_* etc. come from Railway variables at runtime.
 
 FROM ghcr.io/astral-sh/uv:0.12.23 AS uv
