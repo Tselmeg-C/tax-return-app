@@ -27,6 +27,13 @@ dev = [
     "ruff",
     "mypy",
     "httpx",
+    "reportlab>=5.0.1",
+    "pillow>=12.3.0",
+    "pypdfium2>=5.14.0",
+    "pypdf>=6.19.0",
+    "pyyaml>=6.0.3",
+    "types-pyyaml>=6.0.12.20260906",
+    "types-reportlab>=5.0.0.20260911",
 ]
 
 [build-system]

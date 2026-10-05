@@ -1,0 +1,19 @@
+schema_version: 1
+id: b039-schornsteinfeger
+source: synthetic
+file: document.png
+variant: png
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: handwerkerleistung
+  gross_amount: '96.50'
+  deductible_amount: '96.50'
+  labour_share_35a: '96.50'
+  invoice_date: 2025-03-10
+  payment_date: 2025-03-20
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Schornsteinfegermeister Beispiel
+  person_hint: Alex Muster

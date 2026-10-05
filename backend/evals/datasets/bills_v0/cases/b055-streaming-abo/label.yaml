@@ -1,0 +1,19 @@
+schema_version: 1
+id: b055-streaming-abo
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: false
+  category: irrelevant
+  gross_amount: '13.99'
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2025-12-01
+  payment_date: 2025-12-01
+  tax_year: 2025
+  payment_method: paypal
+  vendor: Streamingdienst Beispiel
+  person_hint: Sam Muster

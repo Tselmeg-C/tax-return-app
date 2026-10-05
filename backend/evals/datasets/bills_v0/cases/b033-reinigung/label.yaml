@@ -1,0 +1,19 @@
+schema_version: 1
+id: b033-reinigung
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: haushaltsnahe_dienstleistung
+  gross_amount: '750.00'
+  deductible_amount: '750.00'
+  labour_share_35a: '750.00'
+  invoice_date: 2025-06-30
+  payment_date: 2025-07-05
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Reinigungsservice Muster GmbH
+  person_hint: Sam Muster

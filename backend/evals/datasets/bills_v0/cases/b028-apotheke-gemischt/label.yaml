@@ -1,0 +1,21 @@
+schema_version: 1
+id: b028-apotheke-gemischt
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags:
+- mixed_receipt
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: krankheitskosten
+  gross_amount: '26.44'
+  deductible_amount: '10.00'
+  labour_share_35a: null
+  invoice_date: 2025-02-18
+  payment_date: 2025-02-18
+  tax_year: 2025
+  payment_method: cash
+  vendor: Apotheke am Musterplatz
+  person_hint: null
+notes: Nur die Rezept-Positionen zählen, Kosmetik nicht.

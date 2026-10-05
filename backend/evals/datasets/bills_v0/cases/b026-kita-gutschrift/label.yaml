@@ -1,0 +1,21 @@
+schema_version: 1
+id: b026-kita-gutschrift
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags:
+- credit_note
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: kinderbetreuung
+  gross_amount: '-120.00'
+  deductible_amount: '-120.00'
+  labour_share_35a: null
+  invoice_date: 2025-09-05
+  payment_date: 2025-09-15
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Kita Sonnenschein Muster
+  person_hint: Sam Muster
+notes: Erstattung mindert die Kinderbetreuungskosten (negativ).

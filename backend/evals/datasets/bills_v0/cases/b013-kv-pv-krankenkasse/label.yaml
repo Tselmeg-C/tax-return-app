@@ -1,0 +1,19 @@
+schema_version: 1
+id: b013-kv-pv-krankenkasse
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: vorsorge_kv_pv
+  gross_amount: '5223.00'
+  deductible_amount: '5223.00'
+  labour_share_35a: null
+  invoice_date: 2026-01-20
+  payment_date: 2025-12-15
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Krankenkasse Beispiel
+  person_hint: Sam Muster

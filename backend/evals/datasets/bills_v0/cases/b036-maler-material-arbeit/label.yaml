@@ -1,0 +1,21 @@
+schema_version: 1
+id: b036-maler-material-arbeit
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags:
+- material_and_labour
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: handwerkerleistung
+  gross_amount: '949.40'
+  deductible_amount: '763.00'
+  labour_share_35a: '763.00'
+  invoice_date: 2025-05-12
+  payment_date: 2025-05-20
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Malerbetrieb Beispiel GmbH
+  person_hint: Alex Muster
+notes: Nur Arbeits- und Fahrtkosten, nicht Material.

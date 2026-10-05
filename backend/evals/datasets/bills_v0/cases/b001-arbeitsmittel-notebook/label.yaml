@@ -1,0 +1,21 @@
+schema_version: 1
+id: b001-arbeitsmittel-notebook
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags:
+- duplicate_rephotographed
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: wk_arbeitsmittel
+  gross_amount: '888.90'
+  deductible_amount: '888.90'
+  labour_share_35a: null
+  invoice_date: 2025-03-14
+  payment_date: 2025-03-14
+  tax_year: 2025
+  payment_method: card
+  vendor: Technikhaus Beispiel GmbH
+  person_hint: Alex Muster
+notes: Beruflich genutztes Notebook, netto unter 800 EUR (GWG), voll im Jahr der Zahlung.

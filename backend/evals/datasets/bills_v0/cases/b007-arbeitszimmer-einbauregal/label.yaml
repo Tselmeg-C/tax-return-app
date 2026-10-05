@@ -1,0 +1,20 @@
+schema_version: 1
+id: b007-arbeitszimmer-einbauregal
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: wk_arbeitszimmer
+  gross_amount: '1240.00'
+  deductible_amount: '1240.00'
+  labour_share_35a: null
+  invoice_date: 2025-08-12
+  payment_date: 2025-08-20
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Schreinerei Beispiel GmbH
+  person_hint: Alex Muster
+notes: Ausstattung des Arbeitszimmers (Mittelpunkt der Tätigkeit laut Profil).

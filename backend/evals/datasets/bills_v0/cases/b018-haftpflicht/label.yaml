@@ -1,0 +1,20 @@
+schema_version: 1
+id: b018-haftpflicht
+source: synthetic
+file: document.png
+variant: png
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: vorsorge_sonstige
+  gross_amount: '89.50'
+  deductible_amount: '89.50'
+  labour_share_35a: null
+  invoice_date: 2024-12-01
+  payment_date: 2025-01-02
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Versicherung Beispiel VVaG
+  person_hint: Alex Muster
+notes: Rechnung von 2024, Abfluss 2025.

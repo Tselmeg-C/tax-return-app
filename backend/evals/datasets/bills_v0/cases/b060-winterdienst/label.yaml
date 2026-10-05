@@ -1,0 +1,19 @@
+schema_version: 1
+id: b060-winterdienst
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: haushaltsnahe_dienstleistung
+  gross_amount: '120.00'
+  deductible_amount: '120.00'
+  labour_share_35a: '120.00'
+  invoice_date: 2025-03-05
+  payment_date: 2025-03-12
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Hausmeisterservice Beispiel
+  person_hint: Sam Muster

@@ -1,0 +1,19 @@
+schema_version: 1
+id: b043-gebaeudeversicherung
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: v_nebenkosten
+  gross_amount: '486.00'
+  deductible_amount: '486.00'
+  labour_share_35a: null
+  invoice_date: 2025-01-05
+  payment_date: 2025-02-01
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Gebäudeversicherung Beispiel AG
+  person_hint: Alex Muster

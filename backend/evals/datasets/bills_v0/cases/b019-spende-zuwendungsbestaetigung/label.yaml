@@ -1,0 +1,19 @@
+schema_version: 1
+id: b019-spende-zuwendungsbestaetigung
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: spenden
+  gross_amount: '350.00'
+  deductible_amount: '350.00'
+  labour_share_35a: null
+  invoice_date: 2026-01-31
+  payment_date: 2025-10-01
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Tierschutzverein Muster e.V.
+  person_hint: Alex Muster

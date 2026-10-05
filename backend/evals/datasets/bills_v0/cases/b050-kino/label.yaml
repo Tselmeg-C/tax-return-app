@@ -1,0 +1,19 @@
+schema_version: 1
+id: b050-kino
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: false
+  category: irrelevant
+  gross_amount: '31.50'
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2025-02-22
+  payment_date: 2025-02-22
+  tax_year: 2025
+  payment_method: card
+  vendor: Muster-Lichtspiele
+  person_hint: null
