@@ -15,6 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.config import Settings, get_settings
 from app.db.session import create_engine, create_sessionmaker
+from app.observability import API_SERVICE_NAME, setup_observability
+from app.observability.http import instrument_app, instrument_engine
+from app.observability.logs import set_level
 
 logger = logging.getLogger("app.api")
 
@@ -22,13 +25,19 @@ HEALTH_DB_TIMEOUT_SECONDS = 2.0
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
-    """Build the app. Settings are resolved at startup (not import); no DB connection is opened."""
+    """Build the app. Settings are resolved at startup (not import); no DB connection is opened.
+
+    Observability (JSON logging, OTel) is set up here, at import time of `app.api.main`, so
+    uvicorn's own startup lines are already JSON. It never connects anywhere by itself.
+    """
+    observability = setup_observability(API_SERVICE_NAME)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         resolved = settings if settings is not None else get_settings()
-        logging.basicConfig(level=resolved.log_level.upper())
+        set_level(resolved.log_level)
         engine = create_engine(resolved)
+        instrument_engine(engine, observability)
         app.state.settings = resolved
         app.state.engine = engine
         app.state.sessionmaker = create_sessionmaker(engine)
@@ -36,8 +45,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             yield
         finally:
             await engine.dispose()
+            # Bounded flush; the providers are shut down (also bounded) at process exit.
+            await asyncio.to_thread(observability.force_flush)
 
     app = FastAPI(title="belegbot", version=package_version("belegbot"), lifespan=lifespan)
+    instrument_app(app, observability)
 
     @app.get("/health")
     async def health(request: Request) -> JSONResponse:

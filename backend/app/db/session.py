@@ -16,6 +16,8 @@ def create_engine(settings: Settings) -> AsyncEngine:
     return create_async_engine(
         settings.database_url.get_secret_value(),
         pool_pre_ping=True,
+        # Names the pool in OTel connection metrics instead of a URL-like default.
+        pool_logging_name="belegbot",
         connect_args={"connect_timeout": CONNECT_TIMEOUT_SECONDS},
     )
 
