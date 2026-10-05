@@ -1,7 +1,7 @@
 # Steuerbeleg-App — Design Plan
 
 > Working name: **belegbot**. Personal/family tool that turns photos & PDFs of bills into a German income-tax (ESt) summary with a near-exact refund estimate.
-> Status: design v1 · 2026-10-04 · Owner: Tselmeg
+> Status: design v1.1 · 2026-10-05 · Owner: Tselmeg — v1.1 confirms the decisions from the M0 grooming (React/TanStack web client replaced NiceGUI, Anlage V in v1, Resend, family-only, ADLC, golden values via browser automation)
 
 ---
 
@@ -11,9 +11,10 @@
 |---|---|
 | Audience | Me + family (MVP, single household, few users) |
 | Tax scope | Anlage N (Werbungskosten), Sonderausgaben, außergewöhnliche Belastungen, §35a, Anlage Kind, Anlage KAP, Anlage V |
+| Anlage V | **In v1** (rental income §21 incl. AfA basis per property, Zinsen, Erhaltung, Nebenkosten) |
 | Not in scope | Self-employed / EÜR / USt, ELSTER submission |
 | Output | Per-Anlage/line summary + **near-exact** refund estimate + PDF/CSV export (manual entry in ELSTER/WISO) |
-| Clients | Web UI (Python: NiceGUI) + Telegram bot (v1), WhatsApp later behind same interface |
+| Clients | **Web client: React + TanStack (Start/Router/Query)** in `frontend/` (own Railway `web` service, same-origin `/api` proxy to `api`) + Telegram bot (v1), WhatsApp later behind same interface. *(Replaced the earlier NiceGUI idea.)* |
 | Backend | Python 3.12, FastAPI, Postgres (Railway) |
 | File storage | Railway volume (files) + metadata in Postgres; behind a `Storage` interface so S3/R2 is a swap |
 | LLM | Provider-agnostic abstraction; **OpenAI (GPT) first**, Claude/Gemini pluggable |
@@ -21,8 +22,12 @@
 | Tax years | 2025 + 2026, parameters versioned per year in config |
 | Household | Household → members (spouses, kids); bills assigned to a member; Zusammenveranlagung supported |
 | Auth | Magic link + passkeys (WebAuthn); Telegram linked via one-time code |
+| E-mail | **Resend** sends the magic-link e-mails |
+| Tenancy | **Family-only** — a single household of family members; no non-family users planned (no multi-tenant hardening) |
 | Observability | Grafana: app metrics/logs/traces, LLM cost & quality, user-facing tax dashboard |
 | Dev flow | GitHub Codespaces + Claude Code, CLAUDE.md, GitHub Actions CI, Railway auto-deploy from `main` |
+| LLM lifecycle (ADLC) | **Evals are first-class from M1**: spec → eval set → build → eval gate → observe → iterate (see `_docs/adlc.md`) |
+| Tax golden values | Collected from the official **BMF calculator via browser automation** and stored as golden test fixtures |
 
 > Note: "GÜT API" in the Q&A was read as **GPT (OpenAI) API**. Correct me if wrong — the abstraction makes this a one-line config change anyway.
 
@@ -43,10 +48,12 @@
 ## 3. Architecture
 
 ```
-            ┌────────────┐     ┌──────────────┐
- Browser ──►│ NiceGUI UI │     │ Telegram Bot │◄── Telegram (webhook)
-            └─────┬──────┘     └──────┬───────┘
-                  │  REST (internal)  │
+            ┌──────────────────┐     ┌──────────────┐
+ Browser ──►│ web (React/      │     │ Telegram Bot │◄── Telegram (webhook)
+            │ TanStack, /api ─►│     └──────┬───────┘
+            │ same-origin proxy│            │
+            └─────┬────────────┘            │
+                  │  /api → REST (private)  │
               ┌───▼───────────────────▼───┐
               │       FastAPI  (api)       │── auth, households, docs, summaries
               └───┬───────────┬───────────┘
@@ -64,7 +71,7 @@
 | Service | Start cmd | Notes |
 |---|---|---|
 | `api` | `uvicorn app.api.main:app` | also hosts Telegram webhook `/bot/telegram/{secret}` |
-| `web` | `python -m app.web.main` | NiceGUI; talks to `api` over Railway private network |
+| `web` | Node server for `frontend/` (target defined in #3) | React/TanStack app from `frontend/`; serves the UI and a **same-origin `/api` proxy to `api`** over the Railway private network (no CORS, cookies stay first-party) |
 | `worker` | `python -m app.worker` | queue consumer; owns the volume mount |
 | `postgres` | Railway plugin | daily backups enabled |
 
@@ -77,26 +84,34 @@
 ## 4. Repo layout
 
 ```
-belegbot/
-├── .devcontainer/devcontainer.json   # py3.12, postgres feature, Claude Code, uv
-├── CLAUDE.md                         # conventions for Claude Code
-├── pyproject.toml                    # uv, ruff, mypy, pytest
-├── app/
-│   ├── api/            # FastAPI routers (auth, household, documents, summary, export, bot)
-│   ├── web/            # NiceGUI pages
-│   ├── bot/            # channel-agnostic bot core + telegram/ + whatsapp/ adapters
-│   ├── pipeline/       # preprocess, classify, extract, map, dedupe
-│   ├── llm/            # provider abstraction (see §6)
-│   ├── tax/            # rules engine + calculator (pure functions, no I/O)
-│   │   └── params/     # 2025.yaml, 2026.yaml
-│   ├── domain/         # pydantic models & enums
-│   ├── db/             # SQLAlchemy 2.0 models, alembic migrations
-│   ├── storage/        # Storage interface: LocalVolume, S3 (later)
-│   └── observability/  # OTel setup, metrics
-├── tests/
-│   ├── tax/            # golden tests vs. BMF Lohn-/Einkommensteuerrechner
-│   └── pipeline/fixtures/  # anonymised sample receipts + expected JSON
-└── evals/              # LLM extraction eval set & runner
+tax-return-app/                         # monorepo
+├── .devcontainer/
+│   ├── devcontainer.json               # py3.12, uv, Node 22, Claude Code
+│   └── docker-compose.yml              # workspace + Postgres 16 (service `db`)
+├── .github/                            # issue + PR templates (CI comes in #2)
+├── .env.example                        # every env var through M6, placeholders only
+├── CLAUDE.md                           # conventions for Claude Code
+├── plan.md
+├── _docs/                              # process, roles, task template, adlc.md
+├── backend/
+│   ├── pyproject.toml                  # uv, ruff, mypy, pytest (from #2)
+│   ├── app/
+│   │   ├── api/            # FastAPI routers (auth, household, documents, summary, export, bot)
+│   │   ├── bot/            # channel-agnostic bot core + telegram/ + whatsapp/ adapters
+│   │   ├── pipeline/       # preprocess, classify, extract, map, dedupe
+│   │   ├── llm/            # provider abstraction (see §6)
+│   │   ├── tax/            # rules engine + calculator (pure functions, no I/O)
+│   │   │   └── params/     # 2025.yaml, 2026.yaml
+│   │   ├── domain/         # pydantic models & enums
+│   │   ├── db/             # SQLAlchemy 2.0 models, alembic migrations
+│   │   ├── storage/        # Storage interface: LocalVolume, S3 (later)
+│   │   └── observability/  # OTel setup, metrics
+│   ├── tests/
+│   │   ├── tax/            # golden tests vs. BMF Einkommensteuerrechner (values via browser automation)
+│   │   └── pipeline/fixtures/  # anonymised sample receipts + expected JSON
+│   └── evals/              # LLM eval sets & runner (first-class from M1, see `_docs/adlc.md`)
+└── frontend/                           # React + TanStack web client (`web` service)
+    └── src/                            # routes/, components/, lib/, test/
 ```
 
 ---
@@ -192,13 +207,13 @@ Near-exact scope:
 
 Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pauschbetrag, Vorsorge-Höchstbeträge, §35a caps.
 
-**Validation**: golden tests against the official **BMF Einkommensteuerrechner** for ~20 synthetic household scenarios per year; CI fails on deviation > 1 €.
+**Validation**: golden tests against the official **BMF Einkommensteuerrechner** for ~20 synthetic household scenarios per year; golden values are collected from the BMF calculator via **browser automation** (scripted, reproducible) and committed as fixtures; CI fails on deviation > 1 €.
 
 ---
 
 ## 9. Clients
 
-**Web (NiceGUI)**: dashboard per year (refund estimate, per-Anlage totals, missing-docs hints), document list with thumbnail + extracted fields (editable inline — overrides logged), profile/household wizard, export button. Mobile-friendly upload via `<input capture>`.
+**Web (React + TanStack, `frontend/`)**: own Railway `web` service; the browser only talks to its own origin and `/api/*` is proxied to the `api` service (same-origin, so session cookies stay httpOnly/first-party and no CORS is needed). Dashboard per year (refund estimate, per-Anlage totals, missing-docs hints), document list with thumbnail + extracted fields (editable inline — overrides logged), profile/household wizard, export button. Mobile-friendly upload via `<input capture>`.
 
 **Bot core** (`app/bot/core.py`) is channel-agnostic: `IncomingMessage(user, files, text)` → commands. Adapters:
 - **Telegram** (v1, `python-telegram-bot` or `aiogram`, webhook mode): send photo/PDF/album, `/summary 2025`, `/missing`, `/undo`, `/year 2025`, `/link <code>`
@@ -208,7 +223,7 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
 
 ## 10. Auth & security / GDPR
 
-- Magic link (signed, 15 min, single use) + **passkeys** (`webauthn` lib) after first login; sessions via httpOnly cookie.
+- Magic link (signed, 15 min, single use, sent via **Resend**) + **passkeys** (`webauthn` lib) after first login; sessions via httpOnly cookie.
 - Telegram linking: web shows one-time code → `/link 123456` → `channel_link` row; unknown chat IDs are ignored.
 - Webhook secret path + `X-Telegram-Bot-Api-Secret-Token` check.
 - Steuer-ID & documents are sensitive: encrypt sensitive columns (app-level Fernet key in Railway env), volume on Railway (note: Railway region choice — pick **EU West (Amsterdam)**).
@@ -240,11 +255,13 @@ Since there's no review queue, accuracy must be measured offline:
 
 ## 13. Dev workflow (Codespaces + Claude Code + Railway)
 
-- `.devcontainer/devcontainer.json`: Python 3.12, `uv`, Postgres service (docker-compose), Node (for Claude Code), `postCreateCommand: uv sync && npm i -g @anthropic-ai/claude-code`. Secrets via Codespaces secrets (`OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, …).
+- `.devcontainer/devcontainer.json` + `.devcontainer/docker-compose.yml`: Python 3.12, `uv`, Node 22 (frontend + Claude Code), Claude Code, Postgres 16 service `db` (healthcheck, named volume). `postCreateCommand` runs `npm ci` in `frontend/` and `uv sync` in `backend/` (once `backend/pyproject.toml` exists). Secrets via Codespaces secrets (`OPENAI_API_KEY`, `RESEND_API_KEY`, `TELEGRAM_BOT_TOKEN`, …); `.env.example` lists every variable.
+- Frontend dev: `cd frontend && npm run dev` (port 3000); `/api` is proxied to the FastAPI `api` service (real proxy in #3).
+- ADLC for LLM features: evals are first-class from M1 — spec → eval set → build → eval gate → observe → iterate (`_docs/adlc.md`, labels `adlc:spec` / `adlc:eval-gate`).
 - Claude Code: note Claude **Pro** includes Claude Code usage; the app's own LLM calls use the separate OpenAI/Anthropic API key.
 - `CLAUDE.md`: stack, commands (`uv run pytest`, `ruff`, `alembic`), rule "tax/ is pure, every rule change needs a golden test", "never log document contents or Steuer-ID".
 - Telegram in dev: Codespaces forwarded port (public) as webhook URL, or polling mode with `BOT_MODE=polling`.
-- **CI (GitHub Actions)**: ruff, mypy, pytest (incl. tax golden tests), alembic migration check. Evals run on demand (manual workflow) to control cost.
+- **CI (GitHub Actions)**: ruff, mypy, pytest (incl. tax golden tests), alembic migration check, frontend lint + tests. Evals run on demand (manual workflow) to control cost; LLM changes need an eval run before merge.
 - **CD**: Railway GitHub integration — auto-deploy `main`; PR preview environments; migrations run in Railway pre-deploy command `alembic upgrade head`.
 
 ---
@@ -271,7 +288,8 @@ Since there's no review queue, accuracy must be measured offline:
 - **Near-exact calc complexity** — Vorsorgeaufwand and Progressionsvorbehalt are the hardest parts; consider validating against ERiC's calculation later.
 - **Railway volume single-mount** → v1 merges api+worker; plan migration to object storage.
 - **LLM data protection** for family documents → choose retention settings, keep EU option ready (Vertex).
-- Open: Anlage V — do you own rental property now (needs AfA basis per property), or is this future-proofing? Should non-family users ever be possible (drives multi-tenant hardening)?
+- ~~Open: Anlage V — own rental property now or future-proofing?~~ **Answered:** Anlage V is **in v1** (AfA basis per property needed).
+- ~~Open: should non-family users ever be possible?~~ **Answered:** **No — family-only** tenancy; no multi-tenant hardening planned.
 
 ---
 
