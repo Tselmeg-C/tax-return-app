@@ -18,6 +18,8 @@ def create_engine(settings: Settings) -> AsyncEngine:
         pool_pre_ping=True,
         # Bound values (e-mail, names, ciphertext) never appear in exception messages or logs.
         hide_parameters=True,
+        # Names the pool in OTel connection metrics instead of a URL-like default.
+        pool_logging_name="belegbot",
         connect_args={"connect_timeout": CONNECT_TIMEOUT_SECONDS},
     )
 
