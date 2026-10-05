@@ -111,6 +111,27 @@ disabled`). CI's `deploy-smoke` job builds both images and checks migrations (tw
 concurrently), `/health`, `/version`, `/healthz`, `/`, `/api/health`, `/api/version`, the 502
 after stopping the api and the non-root users.
 
+## Deferred to final deployment
+
+The real Railway / Grafana Cloud deployment happens at the end of the backlog (local dev
+and CI use no exporter or in-memory exporters). These #3 checks wait until then:
+
+- Setup steps 1–6 below (Grafana stack + token, Railway project, `api`, `web`, Postgres,
+  PR environments, regions EU West, Postgres backups)
+- `README.md`: the production web URL
+- Public URL checks: `/` 200, `/api/health` 200 with `X-Trace-Id`, `/api/version` shows
+  `env: production` and the deployed `main` SHA, `/healthz` 200; `api` has no public domain;
+  GitHub deployment statuses for the merge commit are `success`
+- Railway UI: pre-deploy `alembic upgrade head` runs once and succeeds before the health check;
+  watch paths (backend-only merge redeploys only `api`, frontend-only only `web`); **Wait for CI**
+- Grafana: Tempo trace `belegbot-web` → `belegbot-api` → DB span with
+  `deployment.environment.name=production`; Loki request line with the same `trace_id` and the
+  worker's `no queue yet` line; an HTTP server duration metric for `belegbot-api`
+- PR environment: own empty Postgres, migrated, `/api/health` 200, traces tagged with the PR
+  environment name, removed on close/merge
+- Broken-migration PR (agent creates it on request): fails in the pre-deploy step, never active
+- No secret, OTLP header, DB password or cookie value in Railway logs or Loki
+
 ## Setup (repo owner, at the final deployment)
 
 Do these once #3 is merged to `main` (before that, `main` has no Dockerfiles). Keep secrets
