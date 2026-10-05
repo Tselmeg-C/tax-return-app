@@ -174,7 +174,7 @@ async def find_valid_session(
     row = result.one_or_none()
     if row is None:
         return None
-    user_session, user = row.tuple()
+    user_session, user = row
     if (
         user_session.revoked_at is not None
         or now >= user_session.expires_at

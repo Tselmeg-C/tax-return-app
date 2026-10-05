@@ -98,9 +98,7 @@ async def _bootstrap(session: AsyncSession, args: argparse.Namespace, out: TextI
         after=snapshot(user),
         actor=Actor.system(),
     )
-    print(
-        f"created household {household.id} and owner {user.id} ({mask_email(email)})", file=out
-    )
+    print(f"created household {household.id} and owner {user.id} ({mask_email(email)})", file=out)
 
 
 async def _invite(session: AsyncSession, args: argparse.Namespace, out: TextIO) -> None:

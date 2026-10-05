@@ -40,6 +40,7 @@ from tests.domain.factories import make_household, make_user
 BASE_URL = "https://app.test"
 DEFAULT_IP = "198.51.100.10"
 LINK_RE = re.compile(r"^https://app\.test/login/verify#token=([A-Za-z0-9_-]{43})$")
+TOKEN_RE = re.compile(r"/login/verify#token=([A-Za-z0-9_-]{43})$")
 
 
 def random_email(prefix: str = "user") -> str:
@@ -127,9 +128,9 @@ class Api:
 
 
 def token_from_mail(mail: Any) -> str:
-    links = [line for line in mail.text.splitlines() if line.startswith("https://")]
+    links = [line for line in mail.text.splitlines() if "/login/verify#token=" in line]
     assert len(links) == 1
-    match = LINK_RE.match(links[0])
+    match = TOKEN_RE.search(links[0])
     assert match, "link format"
     return match.group(1)
 

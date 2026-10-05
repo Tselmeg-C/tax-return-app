@@ -156,9 +156,7 @@ async def test_per_ip_limit(api: Api, family: Family) -> None:
     assert int(eleventh.headers["retry-after"]) > 0
     assert eleventh.headers["cache-control"] == "no-store"
 
-    other = await api.post(
-        "/auth/magic-link", json={"email": random_email()}, ip="198.51.100.99"
-    )
+    other = await api.post("/auth/magic-link", json={"email": random_email()}, ip="198.51.100.99")
     assert other.status_code == 202
 
     api.clock.advance(timedelta(minutes=15))
