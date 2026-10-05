@@ -221,6 +221,9 @@ def configure_logging(
         lib_logger = logging.getLogger(name)
         lib_logger.handlers.clear()
         lib_logger.propagate = True
+    # HTTP client libraries log full request URLs (query strings) at INFO.
+    for name in ("httpx", "httpcore", "urllib3"):
+        logging.getLogger(name).setLevel(logging.WARNING)
     # The access log prints query strings; the request log middleware replaces it.
     access = logging.getLogger("uvicorn.access")
     access.handlers.clear()

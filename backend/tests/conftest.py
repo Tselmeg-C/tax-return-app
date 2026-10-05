@@ -24,6 +24,19 @@ from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, AsyncSession, c
 
 from app.config import normalise_database_url
 
+# Hermetic telemetry: tests never export anywhere, whatever the shell has set. This runs
+# before any test module imports `app.api.main` (which sets up observability on import).
+for _name in (
+    "OTEL_EXPORTER_OTLP_ENDPOINT",
+    "OTEL_EXPORTER_OTLP_HEADERS",
+    "OTEL_TRACES_EXPORTER",
+    "OTEL_SERVICE_NAME",
+    "OTEL_SDK_DISABLED",
+    "OTEL_RESOURCE_ATTRIBUTES",
+    "RAILWAY_ENVIRONMENT_NAME",
+):
+    os.environ.pop(_name, None)
+
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_TEST_DB_NAME = "belegbot_test"
 
