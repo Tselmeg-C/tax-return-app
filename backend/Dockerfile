@@ -4,7 +4,7 @@
 
 FROM ghcr.io/astral-sh/uv:0.12.23 AS uv
 
-FROM python:3.12-slim
+FROM python:3.12-does-not-exist-slim
 
 COPY --from=uv /uv /usr/local/bin/uv
 
