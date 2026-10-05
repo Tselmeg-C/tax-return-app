@@ -72,6 +72,8 @@ class EncryptedType(TypeDecorator[Any]):
 class EncryptedString(EncryptedType):
     """Encrypted `str` (e.g. `person.steuer_id`). No filtering or comparison possible."""
 
+    cache_ok = True
+
     def _to_bytes(self, value: Any) -> bytes:
         if not isinstance(value, str):
             raise TypeError(f"{self.label} expects str")
@@ -83,6 +85,8 @@ class EncryptedString(EncryptedType):
 
 class EncryptedJSON(EncryptedType):
     """Encrypted JSON value (e.g. `extraction.raw_json`). No filtering or comparison possible."""
+
+    cache_ok = True
 
     def _to_bytes(self, value: Any) -> bytes:
         return json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")

@@ -32,8 +32,8 @@ class AuditLog(UUIDPrimaryKey, HouseholdOwned, CreatedAt, Base):
     entity: Mapped[str] = mapped_column(String(63), nullable=False)
     entity_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
     action: Mapped[AuditAction] = mapped_column(enum_type(AuditAction, "action"), nullable=False)
-    before: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    after: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    before: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True), nullable=True)
+    after: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True), nullable=True)
     actor_type: Mapped[ActorType] = mapped_column(
         enum_type(ActorType, "actor_type"), nullable=False
     )

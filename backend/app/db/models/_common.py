@@ -35,6 +35,10 @@ class HouseholdOwned:
 
 
 class CreatedAt:
+    # Fetch server-generated values (created_at / updated_at) via RETURNING on flush, so they
+    # are loaded afterwards; lazy loads would fail under asyncio.
+    __mapper_args__ = {"eager_defaults": True}
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
