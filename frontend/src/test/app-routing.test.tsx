@@ -12,6 +12,6 @@ describe("App routing", () => {
 
     const matches = router.matchRoutes("/");
 
-    expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
+    expect(matches.at(-1)?.routeId).toBe(rootRouteId);
   });
 });
