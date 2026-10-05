@@ -1,0 +1,2 @@
+dont log, print, publish, commit, leak any kind of credentials like password, tokens, internal data, privacy data etc.
+allowed to create pull requests when the criteria met, but leave them for me to merge.
