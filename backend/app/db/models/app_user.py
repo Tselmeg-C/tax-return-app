@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from app.db.base import Base
@@ -30,6 +31,8 @@ class AppUser(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
     person_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("person.id", ondelete="SET NULL"), nullable=True
     )
+    # Set = no new login links and no sessions (CLI `disable`); the household's documents stay.
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     @validates("email")
     def _normalise_email(self, _key: str, value: str) -> str:

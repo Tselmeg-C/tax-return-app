@@ -66,6 +66,11 @@ async def test_version_without_git_sha(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_version_with_git_sha(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GIT_SHA", "abc123")
     monkeypatch.setenv("APP_ENV", "production")
+    # Production refuses to start without these (#5); test-only placeholder values.
+    monkeypatch.setenv("MAIL_BACKEND", "resend")
+    monkeypatch.setenv("RESEND_API_KEY", "re_test_placeholder")
+    monkeypatch.setenv("RESEND_FROM_EMAIL", "belegbot <login@example.com>")
+    monkeypatch.setenv("APP_BASE_URL", "https://app.test")
     async with client_for(_settings(DOWN_URL)) as client:
         response = await client.get("/version")
     assert response.status_code == 200
