@@ -1,0 +1,14 @@
+node_modules
+.env
+.env.*
+.output
+dist
+dist-ssr
+.nitro
+.tanstack
+.vinxi
+coverage
+*.log
+Dockerfile
+.dockerignore
+railway.toml

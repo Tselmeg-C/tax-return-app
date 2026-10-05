@@ -72,6 +72,13 @@ export function resolveApiUrl(env: Record<string, string | undefined>): ApiUrlRe
   }
 }
 
+/** Upstream response-head timeout: `API_PROXY_TIMEOUT_MS` if a positive integer, else 30 s. */
+export function resolveTimeoutMs(env: Record<string, string | undefined>): number {
+  const raw = env["API_PROXY_TIMEOUT_MS"]?.trim();
+  const value = raw ? Number(raw) : NaN;
+  return Number.isInteger(value) && value > 0 ? value : DEFAULT_UPSTREAM_TIMEOUT_MS;
+}
+
 /**
  * Map an incoming `/api…` URL onto the upstream base. Returns null for paths outside `/api`.
  * Only the path and query are taken from the incoming URL; scheme, host and port always come

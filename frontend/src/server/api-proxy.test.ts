@@ -11,6 +11,7 @@ import {
   buildUpstreamUrl,
   createApiProxy,
   resolveApiUrl,
+  resolveTimeoutMs,
   PROXY_SPAN_NAME,
   type ApiProxy,
 } from "./api-proxy";
@@ -91,6 +92,15 @@ describe("resolveApiUrl", () => {
   it("rejects non-http URLs", () => {
     expect(resolveApiUrl({ API_INTERNAL_URL: "file:///etc/passwd" }).kind).toBe("invalid");
     expect(resolveApiUrl({ API_INTERNAL_URL: "not a url" }).kind).toBe("invalid");
+  });
+});
+
+describe("resolveTimeoutMs", () => {
+  it("defaults to 30 s and accepts a positive integer override", () => {
+    expect(resolveTimeoutMs({})).toBe(30_000);
+    expect(resolveTimeoutMs({ API_PROXY_TIMEOUT_MS: "120000" })).toBe(120_000);
+    expect(resolveTimeoutMs({ API_PROXY_TIMEOUT_MS: "-1" })).toBe(30_000);
+    expect(resolveTimeoutMs({ API_PROXY_TIMEOUT_MS: "abc" })).toBe(30_000);
   });
 });
 
