@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BelegeRouteImport } from './routes/belege'
 import { Route as ExportRouteImport } from './routes/export'
 import { Route as HaushaltRouteImport } from './routes/haushalt'
+import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as ApiSplatRouteImport } from './routes/api/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +36,32 @@ const HaushaltRoute = HaushaltRouteImport.update({
   path: '/haushalt',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HealthzRoute = HealthzRouteImport.update({
+  id: '/healthz',
+  path: '/healthz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSplatRoute = ApiSplatRouteImport.update({
+  id: '/api/$',
+  path: '/api/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/belege': typeof BelegeRoute
   '/export': typeof ExportRoute
   '/haushalt': typeof HaushaltRoute
+  '/healthz': typeof HealthzRoute
+  '/api/$': typeof ApiSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/belege': typeof BelegeRoute
   '/export': typeof ExportRoute
   '/haushalt': typeof HaushaltRoute
+  '/healthz': typeof HealthzRoute
+  '/api/$': typeof ApiSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,22 @@ export interface FileRoutesById {
   '/belege': typeof BelegeRoute
   '/export': typeof ExportRoute
   '/haushalt': typeof HaushaltRoute
+  '/healthz': typeof HealthzRoute
+  '/api/$': typeof ApiSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/belege' | '/export' | '/haushalt'
+  fullPaths: '/' | '/belege' | '/export' | '/haushalt' | '/healthz' | '/api/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/belege' | '/export' | '/haushalt'
-  id: '__root__' | '/' | '/belege' | '/export' | '/haushalt'
+  to: '/' | '/belege' | '/export' | '/haushalt' | '/healthz' | '/api/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/belege'
+    | '/export'
+    | '/haushalt'
+    | '/healthz'
+    | '/api/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +92,8 @@ export interface RootRouteChildren {
   BelegeRoute: typeof BelegeRoute
   ExportRoute: typeof ExportRoute
   HaushaltRoute: typeof HaushaltRoute
+  HealthzRoute: typeof HealthzRoute
+  ApiSplatRoute: typeof ApiSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +126,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HaushaltRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/healthz': {
+      id: '/healthz'
+      path: '/healthz'
+      fullPath: '/healthz'
+      preLoaderRoute: typeof HealthzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/$': {
+      id: '/api/$'
+      path: '/api/$'
+      fullPath: '/api/$'
+      preLoaderRoute: typeof ApiSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +148,8 @@ const rootRouteChildren: RootRouteChildren = {
   BelegeRoute: BelegeRoute,
   ExportRoute: ExportRoute,
   HaushaltRoute: HaushaltRoute,
+  HealthzRoute: HealthzRoute,
+  ApiSplatRoute: ApiSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

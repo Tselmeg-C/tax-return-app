@@ -1,0 +1,2 @@
+api: uvicorn app.api.main:app --host '' --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*' --no-access-log
+worker: python -m app.worker
