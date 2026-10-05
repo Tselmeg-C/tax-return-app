@@ -271,12 +271,12 @@ Since there's no review queue, accuracy must be measured offline:
 | Milestone | Scope | Exit criterion |
 |---|---|---|
 | **M0 Skeleton** (1 wk) | repo, devcontainer, CLAUDE.md, FastAPI+Postgres+alembic, Railway deploy, OTel→Grafana hello-world | `/health` live on Railway, trace visible in Grafana |
-| **M1 Ingest + LLM layer** (1–2 wk) | upload (web), storage, queue, `LLMProvider` + OpenAI, classify+extract generic bills | 20 sample bills processed, results in DB |
+| **M1 Ingest + LLM layer** (1–2 wk) | upload (web), storage, queue, `LLMProvider` + OpenAI, classify+extract generic bills, **first eval set + runner (ADLC)** | 20 sample bills processed, results in DB, eval gate passes |
 | **M2 Telegram** (1 wk) | bot core + Telegram adapter, linking, notifications, `/summary` | photo → reply with category & amount |
 | **M3 Profile + tax engine** (2–3 wk) | household wizard, params 2025/2026, full calculator, Pflichtveranlagung check, golden tests | ≤1 € deviation vs BMF calculator on test scenarios |
 | **M4 Official docs** (1–2 wk) | Lohnsteuerbescheinigung, Jahressteuerbescheinigung, Nebenkostenabrechnung schemas; KAP + V | own 2025 return reproduced |
 | **M5 Summary/export + dashboards** (1 wk) | per-Anlage report PDF/CSV/ZIP, Grafana LLM & tax dashboards | file own 2025 return using the export |
-| **M6 Evals + 2nd provider** (1 wk) | eval set, Anthropic/Gemini provider, comparison dashboard | data-driven default model choice |
+| **M6 Evals + 2nd provider** (1 wk) | expanded eval set, Anthropic/Gemini provider, comparison dashboard | data-driven default model choice |
 | **Later** | WhatsApp, e-mail inbox ingest, multi-receipt split, S3/R2 storage, ERiC/ELSTER, public product (GDPR, billing) | — |
 
 ---
