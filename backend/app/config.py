@@ -37,6 +37,12 @@ class Settings(BaseSettings):
         default="unknown",
         validation_alias=AliasChoices("GIT_SHA", "RAILWAY_GIT_COMMIT_SHA", "git_sha"),
     )
+    # Comma-separated Fernet keys: the first encrypts, all decrypt (rotation). Optional, so
+    # the app and Alembic start without it; app.db.crypto raises on first use instead.
+    field_encryption_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("FIELD_ENCRYPTION_KEY", "field_encryption_key"),
+    )
 
     @field_validator("database_url", mode="before")
     @classmethod
@@ -45,6 +51,15 @@ class Settings(BaseSettings):
             value = value.get_secret_value()
         if isinstance(value, str):
             return SecretStr(normalise_database_url(value))
+        return value
+
+    @field_validator("field_encryption_key", mode="before")
+    @classmethod
+    def _empty_key_is_unset(cls, value: object) -> object:
+        if isinstance(value, SecretStr):
+            value = value.get_secret_value()
+        if isinstance(value, str) and not value.strip():
+            return None
         return value
 
     @field_validator("git_sha", mode="after")

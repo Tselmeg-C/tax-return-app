@@ -118,18 +118,38 @@ tax-return-app/                         # monorepo
 
 ## 5. Data model (Postgres)
 
+Models live in `backend/app/db/models/`, enums in `backend/app/domain/enums.py`. Rules for
+every table (enforced by meta-tests in `backend/tests/domain/`):
+
+- **Tenancy:** every table except `household` has `household_id uuid NOT NULL REFERENCES household(id) ON DELETE RESTRICT`, child tables included, so one filter works everywhere. No composite FKs (family-only, §1). Query through `HouseholdScope` (`app/db/scope.py`).
+- **Keys and types:** `id uuid` generated in Python (no server default); money `NUMERIC(12,2)`, `cost_eur NUMERIC(12,6)`; `created_at` / `updated_at timestamptz NOT NULL DEFAULT now()`. Every FK column leads an index.
+- **Enums:** `VARCHAR(64)` + `CHECK` (no native Postgres enums), storing the lowercase value codes.
+- **PII:** `person.steuer_id` and `extraction.raw_json` are Fernet-encrypted `bytea` (`FIELD_ENCRYPTION_KEY`, §10); they cannot be filtered or made unique. Names, dob, e-mail, vendors and amounts are plain text but never printed (`repr` shows `<Class id=…>` only, engine `hide_parameters=True`).
+
+Core tables (#4, migration `727a2e042810`):
+
 - `household(id, name, created_at)`
-- `user(id, household_id, email, role[owner|member])` + `passkey`, `magic_link_token`, `channel_link(user_id, channel, external_id)`
-- `person(id, household_id, kind[adult|child], first_name, dob, steuer_id?, religion[none|ev|rk|…], disability_grade?, …)`
-- `tax_profile(household_id, year, assessment[single|joint|separate], bundesland, church_tax_rate)` — per **year**, since status changes
-- `employment(person_id, year, employer, steuerklasse, commute_km, office_days, homeoffice_days)`
-- `child_year(person_id, year, kindergeld_months, lives_with[both|one], betreuung_costs…)`
-- `document(id, household_id, uploaded_by, channel, sha256, mime, storage_key, pages, status, created_at)`
-- `extraction(id, document_id, provider, model, prompt_version, raw_json, confidence, cost_eur, latency_ms)`
-- `tax_item(id, document_id, person_id, year, category, anlage, zeile, gross, deductible_amount, labour_share_35a?, vendor, date, payment_method, is_relevant, reason, overridden_by_user)`
-- `official_record(person_id, year, kind[lstb|jstb|elterngeld|…], fields jsonb)` — Lohnsteuerbescheinigung lines etc.
-- `estimate(household_id, year, params_version, inputs_hash, result jsonb, created_at)`
-- `audit_log(entity, entity_id, action, before, after, actor, at)`
+- `app_user(id, household_id, email UNIQUE lowercase, role[owner|member], person_id? UNIQUE → person SET NULL, created_at, updated_at)` (`user` is reserved in Postgres)
+- `person(id, household_id, kind[adult|child], first_name, last_name?, dob? (required for children), steuer_id? 🔒, religion[none|ev|rk|other], disability_grade? (20–100, step 10), created_at, updated_at)`
+- `document(id, household_id, uploaded_by_user_id → app_user RESTRICT, channel[web|telegram], sha256 (UNIQUE per household), mime_type, size_bytes, page_count?, storage_key (opaque, UNIQUE), status[queued|processing|done|needs_attention|failed], doc_type?, error_kind?, created_at, updated_at)`
+- `extraction(id, household_id, document_id → document CASCADE, step[classify|extract], doc_type?, provider, model, prompt_version, raw_json? 🔒, confidence?, input_tokens, output_tokens, cost_eur, latency_ms, error_kind?, created_at)` — one row per LLM call (§6)
+- `tax_item(id, household_id, document_id? → document CASCADE, extraction_id? → extraction SET NULL, person_id? → person RESTRICT (NULL = household-level), year, category, anlage?, zeile?, gross_amount, deductible_amount, labour_share_35a?, vendor?, invoice_date?, payment_date?, payment_method, is_relevant (irrelevant ⇒ deductible 0), reason?, confidence?, overridden_by_user, created_at, updated_at)`
+- `audit_log(id, household_id, entity, entity_id (no FK), action[create|update|delete], before? jsonb, after? jsonb, actor_type[user|system], actor_user_id? (no FK), created_at)` — written via `app/db/audit.py`, encrypted values stored as `"[redacted]"`
+
+🔒 = encrypted. `Category` (30 codes in 9 groups, §7) and `DocType` / `PaymentMethod` are the vocabulary of the LLM schemas; `Category → Anlage/Zeile` lives per year in `params/{year}.yaml` (#9).
+
+Tables added later, each by the issue that first uses it, in its own migration and under the same rules:
+
+| Table(s) | Issue |
+|---|---|
+| `magic_link_token`, `session` | #5 |
+| queue tables, extra `document` columns (e.g. encrypted original filename) | #6 |
+| `channel_link(user_id, channel, external_id)`, one-time link codes | #11 |
+| `passkey` | #12 |
+| `tax_profile(household_id, year, assessment, bundesland, church_tax_rate)`, `employment(person_id, year, employer, steuerklasse, commute_km, office_days, homeoffice_days)`, `child_year(person_id, year, kindergeld_months, lives_with, betreuung_costs…)`, `property` (+ `tax_item.property_id`), extra `person` columns | #13 |
+| `estimate(household_id, year, params_version, inputs_hash, result jsonb, created_at)` | #17 |
+| `official_record(person_id, year, kind, fields)`, kinds `lstb`, `elterngeld`, `alg`, `kindergeld` (`jstb` #19, Nebenkosten #20; encrypted where it holds a Steuer-ID) | #18 |
+| read-only Grafana role + PII-free views | #22 |
 
 Dedupe: `sha256` for identical files + fuzzy key `(vendor, date, amount)` for re-photographed bills.
 

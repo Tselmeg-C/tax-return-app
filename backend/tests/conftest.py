@@ -96,7 +96,7 @@ def migrated_database(test_database_url: str) -> str:
 
 @pytest.fixture(scope="session")
 async def db_engine(migrated_database: str) -> AsyncIterator[AsyncEngine]:
-    engine = create_async_engine(migrated_database, pool_pre_ping=True)
+    engine = create_async_engine(migrated_database, pool_pre_ping=True, hide_parameters=True)
     try:
         yield engine
     finally:

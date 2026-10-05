@@ -11,6 +11,33 @@ before starting a task.
 - `backend/app/tax/` is pure (no I/O, no DB, no network); every tax rule change needs a golden test.
 - Never log document contents or the Steuer-ID (not in logs, traces, metrics, fixtures or error messages).
 - Any LLM change (prompt, schema, model, provider, routing) needs an eval run; see `_docs/adlc.md`.
+  Once #9 has merged, changing the `Category`, `DocType` or `PaymentMethod` enums
+  (`backend/app/domain/enums.py`) is an LLM schema change and needs an eval run too.
+- Query household-owned tables through `HouseholdScope` (`app/db/scope.py`), never with a bare `select`.
+- Log DB errors by exception class name only (`type(exc).__name__`), never `str(exc)`:
+  Postgres' `DETAIL` can contain plain column values (names, e-mail, amounts).
+
+## New tables (rules from #4)
+
+Every new table gets its own Alembic migration in the issue that first uses it. The
+meta-tests in `backend/tests/domain/` check most of these rules automatically.
+
+- `household_id uuid NOT NULL` → `household.id ON DELETE RESTRICT` on every table except
+  `household` (use the `HouseholdOwned` mixin). An exception needs an entry with a reason in
+  `HOUSEHOLD_ID_EXEMPT` (`tests/domain/test_schema_meta.py`)
+- `id` via `UUIDPrimaryKey` (Python `uuid4`, no server default); timestamps via `CreatedAt` /
+  `Timestamps`; money `Numeric(12, 2)`, never float
+- Every FK column is the first column of an index (`Index(None, "col")` or a composite)
+- Enums: `enum_type(MyEnum, "<column>")` from `app/db/types.py` (VARCHAR + CHECK storing the
+  values, not native PG enums). Values are lowercase ASCII codes; German labels go in `LABELS_DE`
+- Steuer-ID, IBAN, raw document text / LLM output: `EncryptedString("<table>.<column>")` or
+  `EncryptedJSON(...)`. They cannot be filtered, compared or made unique
+- Changes users make get an audit row via `app.db.audit.record(...)` (inside the caller's
+  transaction; encrypted values are stored as `"[redacted]"`)
+- Never override `__repr__` / `__str__` on models (they print `<Class id=…>` only)
+- Migrations must not import from `app.*`: write enums as `sa.String(64)` + `sa.CheckConstraint`
+  and encrypted columns as `sa.LargeBinary()`; write `downgrade()` by hand
+- Test data uses fictional names and runtime-generated sentinels (never a real-looking Steuer-ID)
 
 ## Stack
 
@@ -62,6 +89,8 @@ uv run ruff check . && uv run ruff format --check .
 uv run mypy app
 uv run alembic upgrade head   # migrations (URL from DATABASE_URL, never in alembic.ini)
 uv run alembic revision --autogenerate -m "..."   # new migration after changing models
+uv run python -m app.db.seed  # idempotent dev seed (fictional "Musterhaushalt"); refuses APP_ENV=production
+                              # SEED_OWNER_EMAIL=you@example.org overrides the owner's e-mail
 uv run python -m evals.run    # eval runner (see _docs/adlc.md; arrives with the first LLM feature)
 ```
 
@@ -94,3 +123,15 @@ require branches to be up to date before merging.
 
 Copy `.env.example` to `.env` (git-ignored) and fill in values locally; real
 secrets live in Codespaces / Railway secrets, never in the repo.
+
+`FIELD_ENCRYPTION_KEY` (encrypted columns) is a comma-separated list of Fernet keys: the
+first encrypts, all decrypt (prepend a new key to rotate). The app, `/health` and Alembic run
+without it; the first encrypt/decrypt of a non-NULL value raises `EncryptionKeyError`. Generate
+a dev key with:
+
+```bash
+cd backend && uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Use a different key per environment and keep a backup: data encrypted with a lost key is
+unrecoverable. Tests generate throwaway keys at runtime and need no key configured.
