@@ -21,6 +21,7 @@ jobs:
     outputs:
       backend: ${{ github.event_name != 'pull_request' || steps.filter.outputs.backend == 'true' }}
       frontend: ${{ github.event_name != 'pull_request' || steps.filter.outputs.frontend == 'true' }}
+      deploy: ${{ github.event_name != 'pull_request' || steps.filter.outputs.deploy == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -34,6 +35,11 @@ jobs:
             frontend:
               - 'frontend/**'
               - '.github/workflows/**'
+            deploy:
+              - 'backend/**'
+              - 'frontend/**'
+              - '.github/workflows/**'
+              - '.github/scripts/**'
 
   backend:
     name: backend
@@ -112,9 +118,20 @@ jobs:
       - name: build
         run: npm run build
 
+  deploy-smoke:
+    name: deploy-smoke
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images, migrate twice concurrently, smoke-test api and web
+        run: .github/scripts/deploy-smoke.sh
+
   ci-ok:
     name: ci-ok
-    needs: [changes, backend, frontend]
+    needs: [changes, backend, frontend, deploy-smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
