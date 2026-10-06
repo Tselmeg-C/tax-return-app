@@ -17,3 +17,6 @@ node_modules/
 # Editors / OS
 .DS_Store
 .idea/
+
+# Dev mail outbox (MAIL_BACKEND=file): contains login links
+backend/.dev-mail/

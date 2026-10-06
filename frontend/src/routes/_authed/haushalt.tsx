@@ -3,7 +3,7 @@ import { Baby, Plus, User } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { eur, members } from "@/lib/mock";
 
-export const Route = createFileRoute("/haushalt")({
+export const Route = createFileRoute("/_authed/haushalt")({
   head: () => ({
     meta: [
       { title: "Haushalt — belegbot" },

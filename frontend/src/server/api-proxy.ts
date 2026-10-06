@@ -4,6 +4,10 @@
  * - The upstream host always comes from `API_INTERNAL_URL`; a crafted path can never change it.
  * - Bodies are streamed both ways; status, headers (incl. multiple `Set-Cookie`) and
  *   redirects (not followed) are passed through unchanged.
+ * - `X-Forwarded-For` is **replaced** with one address (the api's rate-limit key): the socket
+ *   peer by default, or with `TRUSTED_PROXY_HOPS=n` the n-th entry from the right of the
+ *   incoming header (Railway's edge appends the real client, so n=1 there). A client can never
+ *   choose its own value.
  * - Unreachable upstream → 502, no response headers within the timeout → 504,
  *   no `API_INTERNAL_URL` in production → 503.
  * - One span per request (`web /api proxy`); its W3C `traceparent` is sent upstream so the
@@ -72,6 +76,34 @@ export function resolveApiUrl(env: Record<string, string | undefined>): ApiUrlRe
   }
 }
 
+/** `TRUSTED_PROXY_HOPS`: a non-negative integer, else 0 (trust no forwarded header). */
+export function resolveTrustedProxyHops(env: Record<string, string | undefined>): number {
+  const raw = env["TRUSTED_PROXY_HOPS"]?.trim();
+  const value = raw ? Number(raw) : 0;
+  return Number.isInteger(value) && value >= 0 ? value : 0;
+}
+
+/**
+ * The single client address sent upstream. With `trustedHops` > 0 it is the entry that the
+ * trusted proxy closest to us appended (n-th from the right); without enough entries, or with
+ * 0 hops, it is the socket peer.
+ */
+export function forwardedClientIp(
+  incomingForwardedFor: string | null,
+  clientIp: string | undefined,
+  trustedHops: number,
+): string | undefined {
+  if (trustedHops > 0 && incomingForwardedFor) {
+    const entries = incomingForwardedFor
+      .split(",")
+      .map((e) => e.trim())
+      .filter(Boolean);
+    const picked = entries[entries.length - trustedHops];
+    if (picked) return picked;
+  }
+  return clientIp;
+}
+
 /** Upstream response-head timeout: `API_PROXY_TIMEOUT_MS` if a positive integer, else 30 s. */
 export function resolveTimeoutMs(env: Record<string, string | undefined>): number {
   const raw = env["API_PROXY_TIMEOUT_MS"]?.trim();
@@ -116,6 +148,7 @@ export function buildUpstreamHeaders(
   incoming: Request,
   incomingUrl: URL,
   clientIp: string | undefined,
+  trustedHops = 0,
 ): Headers {
   const listed = connectionTokens(incoming.headers);
   const out = new Headers();
@@ -126,8 +159,11 @@ export function buildUpstreamHeaders(
   });
   out.set("accept-encoding", "identity");
 
-  const priorFor = incoming.headers.get("x-forwarded-for");
-  const forwardedFor = [priorFor, clientIp].filter((v): v is string => Boolean(v)).join(", ");
+  const forwardedFor = forwardedClientIp(
+    incoming.headers.get("x-forwarded-for"),
+    clientIp,
+    trustedHops,
+  );
   if (forwardedFor) out.set("x-forwarded-for", forwardedFor);
   out.set(
     "x-forwarded-proto",
@@ -173,13 +209,15 @@ export interface ApiProxyOptions {
   apiUrl: URL | null;
   tracer: Tracer;
   timeoutMs?: number;
+  /** `TRUSTED_PROXY_HOPS` (see `forwardedClientIp`); default 0. */
+  trustedProxyHops?: number;
   fetchImpl?: typeof fetch;
   /** Warnings for upstream failures; never receives bodies, cookies or query strings. */
   warn?: (message: string, fields: Record<string, string | number>) => void;
 }
 
 export interface ProxyRequestInfo {
-  /** Address of the directly connected peer, appended to `X-Forwarded-For`. */
+  /** Address of the directly connected peer (the `X-Forwarded-For` value by default). */
   clientIp?: string | undefined;
 }
 
@@ -192,6 +230,7 @@ const defaultWarn = (message: string, fields: Record<string, string | number>) =
 export function createApiProxy(options: ApiProxyOptions): ApiProxy {
   const { apiUrl, tracer } = options;
   const timeoutMs = options.timeoutMs ?? DEFAULT_UPSTREAM_TIMEOUT_MS;
+  const trustedHops = options.trustedProxyHops ?? 0;
   const fetchImpl = options.fetchImpl ?? fetch;
   const warn = options.warn ?? defaultWarn;
   const propagator = new W3CTraceContextPropagator();
@@ -224,7 +263,7 @@ export function createApiProxy(options: ApiProxyOptions): ApiProxy {
     const target = buildUpstreamUrl(apiUrl, incomingUrl);
     if (target === null) return finish(jsonError(404, "not found"), "not_found");
 
-    const headers = buildUpstreamHeaders(request, incomingUrl, info.clientIp);
+    const headers = buildUpstreamHeaders(request, incomingUrl, info.clientIp, trustedHops);
     propagator.inject(trace.setSpan(parent, span), headers, headerSetter);
 
     const hasBody = method !== "GET" && method !== "HEAD" && request.body !== null;

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { anlageLabel, eur, items, type Anlage } from "@/lib/mock";
 
-export const Route = createFileRoute("/export")({
+export const Route = createFileRoute("/_authed/export")({
   head: () => ({
     meta: [
       { title: "Export — belegbot" },

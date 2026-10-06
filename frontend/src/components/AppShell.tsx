@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { FileText, LayoutDashboard, Users, Download, Send } from "lucide-react";
 
+import { UserMenu } from "@/components/UserMenu";
+
 const nav = [
   { to: "/", label: "Übersicht", icon: LayoutDashboard },
   { to: "/belege", label: "Belege", icon: FileText },
@@ -43,6 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="hidden items-center gap-1 text-xs text-muted-foreground md:flex">
             <Send className="h-3.5 w-3.5 text-primary" /> Telegram verbunden
           </span>
+          <UserMenu />
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-5 py-8">{children}</main>

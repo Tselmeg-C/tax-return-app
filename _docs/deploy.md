@@ -32,9 +32,17 @@ Variables (set in the Railway UI, never in the repo):
 | `api` | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (private URL, not `DATABASE_PUBLIC_URL`) |
 | `api` | `PORT`, `APP_ENV`, `LOG_LEVEL` | `8000`, `production`, `INFO` |
 | `api` | `OTEL_*` | references to the three shared variables. **No** `OTEL_SERVICE_NAME` |
+| `api` | `MAIL_BACKEND`, `APP_BASE_URL` | `resend`, `https://<web domain>` (login links, CSRF Origin check, `__Host-` cookie) |
+| `api` | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | sending-only key for the verified domain; e.g. `belegbot <login@your-domain>` |
+| `web` | `TRUSTED_PROXY_HOPS` | `1` (take the client address the Railway edge appended to `X-Forwarded-For`) |
 | `web` | `API_INTERNAL_URL` | `http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}` |
 | `web` | `NODE_ENV`, `APP_ENV`, `OTEL_SERVICE_NAME` | `production`, `production`, `belegbot-web` |
 | `web` | `OTEL_*` | references to the three shared variables |
+
+The api refuses to start with `APP_ENV=production` unless `MAIL_BACKEND=resend`,
+`RESEND_API_KEY`, `RESEND_FROM_EMAIL` are set and `APP_BASE_URL` is `https://` (the error
+names the variable). Set them **before** merging #5, so the old deployment keeps serving
+until they exist.
 
 Railway itself provides `RAILWAY_ENVIRONMENT_NAME` (→ `deployment.environment.name` on all
 telemetry) and `RAILWAY_GIT_COMMIT_SHA` (→ `/version` `commit` and `vcs.ref.head.revision`).
@@ -119,7 +127,7 @@ and CI use no exporter or in-memory exporters). These #3 checks wait until then:
 - Setup steps 1–6 below (Grafana stack + token, Railway project, `api`, `web`, Postgres,
   PR environments, regions EU West, Postgres backups)
 - `README.md`: the production web URL
-- Public URL checks: `/` 200, `/api/health` 200 with `X-Trace-Id`, `/api/version` shows
+- Public URL checks: `/login` 200 (`/` redirects to it without a session), `/api/health` 200 with `X-Trace-Id`, `/api/version` shows
   `env: production` and the deployed `main` SHA, `/healthz` 200; `api` has no public domain;
   GitHub deployment statuses for the merge commit are `success`
 - Railway UI: pre-deploy `alembic upgrade head` runs once and succeeds before the health check;
@@ -131,6 +139,22 @@ and CI use no exporter or in-memory exporters). These #3 checks wait until then:
   environment name, removed on close/merge
 - Broken-migration PR (agent creates it on request): fails in the pre-deploy step, never active
 - No secret, OTLP header, DB password or cookie value in Railway logs or Loki
+
+These #5 (login) checks wait until then as well:
+
+- Resend: a domain verified in Resend (SPF/DKIM), a sending-only API key restricted to it,
+  click and open tracking **off**; the `api` / `web` variables above
+- Bootstrap the first owner and invite the family (see "Users" below)
+- `curl -si https://<web>/api/auth/me` → 401; `curl -si https://<web>/belege` → 3xx to
+  `/login?next=%2Fbelege`; `POST https://<web>/api/auth/magic-link` with
+  `X-Requested-With: belegbot` and a non-invited address → `202 {"status":"sent"}`, without the
+  header → 403; `https://<web>/api/docs` → 404
+- User-verified: the mail arrives within 1 min, in German, not in spam; the link works on
+  desktop and phone (requested on one, opened on the other); the cookie shows `HttpOnly`,
+  `Secure`, `SameSite=Lax`; reused or >15 min old links show the error; a link that sat in
+  the inbox still works on the first click; "Abmelden" / "Auf allen Geräten abmelden"; every
+  invited member can sign in, a non-invited address gets no mail; Railway logs and Loki contain
+  neither the address nor any part of a token
 
 ## Setup (repo owner, at the final deployment)
 
@@ -174,6 +198,15 @@ in your password manager and Railway only.
   `NODE_ENV=production`, `APP_ENV=production`, `OTEL_SERVICE_NAME=belegbot-web`, references to
   the three shared `OTEL_*` variables.
 
+**Users** (after the first successful `api` deploy; output shows ids and masked e-mails):
+
+```bash
+railway ssh --service api
+python -m app.auth.cli bootstrap --household-name "Familie X" --email you@your-domain
+python -m app.auth.cli invite --email partner@your-domain            # --role owner for a 2nd owner
+python -m app.auth.cli disable --email someone@your-domain           # also: enable, revoke-sessions
+```
+
 **5. PR environments**
 
 *Project Settings → Environments*: enable **PR Environments** (based on `production`).
@@ -185,7 +218,7 @@ it exists, confirmation of regions and backups. Then run the checks below.
 **Checks after setup**
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://<web>/           # 200
+curl -s -o /dev/null -w '%{http_code}\n' https://<web>/login      # 200 (/ redirects there)
 curl -si https://<web>/api/health                                  # 200, X-Trace-Id
 curl -s https://<web>/api/version                                  # env production, commit = main HEAD
 curl -s -o /dev/null -w '%{http_code}\n' https://<web>/healthz    # 200
