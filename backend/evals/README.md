@@ -139,12 +139,14 @@ Implement `Predictor` (`name`, `describe()`, `async predict(case) -> Prediction`
 it in `evals/predictors/__init__.py`:
 
 ```python
-register(PredictorSpec(
-    name="pipeline",
-    factory=make_pipeline,                                   # PredictorOptions -> Predictor
-    requires_env=lambda o: ("OPENAI_API_KEY",) if (o.provider or "openai") == "openai" else (),
-    default_provider="openai",
-))
+register(
+    PredictorSpec(
+        name="pipeline",
+        factory=make_pipeline,  # PredictorOptions -> Predictor
+        requires_env=lambda o: ("OPENAI_API_KEY",) if (o.provider or "openai") == "openai" else (),
+        default_provider="openai",
+    )
+)
 ```
 
 `EvalCase` (`id`, `path`, `mime_type`, `variant`, `tags`, `read_bytes()`) has no label. Copy
