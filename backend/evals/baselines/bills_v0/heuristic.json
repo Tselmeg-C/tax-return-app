@@ -1,0 +1,2824 @@
+{
+  "cases": [
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_arbeitsmittel",
+        "deductible_amount": "888.90",
+        "doc_type": "generic_bill",
+        "gross_amount": "888.90",
+        "labour_share_35a": null,
+        "payment_method": "card",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b001-arbeitsmittel-notebook",
+      "latency_ms": 5,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "wk_arbeitsmittel",
+        "deductible_amount": "888.90",
+        "doc_type": "generic_bill",
+        "gross_amount": "888.90",
+        "labour_share_35a": null,
+        "payment_method": "card",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": [
+        "duplicate_rephotographed"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_arbeitsmittel",
+        "deductible_amount": "888.90",
+        "doc_type": "generic_bill",
+        "gross_amount": "888.90",
+        "labour_share_35a": null,
+        "payment_method": "card",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b002-arbeitsmittel-notebook-foto",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": [
+        "duplicate_rephotographed"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_fortbildung",
+        "deductible_amount": "590.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "590.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b003-fortbildung-seminar",
+      "latency_ms": 2,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_fortbildung",
+        "deductible_amount": "249.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "249.00",
+        "labour_share_35a": null,
+        "payment_method": "paypal",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b004-fortbildung-online-course-en",
+      "latency_ms": 5,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "wk_fortbildung",
+        "deductible_amount": null,
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": "paypal",
+        "tax_relevant": true,
+        "tax_year": null
+      },
+      "tags": [
+        "english_language"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_fortbildung",
+        "deductible_amount": "360.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "360.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b005-fortbildung-sprachkurs",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_fahrtkosten",
+        "deductible_amount": "118.40",
+        "doc_type": "generic_bill",
+        "gross_amount": "118.40",
+        "labour_share_35a": null,
+        "payment_method": "card",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b006-fahrtkosten-dienstreise",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_arbeitszimmer",
+        "deductible_amount": "1240.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "1240.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b007-arbeitszimmer-einbauregal",
+      "latency_ms": 7,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "wk_arbeitszimmer",
+        "deductible_amount": "1240.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "1240.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_bewerbung",
+        "deductible_amount": "61.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "61.00",
+        "labour_share_35a": null,
+        "payment_method": "cash",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b008-bewerbung-fotos",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_kontofuehrung",
+        "deductible_amount": "60.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "60.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b009-kontofuehrung",
+      "latency_ms": 6,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "wk_kontofuehrung",
+        "deductible_amount": null,
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_berufsverband",
+        "deductible_amount": "294.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "294.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b010-berufsverband-gewerkschaft",
+      "latency_ms": 2,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "wk_doppelte_haushaltsfuehrung",
+        "deductible_amount": "5400.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "5400.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b011-doppelte-haushaltsfuehrung",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "steuerberatung",
+        "deductible_amount": "240.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "400.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b012-steuerberatung-split",
+      "latency_ms": 7,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "steuerberatung",
+        "deductible_amount": "400.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "400.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": [
+        "steuerberatung_split"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "vorsorge_kv_pv",
+        "deductible_amount": "5223.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "5223.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b013-kv-pv-krankenkasse",
+      "latency_ms": 4,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "vorsorge_kv_pv",
+        "deductible_amount": "5223.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "5223.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "vorsorge_kv_pv",
+        "deductible_amount": "4020.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "4020.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b014-kv-pv-privat",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "vorsorge_rv",
+        "deductible_amount": "1200.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "1200.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b015-rv-freiwillig",
+      "latency_ms": 1,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "vorsorge_riester",
+        "deductible_amount": "1925.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "1925.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b016-riester",
+      "latency_ms": 4,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "vorsorge_riester",
+        "deductible_amount": "1925.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "1925.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "vorsorge_ruerup",
+        "deductible_amount": "2400.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "2400.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b017-ruerup",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "vorsorge_sonstige",
+        "deductible_amount": "89.50",
+        "doc_type": "generic_bill",
+        "gross_amount": "89.50",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b018-haftpflicht",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "spenden",
+        "deductible_amount": "350.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "350.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b019-spende-zuwendungsbestaetigung",
+      "latency_ms": 4,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "spenden",
+        "deductible_amount": null,
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "spenden",
+        "deductible_amount": "150.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "150.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b020-spende-kontoauszug",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "spenden",
+        "deductible_amount": "120.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "120.00",
+        "labour_share_35a": null,
+        "payment_method": "other",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b021-sachspende",
+      "latency_ms": 1,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "kirchensteuer",
+        "deductible_amount": "212.40",
+        "doc_type": "generic_bill",
+        "gross_amount": "212.40",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b022-kirchensteuer-nachzahlung",
+      "latency_ms": 3,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "kirchensteuer",
+        "deductible_amount": null,
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "kinderbetreuung",
+        "deductible_amount": "2520.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "3180.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b023-kita-jahresbescheinigung",
+      "latency_ms": 3,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "kinderbetreuung",
+        "deductible_amount": "3180.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "3180.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "kinderbetreuung",
+        "deductible_amount": "2100.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "2100.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b024-tagesmutter",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "schulgeld",
+        "deductible_amount": "2160.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "2700.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b025-schulgeld",
+      "latency_ms": 1,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "kinderbetreuung",
+        "deductible_amount": "-120.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "-120.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b026-kita-gutschrift",
+      "latency_ms": 3,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "kinderbetreuung",
+        "deductible_amount": "-120.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "-120.00",
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": [
+        "credit_note"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "krankheitskosten",
+        "deductible_amount": "218.70",
+        "doc_type": "generic_bill",
+        "gross_amount": "218.70",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b027-zahnarzt-offen",
+      "latency_ms": 4,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "krankheitskosten",
+        "deductible_amount": "218.70",
+        "doc_type": "generic_bill",
+        "gross_amount": "218.70",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": [
+        "no_payment_date"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "krankheitskosten",
+        "deductible_amount": "10.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "26.44",
+        "labour_share_35a": null,
+        "payment_method": "cash",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b028-apotheke-gemischt",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": [
+        "mixed_receipt"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "krankheitskosten",
+        "deductible_amount": "600.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "600.00",
+        "labour_share_35a": null,
+        "payment_method": "card",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b029-optiker-brille",
+      "latency_ms": 1,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "krankheitskosten",
+        "deductible_amount": "171.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "171.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b030-physiotherapie",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "pflege",
+        "deductible_amount": "845.60",
+        "doc_type": "generic_bill",
+        "gross_amount": "845.60",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b031-pflege-ambulant",
+      "latency_ms": 4,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "pflege",
+        "deductible_amount": "845.60",
+        "doc_type": "generic_bill",
+        "gross_amount": "845.60",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "behinderung",
+        "deductible_amount": "192.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "192.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b032-behinderung-fahrdienst",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "haushaltsnahe_dienstleistung",
+        "deductible_amount": "750.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "750.00",
+        "labour_share_35a": "750.00",
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b033-reinigung",
+      "latency_ms": 5,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": true,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "haushaltsnahe_dienstleistung",
+        "deductible_amount": "750.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "750.00",
+        "labour_share_35a": "750.00",
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "haushaltsnahe_dienstleistung",
+        "deductible_amount": "217.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "247.00",
+        "labour_share_35a": "217.00",
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b034-gartenpflege",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": false,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "haushaltsnahe_dienstleistung",
+        "deductible_amount": "384.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "384.00",
+        "labour_share_35a": "384.00",
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b035-haushaltshilfe",
+      "latency_ms": 2,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": false,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "handwerkerleistung",
+        "deductible_amount": "763.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "949.40",
+        "labour_share_35a": "763.00",
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b036-maler-material-arbeit",
+      "latency_ms": 6,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": true,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "handwerkerleistung",
+        "deductible_amount": "763.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "949.40",
+        "labour_share_35a": "763.00",
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": [
+        "material_and_labour"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "handwerkerleistung",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "312.40",
+        "labour_share_35a": "180.00",
+        "payment_method": "cash",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b037-handwerker-bar",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": false,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": [
+        "cash_35a"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "handwerkerleistung",
+        "deductible_amount": "188.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "234.20",
+        "labour_share_35a": "188.00",
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2026
+      },
+      "id": "b038-heizung-jahreswechsel",
+      "latency_ms": 5,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": true,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "handwerkerleistung",
+        "deductible_amount": "188.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "234.20",
+        "labour_share_35a": "188.00",
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2026
+      },
+      "tags": [
+        "abfluss_year_boundary"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "handwerkerleistung",
+        "deductible_amount": "96.50",
+        "doc_type": "generic_bill",
+        "gross_amount": "96.50",
+        "labour_share_35a": "96.50",
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b039-schornsteinfeger",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": false,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "v_schuldzinsen",
+        "deductible_amount": "3184.27",
+        "doc_type": "generic_bill",
+        "gross_amount": "3184.27",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b040-schuldzinsen-darlehen",
+      "latency_ms": 3,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "v_schuldzinsen",
+        "deductible_amount": "3184.27",
+        "doc_type": "generic_bill",
+        "gross_amount": "3184.27",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "v_erhaltung",
+        "deductible_amount": "5635.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "5635.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b041-erhaltung-bad-mehrseitig",
+      "latency_ms": 11,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "haushaltsnahe_dienstleistung",
+        "deductible_amount": "5635.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "5635.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": [
+        "multi_page"
+      ]
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "v_nebenkosten",
+        "deductible_amount": "393.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "393.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b042-grundsteuer-vermietung",
+      "latency_ms": 1,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "v_nebenkosten",
+        "deductible_amount": "486.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "486.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b043-gebaeudeversicherung",
+      "latency_ms": 0,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "kapital_bescheinigung",
+        "deductible_amount": "0.00",
+        "doc_type": "jahressteuerbescheinigung",
+        "gross_amount": "1240.55",
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b044-jahressteuerbescheinigung",
+      "latency_ms": 4,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "kapital_bescheinigung",
+        "deductible_amount": "0.00",
+        "doc_type": "jahressteuerbescheinigung",
+        "gross_amount": "1240.55",
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": 2026
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "11.45",
+        "labour_share_35a": null,
+        "payment_method": "card",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b045-supermarkt-lebensmittel",
+      "latency_ms": 0,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "42.80",
+        "labour_share_35a": null,
+        "payment_method": "cash",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b046-restaurant",
+      "latency_ms": 1,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "189.90",
+        "labour_share_35a": null,
+        "payment_method": "paypal",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b047-kleidung",
+      "latency_ms": 4,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "189.90",
+        "labour_share_35a": null,
+        "payment_method": "paypal",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "508.99",
+        "labour_share_35a": null,
+        "payment_method": "card",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b048-elektronik-privat",
+      "latency_ms": 0,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "72.46",
+        "labour_share_35a": null,
+        "payment_method": "card",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b049-tanken-privat",
+      "latency_ms": 0,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "31.50",
+        "labour_share_35a": null,
+        "payment_method": "card",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b050-kino",
+      "latency_ms": 3,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "31.50",
+        "labour_share_35a": null,
+        "payment_method": "card",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "59.94",
+        "labour_share_35a": null,
+        "payment_method": "paypal",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b051-spielzeug",
+      "latency_ms": 0,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "6.00",
+        "labour_share_35a": null,
+        "payment_method": "cash",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b052-parkschein",
+      "latency_ms": 0,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "3800.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b053-falle-neubau-elektro",
+      "latency_ms": 5,
+      "match": {
+        "category": false,
+        "category_group": false,
+        "deductible_amount": false,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": false,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "handwerkerleistung",
+        "deductible_amount": "3800.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "3800.00",
+        "labour_share_35a": null,
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "180.00",
+        "labour_share_35a": null,
+        "payment_method": "direct_debit",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b054-falle-sportverein",
+      "latency_ms": 2,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": false,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "13.99",
+        "labour_share_35a": null,
+        "payment_method": "paypal",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "id": "b055-streaming-abo",
+      "latency_ms": 5,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "13.99",
+        "labour_share_35a": null,
+        "payment_method": "paypal",
+        "tax_relevant": false,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": null,
+        "deductible_amount": "0.00",
+        "doc_type": "lohnsteuerbescheinigung",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b056-lstb-alex",
+      "latency_ms": 7,
+      "match": {
+        "category": null,
+        "category_group": null,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": null,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": null,
+        "deductible_amount": "0.00",
+        "doc_type": "lohnsteuerbescheinigung",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": null,
+        "deductible_amount": "0.00",
+        "doc_type": "lohnsteuerbescheinigung",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b057-lstb-sam",
+      "latency_ms": 0,
+      "match": {
+        "category": null,
+        "category_group": null,
+        "deductible_amount": true,
+        "doc_type": false,
+        "gross_amount": null,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": null,
+        "deductible_amount": "0.00",
+        "doc_type": "kindergeld_bescheid",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b058-kindergeld-bescheid",
+      "latency_ms": 3,
+      "match": {
+        "category": null,
+        "category_group": null,
+        "deductible_amount": true,
+        "doc_type": false,
+        "gross_amount": null,
+        "invoice_date": false,
+        "labour_share_35a": null,
+        "payment_method": false,
+        "tax_relevant": false,
+        "tax_year": false
+      },
+      "predicted": {
+        "category": "irrelevant",
+        "deductible_amount": "0.00",
+        "doc_type": "generic_bill",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": null,
+        "tax_relevant": false,
+        "tax_year": null
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": null,
+        "deductible_amount": "0.00",
+        "doc_type": "elterngeld_bescheid",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b059-elterngeld-bescheid",
+      "latency_ms": 4,
+      "match": {
+        "category": null,
+        "category_group": null,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": null,
+        "invoice_date": true,
+        "labour_share_35a": null,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": null,
+        "deductible_amount": "0.00",
+        "doc_type": "elterngeld_bescheid",
+        "gross_amount": null,
+        "labour_share_35a": null,
+        "payment_method": "unknown",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    },
+    {
+      "cost_eur": null,
+      "error_kind": null,
+      "expected": {
+        "category": "haushaltsnahe_dienstleistung",
+        "deductible_amount": "120.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "120.00",
+        "labour_share_35a": "120.00",
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "id": "b060-winterdienst",
+      "latency_ms": 5,
+      "match": {
+        "category": true,
+        "category_group": true,
+        "deductible_amount": true,
+        "doc_type": true,
+        "gross_amount": true,
+        "invoice_date": true,
+        "labour_share_35a": true,
+        "payment_method": true,
+        "tax_relevant": true,
+        "tax_year": true
+      },
+      "predicted": {
+        "category": "haushaltsnahe_dienstleistung",
+        "deductible_amount": "120.00",
+        "doc_type": "generic_bill",
+        "gross_amount": "120.00",
+        "labour_share_35a": "120.00",
+        "payment_method": "bank_transfer",
+        "tax_relevant": true,
+        "tax_year": 2025
+      },
+      "tags": []
+    }
+  ],
+  "dataset": {
+    "hash": "f0b28fa2acf389d6aab0e6c5076542292e815c779a2a8b13c09fdbe04e85dadc",
+    "label_schema_version": 1,
+    "n_cases": 60,
+    "name": "bills_v0"
+  },
+  "duration_s": 0.149,
+  "gate": {
+    "baseline_stale": null,
+    "compare_to": null,
+    "enabled": false,
+    "passed": null,
+    "rows": [
+      {
+        "baseline": null,
+        "bound": "0.95",
+        "delta": null,
+        "metric": "relevance_precision",
+        "op": "min",
+        "regression_checked": false,
+        "required": true,
+        "result": "pass",
+        "value": 0.9565
+      },
+      {
+        "baseline": null,
+        "bound": "0.9",
+        "delta": null,
+        "metric": "relevance_recall",
+        "op": "min",
+        "regression_checked": false,
+        "required": true,
+        "result": "fail",
+        "value": 0.4583
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "relevance_f1",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": 0.6197
+      },
+      {
+        "baseline": null,
+        "bound": "0.9",
+        "delta": null,
+        "metric": "doc_type_accuracy",
+        "op": "min",
+        "regression_checked": false,
+        "required": true,
+        "result": "pass",
+        "value": 0.9667
+      },
+      {
+        "baseline": null,
+        "bound": "0.85",
+        "delta": null,
+        "metric": "category_accuracy",
+        "op": "min",
+        "regression_checked": false,
+        "required": true,
+        "result": "fail",
+        "value": 0.5179
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "category_group_accuracy",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": 0.5179
+      },
+      {
+        "baseline": null,
+        "bound": "0.9",
+        "delta": null,
+        "metric": "gross_exact_match",
+        "op": "min",
+        "regression_checked": false,
+        "required": true,
+        "result": "fail",
+        "value": 0.3571
+      },
+      {
+        "baseline": null,
+        "bound": "0.85",
+        "delta": null,
+        "metric": "deductible_exact_match",
+        "op": "min",
+        "regression_checked": false,
+        "required": true,
+        "result": "fail",
+        "value": 0.4833
+      },
+      {
+        "baseline": null,
+        "bound": "5.0",
+        "delta": null,
+        "metric": "deductible_abs_error_eur_mean",
+        "op": "max",
+        "regression_checked": false,
+        "required": true,
+        "result": "fail",
+        "value": "466.55"
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "deductible_abs_error_eur_max",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": "5400.00"
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "deductible_abs_error_eur_sum",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": "27992.70"
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "overclaim_eur_sum",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": "4620.00"
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "underclaim_eur_sum",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": "23372.70"
+      },
+      {
+        "baseline": null,
+        "bound": "10.0",
+        "delta": null,
+        "metric": "labour_share_35a_abs_error_eur_mean",
+        "op": "max",
+        "regression_checked": false,
+        "required": true,
+        "result": "fail",
+        "value": "109.69"
+      },
+      {
+        "baseline": null,
+        "bound": "0.95",
+        "delta": null,
+        "metric": "tax_year_accuracy",
+        "op": "min",
+        "regression_checked": false,
+        "required": true,
+        "result": "fail",
+        "value": 0.3833
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "payment_method_accuracy",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": 0.3833
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "invoice_date_exact_match",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": 0.3833
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "vendor_match",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": 0.4
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "person_hint_match",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": 0.0
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "n_errors",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": 0
+      },
+      {
+        "baseline": null,
+        "bound": "0.02",
+        "delta": null,
+        "metric": "error_rate",
+        "op": "max",
+        "regression_checked": false,
+        "required": true,
+        "result": "pass",
+        "value": 0.0
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "cost_eur_total",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": null
+      },
+      {
+        "baseline": null,
+        "bound": "0.02",
+        "delta": null,
+        "metric": "cost_eur_per_doc_mean",
+        "op": "max",
+        "regression_checked": false,
+        "required": false,
+        "result": "n/a",
+        "value": null
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "cost_eur_per_doc_p95",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": null
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "input_tokens_total",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": null
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "output_tokens_total",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": null
+      },
+      {
+        "baseline": null,
+        "bound": null,
+        "delta": null,
+        "metric": "latency_ms_p50",
+        "op": null,
+        "regression_checked": false,
+        "required": false,
+        "result": "-",
+        "value": 2
+      },
+      {
+        "baseline": null,
+        "bound": "30000",
+        "delta": null,
+        "metric": "latency_ms_p95",
+        "op": "max",
+        "regression_checked": false,
+        "required": false,
+        "result": "pass",
+        "value": 7
+      }
+    ],
+    "thresholds_status": "proposed"
+  },
+  "git_sha": "335745550ea6785074ef78d025447a948cbba38e",
+  "metrics": {
+    "category_accuracy": 0.5179,
+    "category_group_accuracy": 0.5179,
+    "cost_eur_per_doc_mean": null,
+    "cost_eur_per_doc_p95": null,
+    "cost_eur_total": null,
+    "deductible_abs_error_eur_max": "5400.00",
+    "deductible_abs_error_eur_mean": "466.55",
+    "deductible_abs_error_eur_sum": "27992.70",
+    "deductible_exact_match": 0.4833,
+    "doc_type_accuracy": 0.9667,
+    "error_rate": 0.0,
+    "gross_exact_match": 0.3571,
+    "input_tokens_total": null,
+    "invoice_date_exact_match": 0.3833,
+    "labour_share_35a_abs_error_eur_mean": "109.69",
+    "latency_ms_p50": 2,
+    "latency_ms_p95": 7,
+    "n_cases": 60,
+    "n_errors": 0,
+    "output_tokens_total": null,
+    "overclaim_eur_sum": "4620.00",
+    "payment_method_accuracy": 0.3833,
+    "per_group": {
+      "agb": {
+        "category_accuracy": 0.3333,
+        "n": 6
+      },
+      "haushaltsnahe": {
+        "category_accuracy": 0.5,
+        "n": 8
+      },
+      "irrelevant": {
+        "category_accuracy": 0.9091,
+        "n": 11
+      },
+      "kapital": {
+        "category_accuracy": 1.0,
+        "n": 1
+      },
+      "kind": {
+        "category_accuracy": 0.5,
+        "n": 4
+      },
+      "sonderausgaben": {
+        "category_accuracy": 0.5,
+        "n": 4
+      },
+      "vermietung": {
+        "category_accuracy": 0.25,
+        "n": 4
+      },
+      "vorsorge": {
+        "category_accuracy": 0.3333,
+        "n": 6
+      },
+      "werbungskosten": {
+        "category_accuracy": 0.4167,
+        "n": 12
+      }
+    },
+    "person_hint_match": 0.0,
+    "relevance_f1": 0.6197,
+    "relevance_precision": 0.9565,
+    "relevance_recall": 0.4583,
+    "tax_year_accuracy": 0.3833,
+    "top_confusions": [
+      {
+        "count": 3,
+        "expected": "krankheitskosten",
+        "predicted": "irrelevant"
+      },
+      {
+        "count": 2,
+        "expected": "handwerkerleistung",
+        "predicted": "irrelevant"
+      },
+      {
+        "count": 2,
+        "expected": "haushaltsnahe_dienstleistung",
+        "predicted": "irrelevant"
+      },
+      {
+        "count": 2,
+        "expected": "spenden",
+        "predicted": "irrelevant"
+      },
+      {
+        "count": 2,
+        "expected": "v_nebenkosten",
+        "predicted": "irrelevant"
+      },
+      {
+        "count": 2,
+        "expected": "wk_fortbildung",
+        "predicted": "irrelevant"
+      },
+      {
+        "count": 1,
+        "expected": "behinderung",
+        "predicted": "irrelevant"
+      },
+      {
+        "count": 1,
+        "expected": "irrelevant",
+        "predicted": "handwerkerleistung"
+      },
+      {
+        "count": 1,
+        "expected": "kinderbetreuung",
+        "predicted": "irrelevant"
+      },
+      {
+        "count": 1,
+        "expected": "schulgeld",
+        "predicted": "irrelevant"
+      }
+    ],
+    "underclaim_eur_sum": "23372.70",
+    "vendor_match": 0.4
+  },
+  "predictor": {
+    "model": "heuristic-keywords",
+    "name": "heuristic",
+    "prompt_version": "-",
+    "provider": "none",
+    "version": "1"
+  },
+  "recording_stale": false,
+  "skipped_reason": null,
+  "started_at": "2026-10-06T07:06:18.600865+00:00",
+  "status": "ok",
+  "subset": false
+}

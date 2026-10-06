@@ -102,10 +102,17 @@ def _image_findings(location: str, data: bytes) -> list[Finding]:
 def scan_file(path: Path, location: str) -> list[Finding]:
     data = path.read_bytes()
     suffix = path.suffix.lower()
-    if suffix == ".pdf":
-        return _pdf_findings(location, data)
-    if suffix in (".jpg", ".jpeg", ".png"):
-        return _image_findings(location, data)
+    # Dispatch on content, not the extension (a mislabelled file is still scanned).
+    if data.startswith(b"%PDF-") or suffix == ".pdf":
+        try:
+            return _pdf_findings(location, data)
+        except Exception:  # noqa: BLE001 - unreadable PDF: report the rule, never the error
+            return [Finding(location, "unreadable_pdf")]
+    if data.startswith((b"\xff\xd8\xff", b"\x89PNG")) or suffix in (".jpg", ".jpeg", ".png"):
+        try:
+            return _image_findings(location, data)
+        except Exception:  # noqa: BLE001
+            return [Finding(location, "unreadable_image")]
     text = data.decode("utf-8", errors="replace")
     if suffix == ".json":
         try:
