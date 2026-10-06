@@ -81,6 +81,28 @@ def test_smoke_without_key_prints_skipped() -> None:
     assert completed.stdout == "SKIPPED: OPENAI_API_KEY is not set\n"
 
 
+def test_smoke_failure_prints_only_the_failed_line() -> None:
+    """Fake key against a closed local port (no traffic leaves the machine)."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("LLM_", "OTEL_"))}
+    env.update(
+        OPENAI_API_KEY="sk-test-smoke-runtime-only",
+        OPENAI_BASE_URL="http://127.0.0.1:9/v1",
+        LLM_MAX_ATTEMPTS="1",
+        LLM_FALLBACK_MODEL="none",
+    )
+    completed = subprocess.run(
+        [sys.executable, "-m", "app.llm.smoke"],
+        cwd=BACKEND_DIR,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert completed.returncode == 1
+    assert completed.stdout == "FAILED: LLMUnavailable request_id=None\n"
+    assert "sk-test-smoke-runtime-only" not in completed.stdout + completed.stderr
+
+
 ENV_EXAMPLE_VARS = (
     "OPENAI_API_KEY",
     "OPENAI_BASE_URL",

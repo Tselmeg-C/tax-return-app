@@ -113,12 +113,16 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     from app.observability import WORKER_SERVICE_NAME, setup_observability
 
-    # Keep stdout to the one result line (warnings only); metrics and spans still go to
-    # OTLP when OTEL_EXPORTER_OTLP_ENDPOINT is set.
+    # stdout carries only the result (or FAILED / SKIPPED) line: no JSON log lines there.
+    # Logs, metrics and spans still go to OTLP when OTEL_EXPORTER_OTLP_ENDPOINT is set.
     observability = setup_observability(
         WORKER_SERVICE_NAME, env={**os.environ, "LOG_LEVEL": "WARNING"}
     )
-    logging.getLogger().setLevel(logging.WARNING)
+    root = logging.getLogger()
+    for handler in list(root.handlers):
+        if isinstance(handler, logging.StreamHandler) and handler.stream is sys.stdout:
+            root.removeHandler(handler)
+    root.setLevel(logging.INFO)
     try:
         return asyncio.run(_run(args.task))
     finally:

@@ -95,8 +95,9 @@ Groups: `LLMTransientError` (first three), `LLMOutputError` (next four), `LLMPer
   `Image.MAX_IMAGE_PIXELS = LLM_MAX_IMAGE_PIXELS` (bombs → `LLMInputInvalid`), EXIF
   orientation applied, downscaled with LANCZOS to `LLM_MAX_IMAGE_PX` (2048) on the long side
   (never cropped), re-encoded as JPEG q85 (PNG with alpha) **without any metadata** (EXIF
-  incl. GPS, XMP, comments, ICC). Small, clean JPEG / PNG pass through unchanged. Animated
-  GIFs use the first frame. Still over `LLM_MAX_IMAGE_BYTES` → `LLMInputTooLarge`.
+  incl. GPS, XMP, comments, ICC, unknown APPn segments). Every image is re-encoded, so only
+  pixels reach the provider. Animated GIFs and multi-picture JPEGs (MPO, e.g. Android Ultra
+  HDR) use the first (primary) frame. Still over `LLM_MAX_IMAGE_BYTES` → `LLMInputTooLarge`.
 - PDFs (pypdfium2): corrupt / password-protected → `LLMInputInvalid`; more than
   `LLM_MAX_PDF_PAGES` (20) pages → `LLMInputTooLarge` (pages are never dropped). `pdf_input:
   native` sends the PDF as `input_file` named `document.pdf`; `rasterize` (for #23) renders

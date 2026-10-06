@@ -1,7 +1,8 @@
 """Input preflight: runs before any HTTP call.
 
 - Images: allowed formats only, decompression-bomb guard, EXIF orientation applied,
-  downscaled (never cropped) to `LLM_MAX_IMAGE_PX`, all metadata stripped, first GIF frame.
+  downscaled (never cropped) to `LLM_MAX_IMAGE_PX`, always re-encoded (no metadata survives),
+  first frame of GIF / MPO.
 - PDFs: corrupt / encrypted → `LLMInputInvalid`; more pages than `LLM_MAX_PDF_PAGES` →
   `LLMInputTooLarge` (pages are never dropped); `rasterize` mode renders page images.
 - Whole request: image count and base64 size limits.
@@ -22,24 +23,15 @@ from app.config import LLMSettings
 from app.llm.errors import LLMInputInvalid, LLMInputTooLarge
 from app.llm.types import ImagePart, Part, PdfInputMode, PdfPart, TextPart
 
-_FORMAT_MIME = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp", "GIF": "image/gif"}
+# MPO = multi-picture JPEG (camera / Android Ultra HDR); its primary frame is a plain JPEG.
+_FORMAT_MIME = {
+    "JPEG": "image/jpeg",
+    "MPO": "image/jpeg",
+    "PNG": "image/png",
+    "WEBP": "image/webp",
+    "GIF": "image/gif",
+}
 _ALLOWED_MIMES = frozenset(_FORMAT_MIME.values())
-# `Image.info` keys that are not personal metadata; anything else forces a re-encode.
-_BENIGN_INFO = frozenset(
-    {
-        "jfif",
-        "jfif_version",
-        "jfif_unit",
-        "jfif_density",
-        "dpi",
-        "progressive",
-        "progression",
-        "gamma",
-        "aspect",
-        "transparency",
-        "interlace",
-    }
-)
 JPEG_QUALITY = 85
 
 
@@ -90,7 +82,7 @@ def _open_image(data: bytes, limits: InputLimits) -> Image.Image:
                 raise _invalid("image has more pixels than LLM_MAX_IMAGE_PIXELS")
             if image.format not in _FORMAT_MIME:
                 raise _invalid("image format is not jpeg, png, webp or gif")
-            image.seek(0)  # animated GIF / WebP: first frame only
+            image.seek(0)  # animated GIF / WebP, MPO: first (primary) frame only
             image.load()
     except LLMInputInvalid:
         raise
@@ -99,15 +91,6 @@ def _open_image(data: bytes, limits: InputLimits) -> Image.Image:
     except Exception:
         raise _invalid("image cannot be decoded") from None
     return image
-
-
-def _has_metadata(image: Image.Image) -> bool:
-    if set(image.info) - _BENIGN_INFO:
-        return True
-    try:
-        return len(image.getexif()) > 0
-    except Exception:
-        return True
 
 
 def _encode(image: Image.Image) -> tuple[bytes, str]:
@@ -148,17 +131,9 @@ def _prepare_pil(image: Image.Image, limits: InputLimits) -> ImagePart:
 def prepare_image(part: ImagePart, limits: InputLimits) -> ImagePart:
     if part.mime not in _ALLOWED_MIMES:
         raise _invalid("image type is not jpeg, png, webp or gif")
-    image = _open_image(part.data, limits)
-    fmt = image.format or ""
-    passthrough = (
-        fmt in ("JPEG", "PNG")
-        and max(image.size) <= limits.max_image_px
-        and not _has_metadata(image)
-        and len(part.data) <= limits.max_image_bytes
-    )
-    if passthrough:
-        return ImagePart(data=part.data, mime=_FORMAT_MIME[fmt])  # type: ignore[arg-type]
-    return _prepare_pil(image, limits)
+    # Always re-encode: only pixels reach the provider, never metadata segments (EXIF, XMP,
+    # ICC, comments or APPn blocks Pillow does not even expose).
+    return _prepare_pil(_open_image(part.data, limits), limits)
 
 
 def _open_pdf(data: bytes) -> pdfium.PdfDocument:

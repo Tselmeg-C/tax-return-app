@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import secrets
 import struct
 import zlib
 
@@ -163,8 +164,10 @@ def test_request_size_and_image_count_limits() -> None:
     settings = llm_settings(llm_max_request_mb=0.001, llm_max_images=1)
     limits = InputLimits.from_settings(settings)
     assert limits.max_request_bytes == 1000 and limits.max_images == 1
-    with pytest.raises(LLMInputTooLarge):
-        preflight([TextPart("x"), image], limits, "native")
+    noise = io.BytesIO()
+    Image.effect_noise((200, 200), 64).convert("RGB").save(noise, format="JPEG")
+    with pytest.raises(LLMInputTooLarge):  # well over 1000 bytes even after re-encoding
+        preflight([TextPart("x"), ImagePart(noise.getvalue(), "image/jpeg")], limits, "native")
 
 
 def test_truncated_and_encrypted_pdf_are_invalid() -> None:
@@ -191,12 +194,40 @@ def test_animated_gif_uses_first_frame() -> None:
     assert getattr(Image.open(io.BytesIO(sent.data)), "n_frames", 1) == 1
 
 
-def test_small_clean_png_passes_through() -> None:
+def test_small_clean_images_are_re_encoded_without_unknown_segments() -> None:
+    sentinel = f"SENTINEL{secrets.token_hex(6)}".encode()
+    plain = jpeg((100, 80))
+    payload = b"Ducky" + sentinel
+    app12 = b"\xff\xec" + struct.pack(">H", len(payload) + 2) + payload
+    with_app12 = plain[:2] + app12 + plain[2:]
+    assert Image.open(io.BytesIO(with_app12)).size == (100, 80)  # still a valid JPEG
+    for data, mime in ((with_app12, "image/jpeg"), (_png(sentinel), "image/png")):
+        result = preflight([ImagePart(data=data, mime=mime)], LIMITS, "native")  # type: ignore[arg-type]
+        sent = result.parts[0]
+        assert isinstance(sent, ImagePart)
+        assert sentinel not in sent.data
+        assert result.n_images == 1
+
+
+def _png(sentinel: bytes) -> bytes:
     out = io.BytesIO()
     Image.new("RGB", (100, 80), "white").save(out, format="PNG")
-    result = preflight([ImagePart(data=out.getvalue(), mime="image/png")], LIMITS, "native")
-    assert result.parts[0] == ImagePart(data=out.getvalue(), mime="image/png")
-    assert result.n_images == 1
+    return out.getvalue() + sentinel  # trailing bytes after IEND
+
+
+def test_multi_picture_jpeg_uses_primary_frame() -> None:
+    primary = Image.new("RGB", (120, 90), (250, 0, 0))
+    second = Image.new("RGB", (60, 45), (0, 0, 250))
+    out = io.BytesIO()
+    primary.save(out, format="MPO", save_all=True, append_images=[second])
+    assert Image.open(io.BytesIO(out.getvalue())).format == "MPO"
+    result = preflight([ImagePart(data=out.getvalue(), mime="image/jpeg")], LIMITS, "native")
+    sent = result.parts[0]
+    assert isinstance(sent, ImagePart) and sent.mime == "image/jpeg"
+    image = Image.open(io.BytesIO(sent.data))
+    assert image.format == "JPEG" and image.size == (120, 90)
+    red, _, blue = image.getpixel((60, 45))  # type: ignore[misc]
+    assert red > 200 and blue < 50
 
 
 def test_empty_parts_raise_value_error() -> None:
