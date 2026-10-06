@@ -136,8 +136,15 @@ def fee_statement(t: TemplateInput) -> Rendered:
         w.paragraph(str(text), size=9)
     if e.payment_date is not None and t.get("payment_line", True):
         w.gap(4)
-        w.paragraph(str(t.get("payment_line_text", "Die Beträge wurden per Lastschrift "
-                                                    "von Ihrem Konto eingezogen.")), size=9)
+        w.paragraph(
+            str(
+                t.get(
+                    "payment_line_text",
+                    "Die Beträge wurden per Lastschrift von Ihrem Konto eingezogen.",
+                )
+            ),
+            size=9,
+        )
     return Rendered(w.finish(), total)
 
 
@@ -160,7 +167,9 @@ def bank_statement(t: TemplateInput) -> Rendered:
         rows.append([str(row["date"]), str(row["text"]), eur_de(amount, symbol=False)])
         for extra in row.get("details", []) or []:
             rows.append(["", f"  {extra}", ""])
-    w.table(["Buchung", "Vorgang", "Betrag EUR"], rows, [0.15, 0.62, 0.23], ["left", "left", "right"])
+    w.table(
+        ["Buchung", "Vorgang", "Betrag EUR"], rows, [0.15, 0.62, 0.23], ["left", "left", "right"]
+    )
     if t.get("balance"):
         w.pair("Neuer Kontostand", eur_de(dec(t.get("balance"))), size=9.5, bold=True)
     for text in t.get("notes", []) or []:

@@ -155,7 +155,7 @@ class ExpectedFields(BaseModel):
         if not self.tax_relevant and self.deductible_amount != 0:
             raise PydanticCustomError(
                 "irrelevant_has_deductible",
-                "tax_relevant: false requires deductible_amount \"0.00\"",
+                'tax_relevant: false requires deductible_amount "0.00"',
             )
         if self.category is Category.IRRELEVANT and self.tax_relevant:
             raise PydanticCustomError(
@@ -293,12 +293,12 @@ class GateRow(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     metric: str
-    value: float | str | None
+    value: int | float | str | None
     op: Literal["min", "max"] | None
-    bound: float | None
+    bound: str | None
     required: bool
-    baseline: float | str | None
-    delta: float | None
+    baseline: int | float | str | None
+    delta: str | None
     regression_checked: bool
     result: Literal["pass", "fail", "n/a", "regression", "-"]
 

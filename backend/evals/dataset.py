@@ -164,7 +164,9 @@ def load_dataset(name: str, paths: EvalPaths | None = None) -> Dataset:
     try:
         manifest = Manifest.model_validate(_load_yaml(root / "manifest.yaml"))
     except (ValidationError, yaml.YAMLError) as exc:
-        raise DatasetError([f"manifest.yaml: rule manifest_invalid: {type(exc).__name__}"]) from None
+        raise DatasetError(
+            [f"manifest.yaml: rule manifest_invalid: {type(exc).__name__}"]
+        ) from None
     if manifest.label_schema_version != LABEL_SCHEMA_VERSION:
         problems.append("manifest.yaml: rule schema_version: unsupported label_schema_version")
     cases: list[EvalCase] = []

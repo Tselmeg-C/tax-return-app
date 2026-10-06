@@ -56,7 +56,7 @@ def eur_de(amount: Decimal, symbol: bool = True) -> str:
     q = amount.quantize(CENT, rounding=ROUND_HALF_UP)
     sign = "-" if q < 0 else ""
     whole, frac = f"{abs(q):.2f}".split(".")
-    groups = []
+    groups: list[str] = []
     while len(whole) > 3:
         groups.insert(0, whole[-3:])
         whole = whole[:-3]

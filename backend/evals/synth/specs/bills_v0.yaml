@@ -20,8 +20,8 @@ manifest:
     Rendered from evals/synth/specs/bills_v0.yaml; fictional people and vendors only.
   label_schema_version: 1
   coverage_exempt:
-    wk_homeoffice: Pauschale without a Beleg; entered in the profile (#13), not extracted from a document.
-    v_afa: Computed from property data (#13 / #20), no single Beleg represents it.
+    wk_homeoffice: "Pauschale without a Beleg; entered in the profile (#13), not extracted from a document."
+    v_afa: "Computed from property data (#13 / #20), no single Beleg represents it."
   min_cases: 50
   min_cases_per_group:
     werbungskosten: 12

@@ -22,7 +22,6 @@ from pypdf import PdfReader
 from evals.dataset import format_validation_error
 from evals.paths import EvalPaths
 from evals.schema import (
-    LABEL_SCHEMA_VERSION,
     VARIANT_EXTENSIONS,
     ExpectedFields,
     ExpectedLabel,
@@ -123,7 +122,7 @@ def render_case(spec: CaseSpec, global_seed: int) -> RenderedCase:
         doc_bytes = raster.png(rendered.pdf, seed)
     try:
         label = ExpectedLabel(
-            schema_version=LABEL_SCHEMA_VERSION,
+            schema_version=1,
             id=spec.id,
             source=spec.source,
             file=f"document{ext}",

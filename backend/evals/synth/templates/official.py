@@ -37,7 +37,7 @@ def lstb(t: TemplateInput) -> Rendered:
 
 
 def jstb(t: TemplateInput) -> Rendered:
-    """Simplified Jahressteuerbescheinigung (Kapitalerträge). The row marked `total` is the gross."""
+    """Simplified Jahressteuerbescheinigung. The row marked `total` is the gross amount."""
     e = t.expected
     w = Writer()
     w.letterhead(t.vendor, t.vendor_address)

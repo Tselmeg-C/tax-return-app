@@ -32,7 +32,10 @@ def _header(w: Writer, t: TemplateInput, title: str, number_label: str, date_lab
         meta.append(("Customer no." if t.lang == "en" else "Kundennr.", str(t.get("customer_no"))))
     if t.get("service_period"):
         meta.append(
-            ("Service period" if t.lang == "en" else "Leistungszeitraum", str(t.get("service_period")))
+            (
+                "Service period" if t.lang == "en" else "Leistungszeitraum",
+                str(t.get("service_period")),
+            )
         )
     w.address_block(t.recipient_lines, meta)
     w.line(title, size=13, bold=True)
@@ -139,7 +142,14 @@ def invoice_35a(t: TemplateInput) -> Rendered:
         by_kind[kind] = by_kind.get(kind, Decimal(0)) + line_total
         total += line_total
         rows.append(
-            [str(i), str(item["text"]), _KIND_DE[kind], _qty(qty), eur_de(price), eur_de(line_total)]
+            [
+                str(i),
+                str(item["text"]),
+                _KIND_DE[kind],
+                _qty(qty),
+                eur_de(price),
+                eur_de(line_total),
+            ]
         )
     w.table(
         ["Pos.", "Leistung", "Art", "Menge", "Einzelpreis", "Betrag"],
