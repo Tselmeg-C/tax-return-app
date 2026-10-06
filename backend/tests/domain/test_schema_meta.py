@@ -24,8 +24,10 @@ CORE_TABLES = {
     "document",
     "extraction",
     "household",
+    "magic_link_token",  # #5
     "person",
     "tax_item",
+    "user_session",  # #5
 }
 
 TABLES = sorted(Base.metadata.tables.values(), key=lambda t: t.name)

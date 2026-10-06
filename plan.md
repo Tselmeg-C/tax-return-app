@@ -131,7 +131,7 @@ every table (enforced by meta-tests in `backend/tests/domain/`):
 Core tables (#4, migration `727a2e042810`):
 
 - `household(id, name, created_at)`
-- `app_user(id, household_id, email UNIQUE lowercase, role[owner|member], person_id? UNIQUE → person SET NULL, created_at, updated_at)` (`user` is reserved in Postgres)
+- `app_user(id, household_id, email UNIQUE lowercase, role[owner|member], person_id? UNIQUE → person SET NULL, disabled_at? (#5), created_at, updated_at)` (`user` is reserved in Postgres)
 - `person(id, household_id, kind[adult|child], first_name, last_name?, dob? (required for children), steuer_id? 🔒, religion[none|ev|rk|other], disability_grade? (20–100, step 10), created_at, updated_at)`
 - `document(id, household_id, uploaded_by_user_id → app_user RESTRICT, channel[web|telegram], sha256 (UNIQUE per household), mime_type, size_bytes, page_count?, storage_key (opaque, UNIQUE), status[queued|processing|done|needs_attention|failed], doc_type?, error_kind?, created_at, updated_at)`
 - `extraction(id, household_id, document_id → document CASCADE, step[classify|extract], doc_type?, provider, model, prompt_version, raw_json? 🔒, confidence?, input_tokens, output_tokens, cost_eur, latency_ms, error_kind?, created_at)` — one row per LLM call (§6)
@@ -140,11 +140,15 @@ Core tables (#4, migration `727a2e042810`):
 
 🔒 = encrypted. `Category` (30 codes in 9 groups, §7) and `DocType` / `PaymentMethod` are the vocabulary of the LLM schemas; `Category → Anlage/Zeile` lives per year in `params/{year}.yaml` (#9).
 
+Auth tables (#5, migration `5a1c9e3b7d42`; both store only `sha256(token)` as hex, no IP or user agent):
+
+- `magic_link_token(id, household_id, user_id → app_user CASCADE, token_hash char(64) UNIQUE, redirect_path? varchar(512), created_at, expires_at, used_at?)`, index `(user_id, created_at)`
+- `user_session(id, household_id, user_id → app_user CASCADE, token_hash char(64) UNIQUE, created_at, last_seen_at, expires_at (absolute), revoked_at?)`
+
 Tables added later, each by the issue that first uses it, in its own migration and under the same rules:
 
 | Table(s) | Issue |
 |---|---|
-| `magic_link_token`, `session` | #5 |
 | queue tables, extra `document` columns (e.g. encrypted original filename) | #6 |
 | `channel_link(user_id, channel, external_id)`, one-time link codes | #11 |
 | `passkey` | #12 |
@@ -245,7 +249,15 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
 
 ## 10. Auth & security / GDPR
 
-- Magic link (signed, 15 min, single use, sent via **Resend**) + **passkeys** (`webauthn` lib) after first login; sessions via httpOnly cookie.
+- Magic link (random, hashed at rest, 15 min, single use, sent via **Resend**) + **passkeys** (`webauthn` lib) after first login; sessions via httpOnly cookie. Details (#5):
+  - **Invite-only:** only existing, non-disabled `app_user` rows get a link; users come from the CLI (`python -m app.auth.cli bootstrap|invite|disable|enable|revoke-sessions`) or the dev seed. No signup.
+  - **Tokens:** `secrets.token_urlsafe(32)`, stored only as `sha256` (no signing secret). Sessions are opaque `user_session` rows: 7 days idle, 30 days absolute, a new one on every login (any old cookie sent along is revoked).
+  - **Link:** `{APP_BASE_URL}/login/verify#token=…`. The token sits in the fragment (never reaches a server or log); the page strips it and only an "Anmelden" click posts it, so mail scanners cannot burn it. Works on any device. One atomic `UPDATE … RETURNING` = single use; a login also burns the user's other open links.
+  - **Cookie:** `__Host-belegbot_session; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age` (plain `belegbot_session` without Secure on `http://localhost`), set through the same-origin `/api` proxy.
+  - **CSRF:** `SameSite=Lax` + `X-Requested-With: belegbot` on every POST/PUT/PATCH/DELETE + `Origin` (if sent) must match `APP_BASE_URL` → else `403 csrf`.
+  - **No enumeration:** identical `202` for known/unknown/disabled/limited addresses, mail sent after the response; identical `400 invalid_or_expired` for every verify failure; a `422` never echoes input.
+  - **Rate limits:** per e-mail 3 / 15 min and 10 / 24 h (DB, silent); per IP 10 link requests and 20 failed verifies / 15 min (in memory, `429` + `Retry-After`). The web proxy replaces `X-Forwarded-For` (`TRUSTED_PROXY_HOPS`).
+  - **Protected by default:** every api route needs a session except `/health`, `/version`, `/auth/magic-link`, `/auth/verify`, `/auth/logout` (meta-test); docs are off in production. Every app page sits under the `_authed` layout (SSR-safe redirect to `/login?next=…`).
 - Telegram linking: web shows one-time code → `/link 123456` → `channel_link` row; unknown chat IDs are ignored.
 - Webhook secret path + `X-Telegram-Bot-Api-Secret-Token` check.
 - Steuer-ID & documents are sensitive: encrypt sensitive columns (app-level Fernet key in Railway env), volume on Railway (note: Railway region choice — pick **EU West (Amsterdam)**).

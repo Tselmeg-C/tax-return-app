@@ -18,6 +18,8 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-http>=1.45.0",
     "opentelemetry-instrumentation-fastapi>=0.66b0",
     "opentelemetry-instrumentation-sqlalchemy>=0.66b0",
+    "httpx>=0.28.1",
+    "email-validator>=2.3.0",
 ]
 
 [dependency-groups]

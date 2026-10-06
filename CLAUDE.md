@@ -24,6 +24,34 @@ before starting a task.
 - Log DB errors by exception class name only (`type(exc).__name__`), never `str(exc)`:
   Postgres' `DETAIL` can contain plain column values (names, e-mail, amounts).
 
+## Auth (rules from #5)
+
+- Every api route requires a session by default (app-level `require_session` in
+  `backend/app/api/deps.py`). The only public paths are in `backend/app/api/public.py`
+  (`PUBLIC_PATHS`); `tests/auth/test_protection.py` fails for any other route reachable
+  without a session. Use `SignedIn` / `Scope` (`app.api.deps`) in endpoints.
+- `backend/app/auth/service.py` is the one place that queries `app_user` / `magic_link_token`
+  / `user_session` without `HouseholdScope` (lookups by e-mail or token hash happen before a
+  household is known).
+- Every POST/PUT/PATCH/DELETE needs `X-Requested-With: belegbot` (CSRF, `403 csrf`), so the
+  frontend calls the api only through `apiFetch` (`frontend/src/lib/api.ts`). New CSRF-exempt
+  paths (e.g. #11's webhook) go into `CSRF_EXEMPT_PATHS` in `public.py`.
+- Never log, trace or put into an error message: e-mail addresses, link or session tokens,
+  their hashes, cookie values or the `next` path. Log user/session ids instead.
+- Times come from the injectable clock (`app.auth.clock`, `create_app(clock=...)`).
+- Local login: `uv run python -m app.db.seed`, start the api (`MAIL_BACKEND` defaults to
+  `file` outside production) and `npm run dev`, request a link on `/login` for
+  `owner@example.com`, then open the newest file in `backend/.dev-mail/` and paste its link.
+- Users (also in production, via `railway ssh --service api`; output shows masked e-mails):
+
+  ```bash
+  uv run python -m app.auth.cli bootstrap --household-name "Familie X" --email you@example.org
+  uv run python -m app.auth.cli invite --email member@example.org [--role member|owner] [--household-id ID]
+  uv run python -m app.auth.cli disable|enable|revoke-sessions --email member@example.org
+  ```
+
+  `disable` never touches documents; there is no `delete` command.
+
 ## New tables (rules from #4)
 
 Every new table gets its own Alembic migration in the issue that first uses it. The

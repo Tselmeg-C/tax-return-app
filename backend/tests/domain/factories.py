@@ -6,6 +6,7 @@ import hashlib
 import secrets
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -13,7 +14,17 @@ from sqlalchemy.exc import StatementError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.audit import Actor, record, snapshot
-from app.db.models import AppUser, AuditLog, Document, Extraction, Household, Person, TaxItem
+from app.db.models import (
+    AppUser,
+    AuditLog,
+    Document,
+    Extraction,
+    Household,
+    MagicLinkToken,
+    Person,
+    TaxItem,
+    UserSession,
+)
 from app.domain.enums import (
     AuditAction,
     Category,
@@ -115,6 +126,39 @@ async def make_tax_item(session: AsyncSession, household: Household, **kw: Any) 
     return item
 
 
+async def make_link_token(
+    session: AsyncSession, household: Household, user: AppUser, **kw: Any
+) -> MagicLinkToken:
+    now = datetime.now(UTC)
+    values: dict[str, Any] = {
+        "token_hash": random_sha256(),
+        "created_at": now,
+        "expires_at": now + timedelta(minutes=15),
+    }
+    values.update(kw)
+    token = MagicLinkToken(household_id=household.id, user_id=user.id, **values)
+    session.add(token)
+    await session.flush()
+    return token
+
+
+async def make_user_session(
+    session: AsyncSession, household: Household, user: AppUser, **kw: Any
+) -> UserSession:
+    now = datetime.now(UTC)
+    values: dict[str, Any] = {
+        "token_hash": random_sha256(),
+        "created_at": now,
+        "last_seen_at": now,
+        "expires_at": now + timedelta(days=30),
+    }
+    values.update(kw)
+    row = UserSession(household_id=household.id, user_id=user.id, **values)
+    session.add(row)
+    await session.flush()
+    return row
+
+
 @dataclass
 class World:
     household: Household
@@ -124,6 +168,8 @@ class World:
     extraction: Extraction
     tax_item: TaxItem
     audit: AuditLog
+    link_token: MagicLinkToken
+    user_session: UserSession
 
     def by_model(self) -> dict[type[Any], Any]:
         return {
@@ -134,6 +180,8 @@ class World:
             Extraction: self.extraction,
             TaxItem: self.tax_item,
             AuditLog: self.audit,
+            MagicLinkToken: self.link_token,
+            UserSession: self.user_session,
         }
 
 
@@ -158,4 +206,6 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
         actor=Actor.user(user.id),
     )
     assert audit is not None
-    return World(hh, person, user, doc, ext, item, audit)
+    link_token = await make_link_token(session, hh, user)
+    user_session = await make_user_session(session, hh, user)
+    return World(hh, person, user, doc, ext, item, audit, link_token, user_session)

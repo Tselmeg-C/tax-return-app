@@ -2,6 +2,7 @@
 
 from app.db.models.app_user import AppUser
 from app.db.models.audit_log import AuditLog
+from app.db.models.auth import MagicLinkToken, UserSession
 from app.db.models.document import Document
 from app.db.models.extraction import Extraction
 from app.db.models.household import Household
@@ -14,6 +15,8 @@ __all__ = [
     "Document",
     "Extraction",
     "Household",
+    "MagicLinkToken",
     "Person",
     "TaxItem",
+    "UserSession",
 ]

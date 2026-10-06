@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { anlageLabel, estimate, eur, items, missing, type Anlage } from "@/lib/mock";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authed/")({
   head: () => ({
     meta: [
       { title: "Übersicht — belegbot Steuererklärung" },

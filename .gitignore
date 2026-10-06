@@ -18,6 +18,5 @@ node_modules/
 .DS_Store
 .idea/
 
-# Evals: reports are generated per run; private datasets never leave the machine (#39)
-backend/evals/reports/
-backend/evals/datasets_private/
+# Dev mail outbox (MAIL_BACKEND=file): contains login links
+backend/.dev-mail/

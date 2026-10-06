@@ -12,6 +12,7 @@ import {
   createApiProxy,
   resolveApiUrl,
   resolveTimeoutMs,
+  resolveTrustedProxyHops,
   PROXY_SPAN_NAME,
   type ApiProxy,
 } from "./api-proxy";
@@ -250,14 +251,74 @@ describe("api proxy against a stub upstream", () => {
   });
 
   it("sets X-Forwarded-For/-Proto/-Host", async () => {
-    await makeProxy()(
-      req("/api/h", { headers: { host: "web.example", "x-forwarded-for": "203.0.113.7" } }),
-      { clientIp: "10.0.0.1" },
-    );
+    await makeProxy()(req("/api/h", { headers: { host: "web.example" } }), {
+      clientIp: "10.0.0.1",
+    });
     const headers = received[0]!.headers;
-    expect(headers["x-forwarded-for"]).toBe("203.0.113.7, 10.0.0.1");
+    expect(headers["x-forwarded-for"]).toBe("10.0.0.1");
     expect(headers["x-forwarded-proto"]).toBe("http");
     expect(headers["x-forwarded-host"]).toBeDefined();
+  });
+
+  it("replaces an incoming X-Forwarded-For with the socket peer by default", async () => {
+    await makeProxy()(req("/api/h", { headers: { "x-forwarded-for": "203.0.113.9" } }), {
+      clientIp: "10.0.0.1",
+    });
+    expect(received[0]!.headers["x-forwarded-for"]).toBe("10.0.0.1");
+  });
+
+  it("with TRUSTED_PROXY_HOPS=1 takes the rightmost X-Forwarded-For entry", async () => {
+    const hops = resolveTrustedProxyHops({ TRUSTED_PROXY_HOPS: "1" });
+    expect(hops).toBe(1);
+    await makeProxy({ trustedProxyHops: hops })(
+      req("/api/h", { headers: { "x-forwarded-for": "198.51.100.1, 203.0.113.9" } }),
+      { clientIp: "10.0.0.1" },
+    );
+    expect(received[0]!.headers["x-forwarded-for"]).toBe("203.0.113.9");
+  });
+
+  it("falls back to the socket peer when the trusted hop added nothing", async () => {
+    await makeProxy({ trustedProxyHops: 1 })(req("/api/h"), { clientIp: "10.0.0.1" });
+    expect(received[0]!.headers["x-forwarded-for"]).toBe("10.0.0.1");
+  });
+
+  it("parses TRUSTED_PROXY_HOPS defensively", () => {
+    expect(resolveTrustedProxyHops({})).toBe(0);
+    expect(resolveTrustedProxyHops({ TRUSTED_PROXY_HOPS: "2" })).toBe(2);
+    expect(resolveTrustedProxyHops({ TRUSTED_PROXY_HOPS: "-1" })).toBe(0);
+    expect(resolveTrustedProxyHops({ TRUSTED_PROXY_HOPS: "abc" })).toBe(0);
+  });
+
+  it("passes Cookie, Origin and X-Requested-With through unchanged", async () => {
+    await makeProxy()(
+      req("/api/auth/verify", {
+        method: "POST",
+        headers: {
+          cookie: "__Host-belegbot_session=abc; other=1",
+          origin: "https://app.example",
+          "x-requested-with": "belegbot",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ token: "t" }),
+      }),
+    );
+    const headers = received[0]!.headers;
+    expect(headers["cookie"]).toBe("__Host-belegbot_session=abc; other=1");
+    expect(headers["origin"]).toBe("https://app.example");
+    expect(headers["x-requested-with"]).toBe("belegbot");
+  });
+
+  it("returns two session-style Set-Cookie headers with their attributes intact", async () => {
+    const cookies = [
+      "__Host-belegbot_session=abc; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000",
+      "second=x; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0",
+    ];
+    handler = (_req, res) => {
+      res.setHeader("set-cookie", cookies);
+      res.end("{}");
+    };
+    const res = await makeProxy()(req("/api/auth/verify", { method: "POST", body: "{}" }));
+    expect(res.headers.getSetCookie()).toEqual(cookies);
   });
 
   it("crafted paths still hit the stub host", async () => {
