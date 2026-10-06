@@ -202,14 +202,17 @@ cases:
       tax_relevant: true
       category: wk_arbeitszimmer
       gross_amount: "1240.00"
-      deductible_amount: "1240.00"
+      deductible_amount: "39.74"
       invoice_date: 2025-08-12
       payment_date: 2025-08-20
       tax_year: 2025
       payment_method: bank_transfer
       vendor: Schreinerei Beispiel GmbH
       person_hint: Alex Muster
-    notes: Ausstattung des Arbeitszimmers (Mittelpunkt der Tätigkeit laut Profil).
+    notes: >-
+      Ausstattung des Arbeitszimmers (Mittelpunkt der Tätigkeit laut Profil). Netto 1 042,02 EUR
+      liegt über der GWG-Grenze von 800 EUR, daher AfA über 13 Jahre (Büromöbel), zeitanteilig
+      August bis Dezember: 1 240,00 / 13 x 5/12 = 39,74 EUR für 2025.
 
   - id: b008-bewerbung-fotos
     template: receipt
@@ -783,16 +786,19 @@ cases:
         - {text: "Fahrdienst für Menschen mit Behinderung (Merkzeichen aG)", qty: "8", price: "24.00"}
     expected:
       doc_type: generic_bill
-      tax_relevant: true
+      tax_relevant: false
       category: behinderung
       gross_amount: "192.00"
-      deductible_amount: "192.00"
+      deductible_amount: "0.00"
       invoice_date: 2025-04-25
       payment_date: 2025-04-30
       tax_year: 2025
       payment_method: bank_transfer
       vendor: Fahrdienst Beispiel
       person_hint: Alex Muster
+    notes: >-
+      Behinderungsbedingte Fahrtkosten gelten seit 2021 nur über die Pauschale nach
+      § 33 Abs. 2a EStG (Merkzeichen aG), nicht mit den tatsächlichen Kosten; der Beleg zählt nicht.
 
   # --- haushaltsnahe (§35a) ------------------------------------------------------------
   - id: b033-reinigung

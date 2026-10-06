@@ -14,7 +14,7 @@
         "tax_year": 2025
       },
       "id": "b001-arbeitsmittel-notebook",
-      "latency_ms": 5,
+      "latency_ms": 8,
       "match": {
         "category": true,
         "category_group": true,
@@ -135,7 +135,7 @@
         "tax_year": 2025
       },
       "id": "b004-fortbildung-online-course-en",
-      "latency_ms": 5,
+      "latency_ms": 8,
       "match": {
         "category": true,
         "category_group": true,
@@ -245,7 +245,7 @@
       "error_kind": null,
       "expected": {
         "category": "wk_arbeitszimmer",
-        "deductible_amount": "1240.00",
+        "deductible_amount": "39.74",
         "doc_type": "generic_bill",
         "gross_amount": "1240.00",
         "labour_share_35a": null,
@@ -254,11 +254,11 @@
         "tax_year": 2025
       },
       "id": "b007-arbeitszimmer-einbauregal",
-      "latency_ms": 7,
+      "latency_ms": 6,
       "match": {
         "category": true,
         "category_group": true,
-        "deductible_amount": true,
+        "deductible_amount": false,
         "doc_type": true,
         "gross_amount": true,
         "invoice_date": true,
@@ -371,7 +371,7 @@
         "tax_year": 2025
       },
       "id": "b010-berufsverband-gewerkschaft",
-      "latency_ms": 2,
+      "latency_ms": 3,
       "match": {
         "category": false,
         "category_group": false,
@@ -449,7 +449,7 @@
         "tax_year": 2025
       },
       "id": "b012-steuerberatung-split",
-      "latency_ms": 7,
+      "latency_ms": 11,
       "match": {
         "category": true,
         "category_group": true,
@@ -490,7 +490,7 @@
         "tax_year": 2025
       },
       "id": "b013-kv-pv-krankenkasse",
-      "latency_ms": 4,
+      "latency_ms": 6,
       "match": {
         "category": true,
         "category_group": true,
@@ -568,7 +568,7 @@
         "tax_year": 2025
       },
       "id": "b015-rv-freiwillig",
-      "latency_ms": 1,
+      "latency_ms": 3,
       "match": {
         "category": false,
         "category_group": false,
@@ -607,7 +607,7 @@
         "tax_year": 2025
       },
       "id": "b016-riester",
-      "latency_ms": 4,
+      "latency_ms": 6,
       "match": {
         "category": true,
         "category_group": true,
@@ -724,7 +724,7 @@
         "tax_year": 2025
       },
       "id": "b019-spende-zuwendungsbestaetigung",
-      "latency_ms": 4,
+      "latency_ms": 7,
       "match": {
         "category": true,
         "category_group": true,
@@ -802,7 +802,7 @@
         "tax_year": 2025
       },
       "id": "b021-sachspende",
-      "latency_ms": 1,
+      "latency_ms": 2,
       "match": {
         "category": false,
         "category_group": false,
@@ -841,7 +841,7 @@
         "tax_year": 2025
       },
       "id": "b022-kirchensteuer-nachzahlung",
-      "latency_ms": 3,
+      "latency_ms": 5,
       "match": {
         "category": true,
         "category_group": true,
@@ -880,7 +880,7 @@
         "tax_year": 2025
       },
       "id": "b023-kita-jahresbescheinigung",
-      "latency_ms": 3,
+      "latency_ms": 5,
       "match": {
         "category": true,
         "category_group": true,
@@ -958,7 +958,7 @@
         "tax_year": 2025
       },
       "id": "b025-schulgeld",
-      "latency_ms": 1,
+      "latency_ms": 2,
       "match": {
         "category": false,
         "category_group": false,
@@ -997,7 +997,7 @@
         "tax_year": 2025
       },
       "id": "b026-kita-gutschrift",
-      "latency_ms": 3,
+      "latency_ms": 5,
       "match": {
         "category": true,
         "category_group": true,
@@ -1038,7 +1038,7 @@
         "tax_year": 2025
       },
       "id": "b027-zahnarzt-offen",
-      "latency_ms": 4,
+      "latency_ms": 7,
       "match": {
         "category": true,
         "category_group": true,
@@ -1120,7 +1120,7 @@
         "tax_year": 2025
       },
       "id": "b029-optiker-brille",
-      "latency_ms": 1,
+      "latency_ms": 4,
       "match": {
         "category": false,
         "category_group": false,
@@ -1198,7 +1198,7 @@
         "tax_year": 2025
       },
       "id": "b031-pflege-ambulant",
-      "latency_ms": 4,
+      "latency_ms": 7,
       "match": {
         "category": true,
         "category_group": true,
@@ -1228,12 +1228,12 @@
       "error_kind": null,
       "expected": {
         "category": "behinderung",
-        "deductible_amount": "192.00",
+        "deductible_amount": "0.00",
         "doc_type": "generic_bill",
         "gross_amount": "192.00",
         "labour_share_35a": null,
         "payment_method": "bank_transfer",
-        "tax_relevant": true,
+        "tax_relevant": false,
         "tax_year": 2025
       },
       "id": "b032-behinderung-fahrdienst",
@@ -1241,13 +1241,13 @@
       "match": {
         "category": false,
         "category_group": false,
-        "deductible_amount": false,
+        "deductible_amount": true,
         "doc_type": true,
         "gross_amount": false,
         "invoice_date": false,
         "labour_share_35a": null,
         "payment_method": false,
-        "tax_relevant": false,
+        "tax_relevant": true,
         "tax_year": false
       },
       "predicted": {
@@ -1276,7 +1276,7 @@
         "tax_year": 2025
       },
       "id": "b033-reinigung",
-      "latency_ms": 5,
+      "latency_ms": 8,
       "match": {
         "category": true,
         "category_group": true,
@@ -1393,7 +1393,7 @@
         "tax_year": 2025
       },
       "id": "b036-maler-material-arbeit",
-      "latency_ms": 6,
+      "latency_ms": 12,
       "match": {
         "category": true,
         "category_group": true,
@@ -1475,7 +1475,7 @@
         "tax_year": 2026
       },
       "id": "b038-heizung-jahreswechsel",
-      "latency_ms": 5,
+      "latency_ms": 13,
       "match": {
         "category": true,
         "category_group": true,
@@ -1555,7 +1555,7 @@
         "tax_year": 2025
       },
       "id": "b040-schuldzinsen-darlehen",
-      "latency_ms": 3,
+      "latency_ms": 6,
       "match": {
         "category": true,
         "category_group": true,
@@ -1594,7 +1594,7 @@
         "tax_year": 2025
       },
       "id": "b041-erhaltung-bad-mehrseitig",
-      "latency_ms": 11,
+      "latency_ms": 20,
       "match": {
         "category": false,
         "category_group": false,
@@ -1635,7 +1635,7 @@
         "tax_year": 2025
       },
       "id": "b042-grundsteuer-vermietung",
-      "latency_ms": 1,
+      "latency_ms": 2,
       "match": {
         "category": false,
         "category_group": false,
@@ -1713,7 +1713,7 @@
         "tax_year": 2025
       },
       "id": "b044-jahressteuerbescheinigung",
-      "latency_ms": 4,
+      "latency_ms": 5,
       "match": {
         "category": true,
         "category_group": true,
@@ -2103,7 +2103,7 @@
         "tax_year": 2025
       },
       "id": "b054-falle-sportverein",
-      "latency_ms": 2,
+      "latency_ms": 1,
       "match": {
         "category": true,
         "category_group": true,
@@ -2142,7 +2142,7 @@
         "tax_year": 2025
       },
       "id": "b055-streaming-abo",
-      "latency_ms": 5,
+      "latency_ms": 4,
       "match": {
         "category": true,
         "category_group": true,
@@ -2181,7 +2181,7 @@
         "tax_year": 2025
       },
       "id": "b056-lstb-alex",
-      "latency_ms": 7,
+      "latency_ms": 5,
       "match": {
         "category": null,
         "category_group": null,
@@ -2259,7 +2259,7 @@
         "tax_year": 2025
       },
       "id": "b058-kindergeld-bescheid",
-      "latency_ms": 3,
+      "latency_ms": 2,
       "match": {
         "category": null,
         "category_group": null,
@@ -2298,7 +2298,7 @@
         "tax_year": 2025
       },
       "id": "b059-elterngeld-bescheid",
-      "latency_ms": 4,
+      "latency_ms": 5,
       "match": {
         "category": null,
         "category_group": null,
@@ -2364,12 +2364,12 @@
     }
   ],
   "dataset": {
-    "hash": "f0b28fa2acf389d6aab0e6c5076542292e815c779a2a8b13c09fdbe04e85dadc",
+    "hash": "5945bebd0cc8309c5a102c0f29b0e563815a70c2f4644a32924e953b1df6b94c",
     "label_schema_version": 1,
     "n_cases": 60,
     "name": "bills_v0"
   },
-  "duration_s": 0.149,
+  "duration_s": 0.211,
   "gate": {
     "baseline_stale": null,
     "compare_to": null,
@@ -2396,7 +2396,7 @@
         "regression_checked": false,
         "required": true,
         "result": "fail",
-        "value": 0.4583
+        "value": 0.4681
       },
       {
         "baseline": null,
@@ -2407,7 +2407,7 @@
         "regression_checked": false,
         "required": false,
         "result": "-",
-        "value": 0.6197
+        "value": 0.6286
       },
       {
         "baseline": null,
@@ -2473,7 +2473,7 @@
         "regression_checked": false,
         "required": true,
         "result": "fail",
-        "value": "466.55"
+        "value": "483.35"
       },
       {
         "baseline": null,
@@ -2495,7 +2495,7 @@
         "regression_checked": false,
         "required": false,
         "result": "-",
-        "value": "27992.70"
+        "value": "29000.96"
       },
       {
         "baseline": null,
@@ -2506,7 +2506,7 @@
         "regression_checked": false,
         "required": false,
         "result": "-",
-        "value": "4620.00"
+        "value": "5820.26"
       },
       {
         "baseline": null,
@@ -2517,7 +2517,7 @@
         "regression_checked": false,
         "required": false,
         "result": "-",
-        "value": "23372.70"
+        "value": "23180.70"
       },
       {
         "baseline": null,
@@ -2682,12 +2682,12 @@
         "regression_checked": false,
         "required": false,
         "result": "pass",
-        "value": 7
+        "value": 11
       }
     ],
     "thresholds_status": "proposed"
   },
-  "git_sha": "335745550ea6785074ef78d025447a948cbba38e",
+  "git_sha": "27b46af1a6ae8c4e506eca55676ab02b8dcd11a1",
   "metrics": {
     "category_accuracy": 0.5179,
     "category_group_accuracy": 0.5179,
@@ -2695,8 +2695,8 @@
     "cost_eur_per_doc_p95": null,
     "cost_eur_total": null,
     "deductible_abs_error_eur_max": "5400.00",
-    "deductible_abs_error_eur_mean": "466.55",
-    "deductible_abs_error_eur_sum": "27992.70",
+    "deductible_abs_error_eur_mean": "483.35",
+    "deductible_abs_error_eur_sum": "29000.96",
     "deductible_exact_match": 0.4833,
     "doc_type_accuracy": 0.9667,
     "error_rate": 0.0,
@@ -2705,11 +2705,11 @@
     "invoice_date_exact_match": 0.3833,
     "labour_share_35a_abs_error_eur_mean": "109.69",
     "latency_ms_p50": 2,
-    "latency_ms_p95": 7,
+    "latency_ms_p95": 11,
     "n_cases": 60,
     "n_errors": 0,
     "output_tokens_total": null,
-    "overclaim_eur_sum": "4620.00",
+    "overclaim_eur_sum": "5820.26",
     "payment_method_accuracy": 0.3833,
     "per_group": {
       "agb": {
@@ -2750,9 +2750,9 @@
       }
     },
     "person_hint_match": 0.0,
-    "relevance_f1": 0.6197,
+    "relevance_f1": 0.6286,
     "relevance_precision": 0.9565,
-    "relevance_recall": 0.4583,
+    "relevance_recall": 0.4681,
     "tax_year_accuracy": 0.3833,
     "top_confusions": [
       {
@@ -2806,7 +2806,7 @@
         "predicted": "irrelevant"
       }
     ],
-    "underclaim_eur_sum": "23372.70",
+    "underclaim_eur_sum": "23180.70",
     "vendor_match": 0.4
   },
   "predictor": {
@@ -2818,7 +2818,7 @@
   },
   "recording_stale": false,
   "skipped_reason": null,
-  "started_at": "2026-10-06T07:06:18.600865+00:00",
+  "started_at": "2026-10-06T11:37:22.717341+00:00",
   "status": "ok",
   "subset": false
 }

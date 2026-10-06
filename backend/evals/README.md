@@ -99,7 +99,9 @@ worse than the baseline by more than `tolerance` (`per_metric` overrides). `stat
 prints a note and does not change the exit code. A dataset without an entry → exit 2.
 
 `--save-baseline NAME` writes `baselines/<dataset>/NAME.{json,md}` (the report). It refuses to
-overwrite without `--force` and refuses skipped, subset or stale-recording runs. A baseline
+overwrite without `--force` and refuses subset or stale-recording runs (exit 2). On a skipped
+run (key not set) nothing is saved but the exit code stays 0, as Decision 4 ("no key, no
+failure") requires; one line says the baseline was not written. The same holds for `--record`. A baseline
 whose dataset hash differs from the current dataset is stale: the report says so, the
 regression rule is skipped (one warning), absolute thresholds still apply.
 

@@ -20,3 +20,7 @@ node_modules/
 
 # Dev mail outbox (MAIL_BACKEND=file): contains login links
 backend/.dev-mail/
+
+# Eval run outputs and local-only private datasets (#7, #39; repo is public)
+backend/evals/reports/
+backend/evals/datasets_private/

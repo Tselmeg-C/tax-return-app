@@ -215,6 +215,10 @@ def _main(argv: Sequence[str] | None, paths: EvalPaths | None) -> int:
             f"{' and '.join(missing)}, which is not set. No real-provider eval was run."
         )
         print(line)
+        # Decision 4 wins over "refuse skipped runs": a skip exits 0 and saves nothing.
+        for flag, value in (("--save-baseline", args.save_baseline), ("--record", args.record)):
+            if value:
+                print(f"{flag} {value!r} not written: the run was skipped")
         report = Report(
             status="skipped",
             dataset=DatasetInfo(

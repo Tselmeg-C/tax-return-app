@@ -1,21 +1,21 @@
 ### Eval bills_v0 · heuristic (heuristic-keywords) · NOT GATED
-60 cases · dataset f0b28fa2 · git 3357455 · 2026-10-06T07:06Z · thresholds: proposed
+60 cases · dataset 5945bebd · git 27b46af · 2026-10-06T11:37Z · thresholds: proposed
 
 | Metric | Value | Threshold | Baseline | Δ | Result |
 |---|---|---|---|---|---|
 | Relevance precision | 0.9565 | ≥ 0.95 |  |  | pass |
-| Relevance recall | 0.4583 | ≥ 0.9 |  |  | fail |
-| Relevance F1 | 0.6197 |  |  |  |  |
+| Relevance recall | 0.4681 | ≥ 0.9 |  |  | fail |
+| Relevance F1 | 0.6286 |  |  |  |  |
 | Doc type accuracy | 0.9667 | ≥ 0.9 |  |  | pass |
 | Category accuracy | 0.5179 | ≥ 0.85 |  |  | fail |
 | Category group accuracy | 0.5179 |  |  |  |  |
 | Gross exact match | 0.3571 | ≥ 0.9 |  |  | fail |
 | Deductible exact match | 0.4833 | ≥ 0.85 |  |  | fail |
-| Deductible abs error € (mean) | 466.55 | ≤ 5.0 |  |  | fail |
+| Deductible abs error € (mean) | 483.35 | ≤ 5.0 |  |  | fail |
 | Deductible abs error € (max) | 5400.00 |  |  |  |  |
-| Deductible abs error € (sum) | 27992.70 |  |  |  |  |
-| Overclaim € (sum) | 4620.00 |  |  |  |  |
-| Underclaim € (sum) | 23372.70 |  |  |  |  |
+| Deductible abs error € (sum) | 29000.96 |  |  |  |  |
+| Overclaim € (sum) | 5820.26 |  |  |  |  |
+| Underclaim € (sum) | 23180.70 |  |  |  |  |
 | §35a labour share abs error € (mean) | 109.69 | ≤ 10.0 |  |  | fail |
 | Tax year accuracy | 0.3833 | ≥ 0.95 |  |  | fail |
 | Payment method accuracy | 0.3833 |  |  |  |  |
@@ -30,7 +30,7 @@
 | Input tokens | n/a |  |  |  |  |
 | Output tokens | n/a |  |  |  |  |
 | Latency ms (p50) | 2 |  |  |  |  |
-| Latency ms (p95) | 7 | ≤ 30000 (optional) |  |  | pass |
+| Latency ms (p95) | 11 | ≤ 30000 (optional) |  |  | pass |
 
 **Per category group**
 
@@ -61,13 +61,14 @@
 | kinderbetreuung | irrelevant | 1 |
 | schulgeld | irrelevant | 1 |
 
-**Failing cases** (45, first 20)
+**Failing cases** (46, first 20)
 
 - `b002-arbeitsmittel-notebook-foto` [duplicate_rephotographed]: tax_relevant, category, category_group, gross_amount, deductible_amount, tax_year, payment_method, invoice_date
 - `b003-fortbildung-seminar`: tax_relevant, category, category_group, gross_amount, deductible_amount, tax_year, payment_method, invoice_date
 - `b004-fortbildung-online-course-en` [english_language]: gross_amount, deductible_amount, tax_year, invoice_date
 - `b005-fortbildung-sprachkurs`: tax_relevant, category, category_group, gross_amount, deductible_amount, tax_year, payment_method, invoice_date
 - `b006-fahrtkosten-dienstreise`: tax_relevant, category, category_group, gross_amount, deductible_amount, tax_year, payment_method, invoice_date
+- `b007-arbeitszimmer-einbauregal`: deductible_amount
 - `b008-bewerbung-fotos`: tax_relevant, category, category_group, gross_amount, deductible_amount, tax_year, payment_method, invoice_date
 - `b009-kontofuehrung`: gross_amount, deductible_amount, payment_method
 - `b010-berufsverband-gewerkschaft`: tax_relevant, category, category_group, gross_amount, deductible_amount, tax_year, payment_method, invoice_date
@@ -82,4 +83,3 @@
 - `b021-sachspende`: tax_relevant, category, category_group, gross_amount, deductible_amount, tax_year, payment_method, invoice_date
 - `b022-kirchensteuer-nachzahlung`: gross_amount, deductible_amount
 - `b023-kita-jahresbescheinigung`: deductible_amount
-- `b024-tagesmutter`: tax_relevant, category, category_group, gross_amount, deductible_amount, tax_year, payment_method, invoice_date

@@ -22,7 +22,52 @@ from pypdf import PdfReader
 from evals.synth.writer import PDF_AUTHOR, PDF_CREATOR
 
 STEUER_ID_RE = re.compile(r"(?<![0-9])[0-9](?: ?[0-9]){10}(?! ?[0-9])")
-IBAN_RE = re.compile(r"\b[A-Z]{2}[0-9]{2}(?: ?[A-Z0-9]){11,30}\b")
+IBAN_START_RE = re.compile(r"(?<![A-Za-z0-9])[A-Za-z]{2}[0-9]{2}")
+# IBAN length per country (SEPA area plus common others); a candidate is cut to exactly this
+# length, so text after the IBAN ("BIC ...", "2025", "EUR") cannot hide it.
+IBAN_LENGTHS: dict[str, int] = {
+    "AD": 24,
+    "AT": 20,
+    "BE": 16,
+    "BG": 22,
+    "CH": 21,
+    "CY": 28,
+    "CZ": 24,
+    "DE": 22,
+    "DK": 18,
+    "EE": 20,
+    "ES": 24,
+    "FI": 18,
+    "FO": 18,
+    "FR": 27,
+    "GB": 22,
+    "GI": 23,
+    "GL": 18,
+    "GR": 27,
+    "HR": 21,
+    "HU": 28,
+    "IE": 22,
+    "IS": 26,
+    "IT": 27,
+    "LI": 21,
+    "LT": 20,
+    "LU": 20,
+    "LV": 21,
+    "MC": 27,
+    "MT": 31,
+    "NL": 18,
+    "NO": 15,
+    "PL": 28,
+    "PT": 25,
+    "RO": 24,
+    "SE": 24,
+    "SI": 19,
+    "SK": 24,
+    "SM": 27,
+    "TR": 26,
+    "UA": 29,
+    "VA": 22,
+}
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)")
 ALLOWED_EMAIL_DOMAINS = ("example.com", "example.org")
 HASH_KEYS = frozenset({"hash", "dataset_hash", "git_sha"})
@@ -47,12 +92,32 @@ def iban_valid(candidate: str) -> bool:
     return int(digits) % 97 == 1
 
 
+def contains_valid_iban(text: str) -> bool:
+    """True if any substring is a checksum-valid IBAN: any case, single spaces optional."""
+    for m in IBAN_START_RE.finditer(text):
+        length = IBAN_LENGTHS.get(m.group(0)[:2].upper())
+        if length is None:
+            continue
+        compact = []
+        for ch in text[m.start() : m.start() + 2 * length]:
+            if ch == " ":
+                continue
+            if not ch.isascii() or not ch.isalnum():
+                break
+            compact.append(ch)
+            if len(compact) == length:
+                break
+        if len(compact) == length and iban_valid("".join(compact)):
+            return True
+    return False
+
+
 def scan_text(text: str) -> list[str]:
     """Rule names violated by `text` (deduplicated, never the matches)."""
     rules = []
     if STEUER_ID_RE.search(text):
         rules.append("steuer_id_shape")
-    if any(iban_valid(m.group(0)) for m in IBAN_RE.finditer(text)):
+    if contains_valid_iban(text):
         rules.append("valid_iban")
     for m in EMAIL_RE.finditer(text):
         domain = m.group(1).lower()

@@ -16,6 +16,7 @@ from PIL import Image
 from evals import validate
 from evals.dataset import EvalCase, dataset_hash, load_dataset
 from evals.paths import EVALS_DIR, EvalPaths
+from evals.privacy import scan_text
 from evals.synth.writer import Writer
 from tests.evals.conftest import DATASET
 
@@ -199,3 +200,77 @@ def test_dataset_hash_changes_with_content(eval_paths: EvalPaths) -> None:
     label = root / "cases" / "b047-kleidung" / "label.yaml"
     label.write_text(label.read_text(encoding="utf-8") + "\n", encoding="utf-8")
     assert dataset_hash(root) != before
+
+
+def _spaced(iban: str) -> str:
+    return " ".join(iban[i : i + 4] for i in range(0, len(iban), 4))
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        "IBAN {iban}",
+        "IBAN {iban} BIC MUSTDEXXX",
+        "IBAN {iban} 2025",
+        "{iban} EUR",
+        "Konto {iban} BIC ABCDEFGH, Musterbank",
+        "iban {lower}",
+        "IBAN {lower} bic mustdexxx",
+    ],
+)
+@pytest.mark.parametrize("spaced", [False, True])
+def test_scan_text_finds_valid_iban_in_context(template: str, spaced: bool) -> None:
+    iban = _valid_iban(random.Random())
+    shown = _spaced(iban) if spaced else iban
+    text = template.format(iban=shown, lower=shown.lower())
+    assert "valid_iban" in scan_text(text)
+
+
+def test_scan_text_ignores_masked_and_invalid_iban() -> None:
+    iban = _valid_iban(random.Random())
+    broken = iban[:-1] + str((int(iban[-1]) + 1) % 10)
+    assert "valid_iban" not in scan_text("IBAN DE00 XXXX XXXX XXXX XXXX 00 BIC MUSTDEXXX")
+    assert "valid_iban" not in scan_text(f"IBAN {_spaced(broken)} BIC MUSTDEXXX")
+
+
+def test_privacy_scan_catches_iban_bic_line_in_label_notes(
+    eval_paths: EvalPaths, capsys: pytest.CaptureFixture[str]
+) -> None:
+    iban = _spaced(_valid_iban(random.Random()))
+    _edit_label(
+        eval_paths,
+        "b001-arbeitsmittel-notebook",
+        lambda d: d.__setitem__("notes", f"IBAN {iban} BIC MUSTDEXXX"),
+    )
+    code, out = _run(eval_paths, capsys)
+    assert code == 1
+    assert "b001-arbeitsmittel-notebook: privacy rule valid_iban" in out
+    assert iban not in out
+
+
+def test_privacy_scan_catches_iban_bic_line_in_pdf_text(
+    eval_paths: EvalPaths, capsys: pytest.CaptureFixture[str]
+) -> None:
+    iban = _spaced(_valid_iban(random.Random()))
+    w = Writer()
+    w.line(f"Bankverbindung: IBAN {iban} BIC MUSTDEXXX")
+    case = _cases(eval_paths) / "b007-arbeitszimmer-einbauregal"
+    (case / "document.pdf").write_bytes(w.finish())
+    code, out = _run(eval_paths, capsys)
+    assert code == 1
+    assert "b007-arbeitszimmer-einbauregal: privacy rule valid_iban" in out
+    assert iban not in out
+
+
+def test_privacy_scan_catches_iban_bic_line_in_recording(
+    eval_paths: EvalPaths, capsys: pytest.CaptureFixture[str]
+) -> None:
+    iban = _spaced(_valid_iban(random.Random()))
+    path = eval_paths.recordings / DATASET / "fixture-noisy" / "predictions.jsonl"
+    lines = path.read_text().splitlines()
+    lines[0] = lines[0].replace('"vendor": "', f'"vendor": "IBAN {iban} BIC MUSTDEXXX ', 1)
+    path.write_text("\n".join(lines) + "\n")
+    code, out = _run(eval_paths, capsys)
+    assert code == 1
+    assert "fixture-noisy/predictions.jsonl: privacy rule valid_iban" in out
+    assert iban not in out
