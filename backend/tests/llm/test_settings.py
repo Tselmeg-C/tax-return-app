@@ -81,6 +81,38 @@ def test_smoke_without_key_prints_skipped() -> None:
     assert completed.stdout == "SKIPPED: OPENAI_API_KEY is not set\n"
 
 
+ENV_EXAMPLE_VARS = (
+    "OPENAI_API_KEY",
+    "OPENAI_BASE_URL",
+    "LLM_CLASSIFY_MODEL",
+    "LLM_EXTRACT_MODEL",
+    "LLM_FALLBACK_MODEL",
+    "LLM_MAX_ATTEMPTS",
+    "LLM_BACKOFF_BASE_SECONDS",
+    "LLM_BACKOFF_MAX_SECONDS",
+    "LLM_RETRY_AFTER_MAX_SECONDS",
+    "LLM_DEADLINE_SECONDS",
+    "LLM_MAX_IMAGE_PX",
+    "LLM_MAX_IMAGE_PIXELS",
+    "LLM_MAX_IMAGE_BYTES",
+    "LLM_MAX_PDF_PAGES",
+    "LLM_MAX_IMAGES",
+    "LLM_MAX_REQUEST_MB",
+)
+
+
+def test_env_example_lists_llm_variables() -> None:
+    lines = (BACKEND_DIR.parent / ".env.example").read_text("utf-8").splitlines()
+    values = dict(line.split("=", 1) for line in lines if "=" in line and not line.startswith("#"))
+    for name in ENV_EXAMPLE_VARS:
+        assert name in values
+    assert values["OPENAI_API_KEY"] == ""
+    assert not any("anthropic:" in value for value in values.values())
+    defaults = llm_settings()
+    assert int(values["LLM_MAX_ATTEMPTS"]) == defaults.llm_max_attempts
+    assert int(values["LLM_MAX_PDF_PAGES"]) == defaults.llm_max_pdf_pages
+
+
 def test_llm_package_has_no_forbidden_imports() -> None:
     for path in (BACKEND_DIR / "app" / "llm").rglob("*.py"):
         source = path.read_text("utf-8")

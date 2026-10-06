@@ -8,6 +8,7 @@ Python 3.12 backend (FastAPI, Postgres via SQLAlchemy 2.0 + psycopg 3, Alembic),
 - `app/db/` — `base.py` (declarative base, naming convention, PII-free `repr`), `session.py` (async engine/sessions), `models/` (core tables), `types.py` / `crypto.py` (encrypted columns, enum type), `scope.py` (`HouseholdScope`), `audit.py` (audit helper), `seed.py` (dev seed), `migrations/` (Alembic)
 - `app/observability/` — structlog JSON logging + OpenTelemetry (`setup_observability`)
 - `app/worker/` — worker process (`python -m app.worker`; placeholder until #6)
+- `app/llm/` — provider-agnostic LLM layer (router, OpenAI + fake providers, pricing); see `../_docs/llm.md`
 - `tests/` — pytest suite, incl. tax golden tests (later)
 - `evals/` — LLM eval sets and runner (see `_docs/adlc.md`)
 

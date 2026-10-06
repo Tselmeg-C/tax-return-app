@@ -15,6 +15,14 @@ before starting a task.
 - Any LLM change (prompt, schema, model, provider, routing) needs an eval run; see `_docs/adlc.md`.
   Once #9 has merged, changing the `Category`, `DocType` or `PaymentMethod` enums
   (`backend/app/domain/enums.py`) is an LLM schema change and needs an eval run too.
+- LLM calls go only through `app.llm.get_router()` (`_docs/llm.md`). Never log
+  `LLMResult.raw_text`, prompts, parts or `str()` of SDK exceptions; log `type(exc).__name__`.
+  LLM output schemas carry money as strings with a pattern (never `float` / `Decimal`).
+- Recorded LLM HTTP fixtures (`backend/tests/llm/fixtures/`) are synthetic only (public repo):
+  fictional inputs, `req_test_…` / `resp_test_…` ids, no keys or org / project headers.
+- After #9 has merged, changing `routing.yaml` defaults, `temperature`, the strict-schema
+  conversion, the image downscale / PDF mode or the provider request shape in `app/llm/` is
+  an LLM change that needs an eval run (`_docs/adlc.md`).
 - Query household-owned tables through `HouseholdScope` (`app/db/scope.py`), never with a bare `select`.
 - Log DB errors by exception class name only (`type(exc).__name__`), never `str(exc)`:
   Postgres' `DETAIL` can contain plain column values (names, e-mail, amounts).
@@ -96,6 +104,8 @@ uv run alembic upgrade head   # migrations (URL from DATABASE_URL, never in alem
 uv run alembic revision --autogenerate -m "..."   # new migration after changing models
 uv run python -m app.db.seed  # idempotent dev seed (fictional "Musterhaushalt"); refuses APP_ENV=production
                               # SEED_OWNER_EMAIL=you@example.org overrides the owner's e-mail
+uv run pytest -m live         # paid live LLM test; skipped without OPENAI_API_KEY, never in CI
+uv run python -m app.llm.smoke   # one live LLM call; prints SKIPPED without OPENAI_API_KEY
 uv run python -m evals.run    # eval runner (see _docs/adlc.md; arrives with the first LLM feature)
 ```
 
