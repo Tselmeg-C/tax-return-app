@@ -31,11 +31,11 @@ supports before the tax engine applies caps, Pauschalen or percentages (#10 onwa
 
 | Group | Category | Typical Beleg (examples) | Counts as deductible |
 |---|---|---|---|
-| werbungskosten | `wk_arbeitsmittel` | Notebook, Fachbuch, Werkzeug für den Beruf | gross (GWG / AfA is the engine's job) |
+| werbungskosten | `wk_arbeitsmittel` | Notebook, Fachbuch, Werkzeug für den Beruf | gross if ≤ 800 € net (GWG), else the year's AfA share (see below) |
 | | `wk_fortbildung` | Seminar, Sprachkurs, Online-Kurs (beruflich) | gross |
 | | `wk_fahrtkosten` | Bahnticket Dienstreise (nicht erstattet) | gross |
 | | `wk_homeoffice` | exempt: Pauschale without a Beleg (profile, #13) | – |
-| | `wk_arbeitszimmer` | Ausstattung / Kosten des häuslichen Arbeitszimmers | gross |
+| | `wk_arbeitszimmer` | Ausstattung / Kosten des häuslichen Arbeitszimmers | gross, or the year's AfA share for assets > 800 € net (b007) |
 | | `wk_bewerbung` | Bewerbungsfotos, Mappen, Porto | gross |
 | | `wk_kontofuehrung` | Kontoführungsentgelt (Kontoauszug) | fee as printed (Pauschale: engine) |
 | | `wk_berufsverband` | Gewerkschafts- / Verbandsbeitrag | gross |
@@ -51,8 +51,8 @@ supports before the tax engine applies caps, Pauschalen or percentages (#10 onwa
 | kind | `kinderbetreuung` | Kita, Tagesmutter (care only, not meals); refunds negative | care part |
 | | `schulgeld` | Privatschule (without meals) | Schulgeld part (30 % rule: engine) |
 | agb | `krankheitskosten` | Arzt, Zahnarzt, Brille, Physiotherapie, Rezept-Zuzahlung | prescribed / medical part |
-| | `pflege` | Pflegedienst, Pflegeheim (Eigenanteil) | gross |
-| | `behinderung` | behinderungsbedingte Kosten (Fahrdienst, Umbau) | gross |
+| | `pflege` | Pflegedienst, Pflegeheim (Eigenanteil) | gross (§33; see the §35a overlap rule) |
+| | `behinderung` | behinderungsbedingte Kosten (Umbau, Hilfsmittel); travel costs only via the Pauschale | gross; travel receipts `"0.00"`, `tax_relevant: false` (b032) |
 | haushaltsnahe | `haushaltsnahe_dienstleistung` | Reinigung, Haushaltshilfe, Gartenpflege, Winterdienst | `labour_share_35a` |
 | | `handwerkerleistung` | Maler, Sanitär, Heizungswartung, Schornsteinfeger | `labour_share_35a` |
 | vermietung | `v_afa` | exempt: computed from property data (#13 / #20) | – |
@@ -88,6 +88,21 @@ Further rules:
 - **Annual statements** (Beitragsbescheinigungen, Zinsbescheinigungen, Kita-Jahresbescheinigung):
   `invoice_date` = statement date, `payment_date` = last payment printed, so `tax_year` is the
   year paid.
+- **GWG / AfA** (§6 Abs. 2, §7 EStG): a work asset up to 800 € net counts in full in the year
+  of payment. Above that, `deductible_amount` is the year's linear AfA share, pro rata by month
+  from the month of purchase (useful life from the AfA tables; office furniture 13 years).
+  b007: 1 240,00 € gross = 1 042,02 € net, so 1 240,00 / 13 × 5/12 = 39,74 € for 2025.
+- **Disability-related travel costs** (§33 Abs. 2a EStG, since 2021) are covered only by the
+  behinderungsbedingte Fahrtkostenpauschale (from the profile), not by receipts. A Fahrdienst
+  receipt keeps `category: behinderung` but is `tax_relevant: false`, deductible `"0.00"` (b032).
+- **Unpaid invoices** (`no_payment_date`, b027): the label states what the document shows.
+  `payment_method` is the requested method, and `tax_year` comes from the invoice date as the
+  best guess. The cost only counts once paid (Abfluss); a later payment proof would change
+  `payment_date` and possibly `tax_year`.
+- **Ambulant care vs. §35a** (b031): care costs of a person with a Pflegegrad are labelled
+  `pflege` (§33, außergewöhnliche Belastung). §35a Abs. 2 (Pflege- und Betreuungsleistungen)
+  applies only to the part not claimed under §33, so it is not labelled separately; choosing
+  the better option is the engine's job.
 - **person_hint** is the printed recipient (`Alex / Sam / Kim Muster`), not the person the cost
   is for (e.g. the Kita statement goes to Sam for Kim).
 - Everything is fictional: "Muster" people, "Beispiel" / "Muster" vendors, Musterstadt

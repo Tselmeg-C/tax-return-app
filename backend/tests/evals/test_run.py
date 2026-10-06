@@ -113,14 +113,14 @@ def test_replay_fixture_noisy_exact_metrics(
     # Hand-computed from the fixture's deliberate mistakes (see recordings/.../meta.json):
     # b001 wrong category (same group), b013 missed relevant case, b047 irrelevant predicted
     # relevant (+189.90), b029 wrong gross / deductible (+60.00), b036 labour share 736 vs 763,
-    # b040 TimeoutError. 48 positives: TP 46, FN 2, FP 1.
+    # b040 TimeoutError. 47 positives: TP 45, FN 2, FP 1.
     expected = {
         "n_cases": 60,
         "n_errors": 1,
         "error_rate": 0.0167,
-        "relevance_precision": 0.9787,  # 46/47
-        "relevance_recall": 0.9583,  # 46/48
-        "relevance_f1": 0.9684,
+        "relevance_precision": 0.9783,  # 45/46
+        "relevance_recall": 0.9574,  # 45/47
+        "relevance_f1": 0.9677,
         "doc_type_accuracy": 0.9833,  # 59/60
         "category_accuracy": 0.9286,  # 52/56
         "category_group_accuracy": 0.9464,  # 53/56
@@ -423,3 +423,18 @@ def test_subset_run_by_tags(eval_paths: EvalPaths, capsys: pytest.CaptureFixture
     report = last_report(eval_paths)
     assert report["subset"] is True
     assert [c["id"] for c in report["cases"]] == ["b037-handwerker-bar"]
+
+
+def test_save_baseline_on_skipped_run_exits_0_and_writes_nothing(
+    eval_paths: EvalPaths, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("EVAL_TEST_DUMMY_KEY", raising=False)
+    _register(monkeypatch, lambda _o: _Probe(), ("EVAL_TEST_DUMMY_KEY",))
+    code, out, _ = invoke(
+        eval_paths, capsys, "--predictor", "probe", "--save-baseline", "probe", "--record", "p1"
+    )
+    assert code == 0
+    assert "--save-baseline 'probe' not written: the run was skipped" in out
+    assert "--record 'p1' not written: the run was skipped" in out
+    assert not (eval_paths.baselines / DATASET / "probe.json").exists()
+    assert not (eval_paths.recordings / DATASET / "p1").exists()
