@@ -9,31 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as BelegeRouteImport } from './routes/belege'
-import { Route as ExportRouteImport } from './routes/export'
-import { Route as HaushaltRouteImport } from './routes/haushalt'
+import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as HealthzRouteImport } from './routes/healthz'
+import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as AuthedBelegeRouteImport } from './routes/_authed/belege'
+import { Route as AuthedExportRouteImport } from './routes/_authed/export'
+import { Route as AuthedHaushaltRouteImport } from './routes/_authed/haushalt'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
+import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as LoginSentRouteImport } from './routes/login/sent'
+import { Route as LoginVerifyRouteImport } from './routes/login/verify'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BelegeRoute = BelegeRouteImport.update({
-  id: '/belege',
-  path: '/belege',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExportRoute = ExportRouteImport.update({
-  id: '/export',
-  path: '/export',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HaushaltRoute = HaushaltRouteImport.update({
-  id: '/haushalt',
-  path: '/haushalt',
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthzRoute = HealthzRouteImport.update({
@@ -41,89 +29,135 @@ const HealthzRoute = HealthzRouteImport.update({
   path: '/healthz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthedIndexRoute = AuthedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedBelegeRoute = AuthedBelegeRouteImport.update({
+  id: '/belege',
+  path: '/belege',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedExportRoute = AuthedExportRouteImport.update({
+  id: '/export',
+  path: '/export',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedHaushaltRoute = AuthedHaushaltRouteImport.update({
+  id: '/haushalt',
+  path: '/haushalt',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
   path: '/api/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginSentRoute = LoginSentRouteImport.update({
+  id: '/login/sent',
+  path: '/login/sent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginVerifyRoute = LoginVerifyRouteImport.update({
+  id: '/login/verify',
+  path: '/login/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/belege': typeof BelegeRoute
-  '/export': typeof ExportRoute
-  '/haushalt': typeof HaushaltRoute
+  '/': typeof AuthedIndexRoute
   '/healthz': typeof HealthzRoute
+  '/belege': typeof AuthedBelegeRoute
+  '/export': typeof AuthedExportRoute
+  '/haushalt': typeof AuthedHaushaltRoute
   '/api/$': typeof ApiSplatRoute
+  '/login/sent': typeof LoginSentRoute
+  '/login/verify': typeof LoginVerifyRoute
+  '/login/': typeof LoginIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/belege': typeof BelegeRoute
-  '/export': typeof ExportRoute
-  '/haushalt': typeof HaushaltRoute
   '/healthz': typeof HealthzRoute
+  '/belege': typeof AuthedBelegeRoute
+  '/export': typeof AuthedExportRoute
+  '/haushalt': typeof AuthedHaushaltRoute
   '/api/$': typeof ApiSplatRoute
+  '/login/sent': typeof LoginSentRoute
+  '/login/verify': typeof LoginVerifyRoute
+  '/': typeof AuthedIndexRoute
+  '/login': typeof LoginIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/belege': typeof BelegeRoute
-  '/export': typeof ExportRoute
-  '/haushalt': typeof HaushaltRoute
+  '/_authed': typeof AuthedRouteWithChildren
   '/healthz': typeof HealthzRoute
+  '/_authed/belege': typeof AuthedBelegeRoute
+  '/_authed/export': typeof AuthedExportRoute
+  '/_authed/haushalt': typeof AuthedHaushaltRoute
   '/api/$': typeof ApiSplatRoute
+  '/login/sent': typeof LoginSentRoute
+  '/login/verify': typeof LoginVerifyRoute
+  '/_authed/': typeof AuthedIndexRoute
+  '/login/': typeof LoginIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/belege' | '/export' | '/haushalt' | '/healthz' | '/api/$'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/belege' | '/export' | '/haushalt' | '/healthz' | '/api/$'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/healthz'
     | '/belege'
     | '/export'
     | '/haushalt'
-    | '/healthz'
     | '/api/$'
+    | '/login/sent'
+    | '/login/verify'
+    | '/login/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/healthz'
+    | '/belege'
+    | '/export'
+    | '/haushalt'
+    | '/api/$'
+    | '/login/sent'
+    | '/login/verify'
+    | '/'
+    | '/login'
+  id:
+    | '__root__'
+    | '/_authed'
+    | '/healthz'
+    | '/_authed/belege'
+    | '/_authed/export'
+    | '/_authed/haushalt'
+    | '/api/$'
+    | '/login/sent'
+    | '/login/verify'
+    | '/_authed/'
+    | '/login/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  BelegeRoute: typeof BelegeRoute
-  ExportRoute: typeof ExportRoute
-  HaushaltRoute: typeof HaushaltRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
   HealthzRoute: typeof HealthzRoute
   ApiSplatRoute: typeof ApiSplatRoute
+  LoginSentRoute: typeof LoginSentRoute
+  LoginVerifyRoute: typeof LoginVerifyRoute
+  LoginIndexRoute: typeof LoginIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
+    '/_authed': {
+      id: '/_authed'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/belege': {
-      id: '/belege'
-      path: '/belege'
-      fullPath: '/belege'
-      preLoaderRoute: typeof BelegeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/export': {
-      id: '/export'
-      path: '/export'
-      fullPath: '/export'
-      preLoaderRoute: typeof ExportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/haushalt': {
-      id: '/haushalt'
-      path: '/haushalt'
-      fullPath: '/haushalt'
-      preLoaderRoute: typeof HaushaltRouteImport
+      preLoaderRoute: typeof AuthedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/healthz': {
@@ -133,6 +167,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HealthzRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authed/': {
+      id: '/_authed/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/belege': {
+      id: '/_authed/belege'
+      path: '/belege'
+      fullPath: '/belege'
+      preLoaderRoute: typeof AuthedBelegeRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/export': {
+      id: '/_authed/export'
+      path: '/export'
+      fullPath: '/export'
+      preLoaderRoute: typeof AuthedExportRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/haushalt': {
+      id: '/_authed/haushalt'
+      path: '/haushalt'
+      fullPath: '/haushalt'
+      preLoaderRoute: typeof AuthedHaushaltRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/api/$': {
       id: '/api/$'
       path: '/api/$'
@@ -140,16 +202,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/sent': {
+      id: '/login/sent'
+      path: '/login/sent'
+      fullPath: '/login/sent'
+      preLoaderRoute: typeof LoginSentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/verify': {
+      id: '/login/verify'
+      path: '/login/verify'
+      fullPath: '/login/verify'
+      preLoaderRoute: typeof LoginVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthedRouteChildren {
+  AuthedBelegeRoute: typeof AuthedBelegeRoute
+  AuthedExportRoute: typeof AuthedExportRoute
+  AuthedHaushaltRoute: typeof AuthedHaushaltRoute
+  AuthedIndexRoute: typeof AuthedIndexRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedBelegeRoute: AuthedBelegeRoute,
+  AuthedExportRoute: AuthedExportRoute,
+  AuthedHaushaltRoute: AuthedHaushaltRoute,
+  AuthedIndexRoute: AuthedIndexRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  BelegeRoute: BelegeRoute,
-  ExportRoute: ExportRoute,
-  HaushaltRoute: HaushaltRoute,
+  AuthedRoute: AuthedRouteWithChildren,
   HealthzRoute: HealthzRoute,
   ApiSplatRoute: ApiSplatRoute,
+  LoginSentRoute: LoginSentRoute,
+  LoginVerifyRoute: LoginVerifyRoute,
+  LoginIndexRoute: LoginIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

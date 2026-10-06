@@ -3,7 +3,8 @@
 Python 3.12 backend (FastAPI, Postgres via SQLAlchemy 2.0 + psycopg 3, Alembic), managed with `uv`.
 
 - `app/api/` — FastAPI app (`app.api.main:app`)
-- `app/config.py` — `Settings` from env / optional `.env` (`DATABASE_URL`, `APP_ENV`, `LOG_LEVEL`, `GIT_SHA`, `FIELD_ENCRYPTION_KEY`)
+- `app/config.py` — `Settings` from env / optional `.env` (`DATABASE_URL`, `APP_ENV`, `LOG_LEVEL`, `GIT_SHA`, `FIELD_ENCRYPTION_KEY`, auth settings)
+- `app/auth/` — magic-link login, sessions, mail backends, rate limiter, user CLI (#5)
 - `app/domain/enums.py` — domain enums (`Category`, `DocType`, …), `CATEGORY_GROUP`, `LABELS_DE`
 - `app/db/` — `base.py` (declarative base, naming convention, PII-free `repr`), `session.py` (async engine/sessions), `models/` (core tables), `types.py` / `crypto.py` (encrypted columns, enum type), `scope.py` (`HouseholdScope`), `audit.py` (audit helper), `seed.py` (dev seed), `migrations/` (Alembic)
 - `app/observability/` — structlog JSON logging + OpenTelemetry (`setup_observability`)
@@ -86,3 +87,37 @@ Creates 1 household, 3 persons, 2 users (`owner@example.com`, `member@example.co
 documents (no real files) and 9 tax items shaped like `frontend/src/lib/mock.ts`. Idempotent
 (a second run prints `seed: already present, nothing to do`), refuses `APP_ENV=production`,
 writes no audit rows and prints counts only. It needs no `FIELD_ENCRYPTION_KEY`.
+
+## Login (magic link, #5)
+
+Invite-only: users come from the CLI (or the dev seed). Every api route except `/health`,
+`/version`, `/auth/magic-link`, `/auth/verify` and `/auth/logout` needs a session cookie;
+the allowlist is `app/api/public.py`.
+
+Local login (`MAIL_BACKEND` defaults to `file` outside production, so mails land in
+`backend/.dev-mail/`, mode 0600, never in logs):
+
+```bash
+uv run python -m app.db.seed                                # owner@example.com
+uv run uvicorn app.api.main:app --reload --port 8000
+cd ../frontend && npm run dev                               # http://localhost:3000/login
+ls -t .dev-mail/ | head -1                                  # newest mail: open it, copy the link
+```
+
+User management (works with `APP_ENV=production`; output shows ids and masked e-mails only;
+`invite` / `disable` / `enable` / `bootstrap` write an `audit_log` row with `actor_type=system`):
+
+```bash
+uv run python -m app.auth.cli bootstrap --household-name "Familie X" --email you@example.org
+uv run python -m app.auth.cli invite --email member@example.org [--role member|owner] [--household-id ID]
+uv run python -m app.auth.cli disable --email member@example.org          # ends sessions + open links
+uv run python -m app.auth.cli enable --email member@example.org
+uv run python -m app.auth.cli revoke-sessions --email member@example.org
+```
+
+`disable` never touches documents, and there is no `delete` command. Settings:
+`APP_BASE_URL`, `MAIL_BACKEND`, `DEV_MAIL_DIR`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`,
+`MAGIC_LINK_TTL_MINUTES`, `SESSION_IDLE_DAYS`, `SESSION_MAX_DAYS` (see `../.env.example`).
+With `APP_ENV=production` the api refuses to start unless `MAIL_BACKEND=resend`, both
+`RESEND_*` are set and `APP_BASE_URL` is `https://`. API docs (`/docs`) need a session in
+development and are off (404) in production.

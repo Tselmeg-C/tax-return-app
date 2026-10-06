@@ -4,7 +4,7 @@ import { Camera, Pencil, Send, Upload, Globe, Check } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { anlageLabel, eur, items as seed, type TaxItem } from "@/lib/mock";
 
-export const Route = createFileRoute("/belege")({
+export const Route = createFileRoute("/_authed/belege")({
   head: () => ({
     meta: [
       { title: "Belege — belegbot" },

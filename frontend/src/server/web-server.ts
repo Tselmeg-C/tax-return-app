@@ -3,7 +3,13 @@
  * Startup log lines (missing `API_INTERNAL_URL`, export disabled) come from the Nitro plugin
  * in `nitro-startup.ts`, so they are logged at server start and only once.
  */
-import { createApiProxy, resolveApiUrl, resolveTimeoutMs, type ApiProxy } from "./api-proxy";
+import {
+  createApiProxy,
+  resolveApiUrl,
+  resolveTimeoutMs,
+  resolveTrustedProxyHops,
+  type ApiProxy,
+} from "./api-proxy";
 import { setupWebTelemetry, type WebTelemetry } from "./telemetry";
 
 interface WebServer {
@@ -22,6 +28,7 @@ export function initWebServer(env: Record<string, string | undefined> = process.
     apiUrl: resolution.kind === "configured" ? resolution.url : null,
     tracer: telemetry.tracer,
     timeoutMs: resolveTimeoutMs(env),
+    trustedProxyHops: resolveTrustedProxyHops(env),
   });
 
   // Flush pending spans on shutdown (best effort; the server's own handler exits the process).

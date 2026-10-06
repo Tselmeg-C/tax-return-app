@@ -101,10 +101,13 @@ echo "== endpoints"
 expect_status http://localhost:8000/health 200 X-Trace-Id
 expect_status http://localhost:8000/version 200
 expect_status http://localhost:3000/healthz 200
-expect_status http://localhost:3000/ 200
-grep -q '<title>' /tmp/smoke-body || fail "/ has no HTML title"
+# App pages need a session (#5): / redirects to the login page, which renders.
+expect_status http://localhost:3000/ 307
+expect_status http://localhost:3000/login 200
+grep -q '<title>' /tmp/smoke-body || fail "/login has no HTML title"
 expect_status http://localhost:3000/api/health 200 X-Trace-Id
 expect_status http://localhost:3000/api/version 200
+expect_status http://localhost:3000/api/auth/me 401
 
 echo "== api logs are JSON lines"
 docker logs "$API" 2>&1 | grep '^{' | python3 -c '
@@ -129,7 +132,7 @@ echo "== api stopped: /api/health must be 502, web stays up"
 docker stop "$API" >/dev/null
 expect_status http://localhost:3000/api/health 502
 expect_status http://localhost:3000/healthz 200
-expect_status http://localhost:3000/ 200
+expect_status http://localhost:3000/login 200
 
 if [ "$FAILURES" -gt 0 ]; then
   echo "deploy smoke: $FAILURES failure(s)"
