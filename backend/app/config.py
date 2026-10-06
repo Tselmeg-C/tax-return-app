@@ -118,6 +118,13 @@ class Settings(BaseSettings):
             return None
         return value.strip() if isinstance(value, str) else value
 
+    @field_validator("dev_mail_dir", mode="before")
+    @classmethod
+    def _empty_dir_is_default(cls, value: object) -> object:
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return DEFAULT_DEV_MAIL_DIR
+        return value
+
     @field_validator("app_base_url", mode="after")
     @classmethod
     def _valid_base_url(cls, value: str) -> str:

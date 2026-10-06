@@ -103,7 +103,7 @@ async def test_file_outbox_writes_0600_and_logs_no_token(
     files = list(outbox.iterdir())
     assert len(files) == 1
     assert stat.S_IMODE(files[0].stat().st_mode) == 0o600
-    assert token in files[0].read_text()  # the dev outbox is the one place the link goes
+    assert link in files[0].read_text()  # the dev outbox is the one place the link goes
     logged = json_log.getvalue() + caplog.text
     assert "mail written to dev outbox" in logged
     assert token not in logged
@@ -121,6 +121,8 @@ def test_backend_selection(migrated_database: str) -> None:
     dev = auth_settings(migrated_database, mail_backend=None)
     assert isinstance(backend_from_settings(dev), FileOutboxBackend)
     assert str(dev.dev_mail_dir).endswith("backend/.dev-mail")
+    empty = auth_settings(migrated_database, dev_mail_dir="  ")
+    assert empty.dev_mail_dir == dev.dev_mail_dir
     prod = auth_settings(
         migrated_database,
         app_env="production",

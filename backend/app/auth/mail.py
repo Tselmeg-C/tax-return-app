@@ -90,8 +90,9 @@ class FileOutboxBackend:
         msg = EmailMessage()
         msg["To"] = mail.to
         msg["Subject"] = mail.subject
-        msg.set_content(mail.text)
-        msg.add_alternative(mail.html, subtype="html")
+        # 8bit (not quoted-printable), so the link in the file can be copied as is.
+        msg.set_content(mail.text, cte="8bit")
+        msg.add_alternative(mail.html, subtype="html", cte="8bit")
         stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
         path = self.directory / f"{stamp}-{uuid.uuid4().hex[:8]}.eml"
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
