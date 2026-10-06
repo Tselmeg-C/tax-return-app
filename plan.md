@@ -268,10 +268,10 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
 ## 12. Quality: evals for "fully automatic"
 
 Since there's no review queue, accuracy must be measured offline:
-- `evals/dataset/`: 100+ own anonymised Belege with hand-labelled ground truth (relevant?, category, amount, §35a share).
-- `evals/run.py --provider openai --model … --prompt-version v3` → precision/recall for relevance, category accuracy, amount exact-match, € error. Results pushed as metrics → Grafana; compare providers.
-- Every user override in the UI becomes a new labelled example (export script).
-- Gate: don't switch default model/prompt unless eval ≥ current.
+- The repo is public, so the committed eval set is synthetic: `evals/datasets/bills_v0` (60 documents rendered from `evals/synth/specs/bills_v0.yaml`, fictional "Muster" people and vendors, PDF / scanned PDF / photo / PNG variants) with hand-labelled ground truth (relevant?, category, amounts, §35a share, dates, tax year).
+- Optional anonymised real samples stay local only (`evals/datasets_private/`, never committed, #39); user overrides are exported as new labelled examples, private as well (#23).
+- `python -m evals.run --dataset bills_v0 --predictor … [--provider openai --model … --prompt-version v3]` → relevance precision/recall, category accuracy, amount exact-match, € error, cost, latency; `report.json` keys are pushed to Grafana (#22); providers are compared via baselines.
+- Gate: `--gate` checks `evals/thresholds.yaml` and the `compare_to` baseline: don't switch default model/prompt unless eval ≥ current. Real runs are recorded once and replayed offline in CI.
 
 ---
 

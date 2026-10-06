@@ -17,3 +17,7 @@ node_modules/
 # Editors / OS
 .DS_Store
 .idea/
+
+# Evals: reports are generated per run; private datasets never leave the machine (#39)
+backend/evals/reports/
+backend/evals/datasets_private/
