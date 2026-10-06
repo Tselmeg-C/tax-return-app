@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "req_test_completed_no_usage"
+  },
+  "body": {
+    "id": "resp_test_completed_no_usage",
+    "object": "response",
+    "created_at": 1767225600,
+    "status": "completed",
+    "model": "gpt-test-2026-01-01",
+    "output": [
+      {
+        "id": "msg_test_completed_no_usage",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"vendor\": \"Frischmarkt Muster\", \"total\": \"12.34\", \"date\": \"2026-03-14\", \"kind\": \"receipt\", \"items\": [{\"name\": \"Brot\", \"amount\": \"2.49\"}, {\"name\": \"Kaffee Muster\", \"amount\": \"9.85\"}], \"note\": null}",
+            "annotations": []
+          }
+        ]
+      }
+    ],
+    "incomplete_details": null,
+    "error": null,
+    "store": false
+  }
+}

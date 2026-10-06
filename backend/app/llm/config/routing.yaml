@@ -1,0 +1,26 @@
+# Model routing per LLM task (see _docs/llm.md). Bump `version` on every change.
+# The default models are a proposal from #8; #9's eval gate confirms them. Once #9 has
+# merged, changing a default, temperature or token limit is an LLM change and needs an
+# eval run (_docs/adlc.md). Env overrides: LLM_CLASSIFY_MODEL, LLM_EXTRACT_MODEL,
+# LLM_FALLBACK_MODEL (comma-separated, or "none").
+version: 1
+tasks:
+  classify:
+    model: "openai:gpt-4.1-mini"
+    temperature: 0
+    max_output_tokens: 1024
+    timeout_s: 60
+    schema_retries: 1          # re-asks after schema-invalid / truncated output, same model
+    fallback: []               # ordered list of "provider:model"
+  extract:
+    model: "openai:gpt-4.1"
+    temperature: 0
+    max_output_tokens: 4096
+    timeout_s: 120
+    schema_retries: 1
+    fallback: ["openai:gpt-4.1-mini"]
+models:                        # capabilities per model
+  "openai:gpt-4.1-mini": {supports_temperature: true, pdf_input: native, max_output_tokens_cap: 16384}
+  "openai:gpt-4.1": {supports_temperature: true, pdf_input: native, max_output_tokens_cap: 16384}
+  "openai:gpt-5-mini": {supports_temperature: false, pdf_input: native, max_output_tokens_cap: 32768}
+  "fake:test": {supports_temperature: true, pdf_input: native, max_output_tokens_cap: 16384}

@@ -1,0 +1,16 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "req_test_error_429_retry_after",
+    "retry-after": "2"
+  },
+  "body": {
+    "error": {
+      "message": "Rate limit reached for requests.",
+      "type": "requests",
+      "param": null,
+      "code": "rate_limit_exceeded"
+    }
+  }
+}

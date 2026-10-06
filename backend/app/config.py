@@ -212,3 +212,96 @@ def check_api_settings(settings: Settings) -> None:
 @lru_cache
 def get_settings() -> Settings:
     return load_settings()
+
+
+def _env_alias(name: str) -> AliasChoices:
+    return AliasChoices(name, name.lower())
+
+
+class LLMSettings(BaseSettings):
+    """Settings of the LLM layer (`app/llm/`). Nothing here is required at startup.
+
+    Kept apart from `Settings` so the LLM layer (smoke CLI, evals) works without
+    `DATABASE_URL`. A missing `OPENAI_API_KEY` only fails the first real OpenAI call.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
+    )
+
+    app_env: str = Field(default="development", validation_alias=_env_alias("APP_ENV"))
+    openai_api_key: SecretStr | None = Field(
+        default=None, validation_alias=_env_alias("OPENAI_API_KEY")
+    )
+    openai_base_url: str = Field(
+        default="https://api.openai.com/v1", validation_alias=_env_alias("OPENAI_BASE_URL")
+    )
+    # Per-task model overrides / fallback override ("provider:model"; empty = routing.yaml).
+    llm_classify_model: str = Field(default="", validation_alias=_env_alias("LLM_CLASSIFY_MODEL"))
+    llm_extract_model: str = Field(default="", validation_alias=_env_alias("LLM_EXTRACT_MODEL"))
+    llm_fallback_model: str = Field(default="", validation_alias=_env_alias("LLM_FALLBACK_MODEL"))
+    llm_max_attempts: int = Field(default=3, ge=1, validation_alias=_env_alias("LLM_MAX_ATTEMPTS"))
+    llm_backoff_base_seconds: float = Field(
+        default=1.0, ge=0, validation_alias=_env_alias("LLM_BACKOFF_BASE_SECONDS")
+    )
+    llm_backoff_max_seconds: float = Field(
+        default=20.0, ge=0, validation_alias=_env_alias("LLM_BACKOFF_MAX_SECONDS")
+    )
+    llm_retry_after_max_seconds: float = Field(
+        default=30.0, ge=0, validation_alias=_env_alias("LLM_RETRY_AFTER_MAX_SECONDS")
+    )
+    llm_deadline_seconds: float = Field(
+        default=300.0, gt=0, validation_alias=_env_alias("LLM_DEADLINE_SECONDS")
+    )
+    llm_max_image_px: int = Field(
+        default=2048, ge=1, validation_alias=_env_alias("LLM_MAX_IMAGE_PX")
+    )
+    llm_max_image_pixels: int = Field(
+        default=50_000_000, ge=1, validation_alias=_env_alias("LLM_MAX_IMAGE_PIXELS")
+    )
+    llm_max_image_bytes: int = Field(
+        default=8_000_000, ge=1, validation_alias=_env_alias("LLM_MAX_IMAGE_BYTES")
+    )
+    llm_max_pdf_pages: int = Field(
+        default=20, ge=1, validation_alias=_env_alias("LLM_MAX_PDF_PAGES")
+    )
+    llm_max_images: int = Field(default=20, ge=0, validation_alias=_env_alias("LLM_MAX_IMAGES"))
+    llm_max_request_mb: float = Field(
+        default=20.0, gt=0, validation_alias=_env_alias("LLM_MAX_REQUEST_MB")
+    )
+
+    @field_validator("openai_api_key", mode="before")
+    @classmethod
+    def _empty_key_is_unset(cls, value: object) -> object:
+        if isinstance(value, SecretStr):
+            value = value.get_secret_value()
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @field_validator("llm_classify_model", "llm_extract_model", "llm_fallback_model", mode="after")
+    @classmethod
+    def _strip(cls, value: str) -> str:
+        return value.strip()
+
+
+def load_llm_settings() -> LLMSettings:
+    """Build `LLMSettings`; like `load_settings`, errors name the variables, never values."""
+    try:
+        return LLMSettings()
+    except ValidationError as exc:
+        problems = sorted(
+            {
+                f"{'.'.join(str(part) for part in err['loc']).upper()}: {err['msg']}"
+                for err in exc.errors()
+            }
+        )
+        raise SettingsError("invalid LLM settings: " + "; ".join(problems)) from None
+
+
+@lru_cache
+def get_llm_settings() -> LLMSettings:
+    return load_llm_settings()

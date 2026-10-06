@@ -1,0 +1,15 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "req_test_error_429_insufficient_quota"
+  },
+  "body": {
+    "error": {
+      "message": "You exceeded your current quota.",
+      "type": "insufficient_quota",
+      "param": null,
+      "code": "insufficient_quota"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "status": 503,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "req_test_error_503"
+  },
+  "body": {
+    "error": {
+      "message": "The engine is currently overloaded.",
+      "type": "server_error",
+      "param": null,
+      "code": null
+    }
+  }
+}

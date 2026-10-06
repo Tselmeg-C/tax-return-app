@@ -156,6 +156,16 @@ These #5 (login) checks wait until then as well:
   invited member can sign in, a non-invited address gets no mail; Railway logs and Loki contain
   neither the address nor any part of a token
 
+These #8 (LLM layer, `_docs/llm.md`) checks wait as well (tracked in #42):
+
+- `OPENAI_API_KEY` set as a Railway secret on `api` (api + worker). `uv run python -m
+  app.llm.smoke` on Railway prints a request id and a cost; `belegbot.llm.cost` and
+  `belegbot.llm.tokens` for that call are visible in Grafana, and the trace shows
+  `llm classify` → `chat <model>` with no content attributes
+- OpenAI project settings confirmed by the user: data retention (Zero Data Retention if
+  eligible), EU data residency (if yes: an EU project and `OPENAI_BASE_URL`), a project spend
+  limit; the project has credits (the live run on 2026-10-06 got `credit_balance_exhausted`)
+
 ## Setup (repo owner, at the final deployment)
 
 Do these once #3 is merged to `main` (before that, `main` has no Dockerfiles). Keep secrets
