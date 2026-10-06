@@ -1,0 +1,19 @@
+schema_version: 1
+id: b035-haushaltshilfe
+source: synthetic
+file: document.pdf
+variant: pdf_scanned
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: haushaltsnahe_dienstleistung
+  gross_amount: '384.00'
+  deductible_amount: '384.00'
+  labour_share_35a: '384.00'
+  invoice_date: 2025-10-31
+  payment_date: 2025-11-03
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Haushaltshilfe Muster GmbH
+  person_hint: Sam Muster

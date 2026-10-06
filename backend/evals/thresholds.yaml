@@ -1,0 +1,34 @@
+# Gate thresholds per dataset (`python -m evals.run ... --gate`), see evals/README.md.
+#
+# status: proposed  -> the user has not confirmed these numbers yet (#7, "User input").
+#                      `--gate` prints a note but the exit code is unchanged.
+# compare_to        -> baseline in evals/baselines/<dataset>/<name>.json the candidate must not
+#                      fall below ("new default only if >= current", _docs/adlc.md). #9 sets it.
+# thresholds        -> absolute bounds; required: true = n/a counts as fail.
+# regression        -> applied only when compare_to is set and the baseline is not stale;
+#                      per_metric: {metric: tolerance} overrides the default tolerance.
+
+bills_v0:
+  status: proposed
+  compare_to: null
+  thresholds:
+    relevance_precision:                 {min: 0.95, required: true}
+    relevance_recall:                    {min: 0.90, required: true}
+    doc_type_accuracy:                   {min: 0.90, required: true}
+    category_accuracy:                   {min: 0.85, required: true}
+    gross_exact_match:                   {min: 0.90, required: true}
+    deductible_exact_match:              {min: 0.85, required: true}
+    deductible_abs_error_eur_mean:       {max: 5.00, required: true}
+    labour_share_35a_abs_error_eur_mean: {max: 10.00, required: true}
+    tax_year_accuracy:                   {min: 0.95, required: true}
+    error_rate:                          {max: 0.02, required: true}
+    cost_eur_per_doc_mean:               {max: 0.02, required: false}
+    latency_ms_p95:                      {max: 30000, required: false}
+  regression:
+    tolerance: 0.0
+    metrics:
+      - relevance_precision
+      - relevance_recall
+      - category_accuracy
+      - deductible_exact_match
+      - deductible_abs_error_eur_mean

@@ -1,0 +1,19 @@
+schema_version: 1
+id: b058-kindergeld-bescheid
+source: synthetic
+file: document.pdf
+variant: pdf_scanned
+tags: []
+expected:
+  doc_type: kindergeld_bescheid
+  tax_relevant: true
+  category: null
+  gross_amount: null
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2025-02-03
+  payment_date: null
+  tax_year: 2025
+  payment_method: unknown
+  vendor: Familienkasse Musterstadt
+  person_hint: Sam Muster

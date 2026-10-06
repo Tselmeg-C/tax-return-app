@@ -1,0 +1,19 @@
+schema_version: 1
+id: b051-spielzeug
+source: synthetic
+file: document.png
+variant: png
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: false
+  category: irrelevant
+  gross_amount: '59.94'
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2025-12-05
+  payment_date: 2025-12-05
+  tax_year: 2025
+  payment_method: paypal
+  vendor: Spielwaren Beispiel Versand
+  person_hint: Sam Muster

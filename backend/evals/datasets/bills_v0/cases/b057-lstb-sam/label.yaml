@@ -1,0 +1,19 @@
+schema_version: 1
+id: b057-lstb-sam
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: lohnsteuerbescheinigung
+  tax_relevant: true
+  category: null
+  gross_amount: null
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2026-02-20
+  payment_date: null
+  tax_year: 2025
+  payment_method: unknown
+  vendor: Pflegeheim Beispielhaus gGmbH
+  person_hint: Sam Muster

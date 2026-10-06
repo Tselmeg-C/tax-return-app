@@ -1,0 +1,19 @@
+schema_version: 1
+id: b048-elektronik-privat
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: false
+  category: irrelevant
+  gross_amount: '508.99'
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2025-11-28
+  payment_date: 2025-11-28
+  tax_year: 2025
+  payment_method: card
+  vendor: Elektromarkt Muster
+  person_hint: Sam Muster

@@ -1,0 +1,19 @@
+schema_version: 1
+id: b010-berufsverband-gewerkschaft
+source: synthetic
+file: document.pdf
+variant: pdf_scanned
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: wk_berufsverband
+  gross_amount: '294.00'
+  deductible_amount: '294.00'
+  labour_share_35a: null
+  invoice_date: 2026-01-15
+  payment_date: 2025-12-31
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Gewerkschaft Musterberufe
+  person_hint: Alex Muster

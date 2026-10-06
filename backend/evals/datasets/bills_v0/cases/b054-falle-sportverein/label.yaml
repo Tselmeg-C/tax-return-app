@@ -1,0 +1,20 @@
+schema_version: 1
+id: b054-falle-sportverein
+source: synthetic
+file: document.pdf
+variant: pdf_scanned
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: false
+  category: irrelevant
+  gross_amount: '180.00'
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2025-12-20
+  payment_date: 2025-01-15
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Sportverein Beispiel 1920 e.V.
+  person_hint: Sam Muster
+notes: Falle. Beiträge an Sportvereine sind keine Spenden und keine Berufsverbandsbeiträge.

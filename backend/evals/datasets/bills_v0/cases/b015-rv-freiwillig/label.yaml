@@ -1,0 +1,19 @@
+schema_version: 1
+id: b015-rv-freiwillig
+source: synthetic
+file: document.pdf
+variant: pdf_scanned
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: vorsorge_rv
+  gross_amount: '1200.00'
+  deductible_amount: '1200.00'
+  labour_share_35a: null
+  invoice_date: 2026-01-22
+  payment_date: 2025-12-28
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Rentenkasse Musterland
+  person_hint: Sam Muster

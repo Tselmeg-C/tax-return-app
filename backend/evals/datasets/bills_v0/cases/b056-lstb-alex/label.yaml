@@ -1,0 +1,20 @@
+schema_version: 1
+id: b056-lstb-alex
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: lohnsteuerbescheinigung
+  tax_relevant: true
+  category: null
+  gross_amount: null
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2026-02-15
+  payment_date: null
+  tax_year: 2025
+  payment_method: unknown
+  vendor: Beispiel Software GmbH
+  person_hint: Alex Muster
+notes: Felder gehören in official_record (#18), kein tax_item.
