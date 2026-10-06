@@ -91,7 +91,11 @@ BASE_ROUTING: dict[str, Any] = {
         "extract": _task("fake:test", max_output_tokens=4000),
     },
     "models": {
-        "fake:test": {"supports_temperature": True, "pdf_input": "native", "max_output_tokens_cap": 3000},
+        "fake:test": {
+            "supports_temperature": True,
+            "pdf_input": "native",
+            "max_output_tokens_cap": 3000,
+        },
         "fake:fallback": {"supports_temperature": True, "pdf_input": "native"},
         "fake:raster": {"supports_temperature": True, "pdf_input": "rasterize"},
         "openai:gpt-test": {"supports_temperature": True, "pdf_input": "native"},

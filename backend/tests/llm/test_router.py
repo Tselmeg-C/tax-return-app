@@ -198,9 +198,7 @@ async def test_refusal_and_filter_skip_reask(error: type) -> None:
     assert result.fallback_used is True  # type: ignore[attr-defined]
 
 
-@pytest.mark.parametrize(
-    "error", [LLMAuthError, LLMQuotaExceeded, LLMBadRequest, LLMInputTooLarge]
-)
+@pytest.mark.parametrize("error", [LLMAuthError, LLMQuotaExceeded, LLMBadRequest, LLMInputTooLarge])
 async def test_permanent_errors_are_not_retried(error: type, otel: Otel) -> None:
     provider = fake(error(provider="fake", status_code=400), OK, OK)
     router = make_router(
@@ -219,9 +217,7 @@ async def test_permanent_errors_are_not_retried(error: type, otel: Otel) -> None
 
 async def test_deadline_raises_timeout() -> None:
     clock = FakeClock()
-    provider = fake(
-        *(LLMTimeout(provider="fake") for _ in range(10)), delay_s=3, sleep=clock.sleep
-    )
+    provider = fake(*(LLMTimeout(provider="fake") for _ in range(10)), delay_s=3, sleep=clock.sleep)
     router = make_router(
         providers={"fake": provider},
         settings=llm_settings(llm_deadline_seconds=5),

@@ -160,9 +160,7 @@ def test_env_overrides() -> None:
 
     none = apply_env_overrides(base, llm_settings(llm_fallback_model="none"))
     assert all(route.fallback == () for route in none.tasks.values())
-    many = apply_env_overrides(
-        base, llm_settings(llm_fallback_model="fake:fallback, openai:other")
-    )
+    many = apply_env_overrides(base, llm_settings(llm_fallback_model="fake:fallback, openai:other"))
     assert [r.key for r in many.tasks["classify"].fallback] == ["fake:fallback", "openai:other"]
 
 
