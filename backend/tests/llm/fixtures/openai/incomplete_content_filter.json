@@ -1,0 +1,39 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "req_test_incomplete_content_filter"
+  },
+  "body": {
+    "id": "resp_test_incomplete_content_filter",
+    "object": "response",
+    "created_at": 1767225600,
+    "status": "incomplete",
+    "model": "gpt-test-2026-01-01",
+    "output": [
+      {
+        "id": "msg_test_incomplete_content_filter",
+        "type": "message",
+        "role": "assistant",
+        "status": "incomplete",
+        "content": []
+      }
+    ],
+    "incomplete_details": {
+      "reason": "content_filter"
+    },
+    "error": null,
+    "store": false,
+    "usage": {
+      "input_tokens": 1000,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 3,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 1003
+    }
+  }
+}

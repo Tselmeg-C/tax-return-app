@@ -1,0 +1,15 @@
+{
+  "status": 400,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "req_test_error_400_context_length"
+  },
+  "body": {
+    "error": {
+      "message": "Your input exceeds the context window of this model.",
+      "type": "invalid_request_error",
+      "param": "input",
+      "code": "context_length_exceeded"
+    }
+  }
+}
