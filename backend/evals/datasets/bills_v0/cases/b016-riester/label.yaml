@@ -1,0 +1,19 @@
+schema_version: 1
+id: b016-riester
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: vorsorge_riester
+  gross_amount: '1925.00'
+  deductible_amount: '1925.00'
+  labour_share_35a: null
+  invoice_date: 2026-02-02
+  payment_date: 2025-12-01
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Vorsorgekasse Beispiel AG
+  person_hint: Alex Muster

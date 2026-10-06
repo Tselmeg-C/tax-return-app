@@ -1,0 +1,20 @@
+schema_version: 1
+id: b020-spende-kontoauszug
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: spenden
+  gross_amount: '150.00'
+  deductible_amount: '150.00'
+  labour_share_35a: null
+  invoice_date: 2025-12-15
+  payment_date: 2025-12-15
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Kinderhilfe Beispiel e.V.
+  person_hint: Sam Muster
+notes: Vereinfachter Nachweis (bis 300 EUR) per Kontoauszug.

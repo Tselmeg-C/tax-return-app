@@ -80,7 +80,7 @@ jobs:
       - name: ruff format --check
         run: uv run ruff format --check .
       - name: mypy
-        run: uv run mypy app
+        run: uv run mypy app evals
       - name: alembic upgrade head
         run: uv run alembic upgrade head
       - name: alembic check
@@ -91,6 +91,10 @@ jobs:
         run: uv run alembic upgrade head
       - name: pytest
         run: uv run pytest
+      - name: evals validate (bills_v0)
+        run: uv run python -m evals.validate --dataset bills_v0
+      - name: evals oracle gate (bills_v0, offline, no secret)
+        run: uv run python -m evals.run --dataset bills_v0 --predictor oracle --gate
 
   frontend:
     name: frontend

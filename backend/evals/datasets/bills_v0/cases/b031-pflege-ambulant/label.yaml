@@ -1,0 +1,19 @@
+schema_version: 1
+id: b031-pflege-ambulant
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: pflege
+  gross_amount: '845.60'
+  deductible_amount: '845.60'
+  labour_share_35a: null
+  invoice_date: 2025-11-01
+  payment_date: 2025-11-05
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Pflegedienst Beispiel gGmbH
+  person_hint: Sam Muster

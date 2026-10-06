@@ -1,0 +1,19 @@
+schema_version: 1
+id: b040-schuldzinsen-darlehen
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: v_schuldzinsen
+  gross_amount: '3184.27'
+  deductible_amount: '3184.27'
+  labour_share_35a: null
+  invoice_date: 2026-01-12
+  payment_date: 2025-12-30
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Musterbank Baufinanzierung eG
+  person_hint: Alex Muster

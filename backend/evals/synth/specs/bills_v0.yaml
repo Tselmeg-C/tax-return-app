@@ -1,0 +1,1460 @@
+# Generator spec for bills_v0: the single source of truth of the dataset.
+#
+# Every case: template, rendering variant, tags, the values printed on the document (`doc`)
+# and the expected label (`expected`, written to label.yaml as is). Vendor, recipient
+# (= expected.person_hint), dates and payment method are printed from `expected` unless
+# `doc` overrides them. Templates check that the printed total equals expected.gross_amount.
+#
+# Everything here is fictional: "Muster" people, "Beispiel" / "Muster" vendors, Musterstadt
+# addresses, masked Steuer-ID and IBAN. Never put real data in this file (the repo is public).
+#
+#   uv run python -m evals.synth --dataset bills_v0          # regenerate
+#   uv run python -m evals.synth --dataset bills_v0 --check  # verify the committed files
+
+seed: 20251005
+
+manifest:
+  name: bills_v0
+  description: >-
+    Synthetic bills and certificates for the bill pipeline (classify, extract, map).
+    Rendered from evals/synth/specs/bills_v0.yaml; fictional people and vendors only.
+  label_schema_version: 1
+  coverage_exempt:
+    wk_homeoffice: "Pauschale without a Beleg; entered in the profile (#13), not extracted from a document."
+    v_afa: "Computed from property data (#13 / #20), no single Beleg represents it."
+  min_cases: 50
+  min_cases_per_group:
+    werbungskosten: 12
+    vorsorge: 6
+    sonderausgaben: 4
+    kind: 3
+    agb: 5
+    haushaltsnahe: 6
+    vermietung: 4
+    kapital: 1
+    irrelevant: 10
+    official_no_category: 4
+  min_category_cases:
+    wk_arbeitsmittel: 2
+    wk_fortbildung: 2
+    spenden: 3
+    kirchensteuer: 1
+    kinderbetreuung: 2
+    schulgeld: 1
+    krankheitskosten: 3
+    pflege: 1
+    behinderung: 1
+    haushaltsnahe_dienstleistung: 3
+    handwerkerleistung: 3
+  min_official_docs: 4
+  min_variant_share:
+    pdf_text: 0.40
+    pdf_scanned: 0.10
+    photo_jpeg: 0.30
+  min_variant_cases:
+    png: 1
+  required_tags:
+    - cash_35a
+    - material_and_labour
+    - mixed_receipt
+    - abfluss_year_boundary
+    - credit_note
+    - multi_page
+    - english_language
+    - duplicate_rephotographed
+    - steuerberatung_split
+    - no_payment_date
+
+cases:
+  # --- werbungskosten ------------------------------------------------------------------
+  - id: b001-arbeitsmittel-notebook
+    template: invoice
+    variant: pdf_text
+    tags: [duplicate_rephotographed]
+    doc: &b001_doc
+      number: R-2025-0412
+      customer_no: K-5521
+      items:
+        - {text: "Notebook 14 Zoll, 16 GB RAM", price: "849.00"}
+        - {text: "Notebooktasche", price: "39.90"}
+    expected: &b001_exp
+      doc_type: generic_bill
+      tax_relevant: true
+      category: wk_arbeitsmittel
+      gross_amount: "888.90"
+      deductible_amount: "888.90"
+      invoice_date: 2025-03-14
+      payment_date: 2025-03-14
+      tax_year: 2025
+      payment_method: card
+      vendor: Technikhaus Beispiel GmbH
+      person_hint: Alex Muster
+    notes: Beruflich genutztes Notebook, netto unter 800 EUR (GWG), voll im Jahr der Zahlung.
+
+  - id: b002-arbeitsmittel-notebook-foto
+    template: invoice
+    variant: photo_jpeg
+    tags: [duplicate_rephotographed]
+    doc: *b001_doc
+    expected: *b001_exp
+    notes: Dieselbe Rechnung wie b001, abfotografiert.
+
+  - id: b003-fortbildung-seminar
+    template: invoice
+    variant: pdf_scanned
+    doc:
+      number: A-25-118
+      vat_rate: "0"
+      vat_note: Umsatzsteuerfrei nach § 4 Nr. 21 UStG.
+      items:
+        - {text: "Seminar Projektmanagement Grundlagen (2 Tage)", price: "590.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: wk_fortbildung
+      gross_amount: "590.00"
+      deductible_amount: "590.00"
+      invoice_date: 2025-04-22
+      payment_date: 2025-05-06
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Akademie Beispiel e.V.
+      person_hint: Alex Muster
+
+  - id: b004-fortbildung-online-course-en
+    template: invoice
+    variant: pdf_text
+    tags: [english_language]
+    doc:
+      lang: en
+      number: INV-77120
+      items:
+        - {text: "Online course: Data Analysis Fundamentals", price: "249.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: wk_fortbildung
+      gross_amount: "249.00"
+      deductible_amount: "249.00"
+      invoice_date: 2025-09-02
+      payment_date: 2025-09-02
+      tax_year: 2025
+      payment_method: paypal
+      vendor: Example Learning Ltd
+      person_hint: Sam Muster
+    notes: Englischsprachige Rechnung eines Online-Kurses, beruflich veranlasst.
+
+  - id: b005-fortbildung-sprachkurs
+    template: invoice
+    variant: photo_jpeg
+    doc:
+      number: SK-2025-031
+      vat_rate: "0"
+      vat_note: Umsatzsteuerfrei nach § 4 Nr. 21 UStG.
+      items:
+        - {text: "Business English B2, 12 Abende", price: "360.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: wk_fortbildung
+      gross_amount: "360.00"
+      deductible_amount: "360.00"
+      invoice_date: 2025-01-28
+      payment_date: 2025-02-10
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Sprachschule Muster
+      person_hint: Sam Muster
+
+  - id: b006-fahrtkosten-dienstreise
+    template: invoice
+    variant: photo_jpeg
+    doc:
+      title: Fahrkarte und Rechnung
+      number: FK-889301
+      vat_rate: "7"
+      items:
+        - {text: "Musterstadt - Beispielhausen und zurück, 2. Klasse", price: "118.40"}
+      notes: ["Reisezweck laut Kunde: Dienstreise (Kundentermin)."]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: wk_fahrtkosten
+      gross_amount: "118.40"
+      deductible_amount: "118.40"
+      invoice_date: 2025-06-02
+      payment_date: 2025-06-02
+      tax_year: 2025
+      payment_method: card
+      vendor: Schienenverkehr Muster AG
+      person_hint: Alex Muster
+    notes: Dienstreise, vom Arbeitgeber nicht erstattet.
+
+  - id: b007-arbeitszimmer-einbauregal
+    template: invoice
+    variant: pdf_text
+    doc:
+      number: 2025-0277
+      items:
+        - {text: "Einbauregal für das häusliche Arbeitszimmer", price: "1240.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: wk_arbeitszimmer
+      gross_amount: "1240.00"
+      deductible_amount: "1240.00"
+      invoice_date: 2025-08-12
+      payment_date: 2025-08-20
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Schreinerei Beispiel GmbH
+      person_hint: Alex Muster
+    notes: Ausstattung des Arbeitszimmers (Mittelpunkt der Tätigkeit laut Profil).
+
+  - id: b008-bewerbung-fotos
+    template: receipt
+    variant: photo_jpeg
+    doc:
+      number: "0815"
+      time: "15:12"
+      given: "70.00"
+      items:
+        - {text: "Bewerbungsfotos digital", price: "49.00"}
+        - {text: "Abzüge 4 Stk.", price: "12.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: wk_bewerbung
+      gross_amount: "61.00"
+      deductible_amount: "61.00"
+      invoice_date: 2025-07-03
+      payment_date: 2025-07-03
+      tax_year: 2025
+      payment_method: cash
+      vendor: Fotostudio Muster
+      person_hint: null
+
+  - id: b009-kontofuehrung
+    template: bank_statement
+    variant: pdf_text
+    doc:
+      number: "12/2025"
+      balance: "2318.44"
+      rows:
+        - {date: "30.12.2025", text: "Entgelt Kontoführung 2025 (Gehaltskonto)", amount: "-60.00", relevant: true}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: wk_kontofuehrung
+      gross_amount: "60.00"
+      deductible_amount: "60.00"
+      invoice_date: 2025-12-30
+      payment_date: 2025-12-30
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Musterbank eG
+      person_hint: Alex Muster
+    notes: Tatsächliches Entgelt gelabelt; die Pauschale wendet die Engine an.
+
+  - id: b010-berufsverband-gewerkschaft
+    template: contribution_statement
+    variant: pdf_scanned
+    doc:
+      title: Beitragsbescheinigung 2025
+      member_no: G-2210
+      rows:
+        - {text: "Mitgliedsbeiträge Januar bis Dezember 2025 (12 x 24,50 €)", amount: "294.00"}
+      notes: ["Die Beiträge wurden monatlich, zuletzt am 31.12.2025, per Lastschrift eingezogen."]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: wk_berufsverband
+      gross_amount: "294.00"
+      deductible_amount: "294.00"
+      invoice_date: 2026-01-15
+      payment_date: 2025-12-31
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Gewerkschaft Musterberufe
+      person_hint: Alex Muster
+
+  - id: b011-doppelte-haushaltsfuehrung
+    template: invoice
+    variant: photo_jpeg
+    doc:
+      title: Mietbescheinigung Zweitwohnung 2025
+      vat_rate: "0"
+      vat_note: Wohnraumvermietung, umsatzsteuerfrei.
+      bank_line: false
+      payment_text: Die Miete wurde monatlich, zuletzt am 01.12.2025, per Dauerauftrag überwiesen.
+      items:
+        - {text: "Miete Zweitwohnung Beispielhausen am Beschäftigungsort", qty: "12", price: "450.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: wk_doppelte_haushaltsfuehrung
+      gross_amount: "5400.00"
+      deductible_amount: "5400.00"
+      invoice_date: 2025-12-15
+      payment_date: 2025-12-01
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Hausverwaltung Beispiel GmbH
+      person_hint: Alex Muster
+    notes: Kappung (1 000 EUR / Monat) macht die Engine, nicht das Label.
+
+  - id: b012-steuerberatung-split
+    template: invoice
+    variant: pdf_text
+    tags: [steuerberatung_split]
+    doc:
+      number: StB-2025-044
+      items:
+        - {text: "Anlage N und Werbungskosten (beruflich)", price: "240.00"}
+        - {text: "Haushaltsnahe Aufwendungen, Sonderausgaben (privat)", price: "160.00"}
+      notes:
+        - "Aufteilung: beruflich veranlasst 240,00 €, privat 160,00 € (jeweils inkl. USt)."
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: steuerberatung
+      gross_amount: "400.00"
+      deductible_amount: "240.00"
+      invoice_date: 2025-03-28
+      payment_date: 2025-04-10
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Steuerberatung Muster & Partner
+      person_hint: Alex Muster
+    notes: Nur der beruflich veranlasste Teil zählt (Werbungskosten).
+
+  # --- vorsorge ------------------------------------------------------------------------
+  - id: b013-kv-pv-krankenkasse
+    template: contribution_statement
+    variant: pdf_text
+    doc:
+      title: Bescheinigung über Beiträge zur Kranken- und Pflegeversicherung 2025
+      member_no: KV-30817
+      rows:
+        - {text: "Krankenversicherung (Basisabsicherung) 2025", amount: "4210.80"}
+        - {text: "Pflegeversicherung 2025", amount: "1012.20"}
+      notes: ["Die Beiträge wurden monatlich, zuletzt am 15.12.2025, per Lastschrift eingezogen."]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: vorsorge_kv_pv
+      gross_amount: "5223.00"
+      deductible_amount: "5223.00"
+      invoice_date: 2026-01-20
+      payment_date: 2025-12-15
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Krankenkasse Beispiel
+      person_hint: Sam Muster
+
+  - id: b014-kv-pv-privat
+    template: contribution_statement
+    variant: photo_jpeg
+    doc:
+      title: Beitragsbescheinigung 2025 (Basisabsicherung)
+      member_no: PKV-1188
+      rows:
+        - {text: "Krankenversicherung, Anteil Basisabsicherung", amount: "3600.00"}
+        - {text: "Private Pflegepflichtversicherung", amount: "420.00"}
+      notes: ["Die Beiträge wurden monatlich, zuletzt am 01.12.2025, per Lastschrift eingezogen."]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: vorsorge_kv_pv
+      gross_amount: "4020.00"
+      deductible_amount: "4020.00"
+      invoice_date: 2026-01-08
+      payment_date: 2025-12-01
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Private Krankenversicherung Beispiel AG
+      person_hint: Alex Muster
+
+  - id: b015-rv-freiwillig
+    template: contribution_statement
+    variant: pdf_scanned
+    doc:
+      title: Bescheinigung über freiwillige Beiträge 2025
+      member_no: RV-6402
+      rows:
+        - {text: "Freiwillige Beiträge zur gesetzlichen Rentenversicherung 2025", amount: "1200.00"}
+      notes: ["Die Beiträge wurden monatlich, zuletzt am 28.12.2025, per Lastschrift eingezogen."]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: vorsorge_rv
+      gross_amount: "1200.00"
+      deductible_amount: "1200.00"
+      invoice_date: 2026-01-22
+      payment_date: 2025-12-28
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Rentenkasse Musterland
+      person_hint: Sam Muster
+
+  - id: b016-riester
+    template: contribution_statement
+    variant: pdf_text
+    doc:
+      title: Bescheinigung nach § 92 EStG für das Beitragsjahr 2025 (Altersvorsorgevertrag)
+      member_no: AV-5530
+      rows:
+        - {text: "Geleistete Altersvorsorgebeiträge (Eigenbeiträge) 2025", amount: "1925.00"}
+      notes:
+        - "Die Beiträge wurden monatlich, zuletzt am 01.12.2025, per Lastschrift eingezogen."
+        - "Zulagen sind in diesem Betrag nicht enthalten."
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: vorsorge_riester
+      gross_amount: "1925.00"
+      deductible_amount: "1925.00"
+      invoice_date: 2026-02-02
+      payment_date: 2025-12-01
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Vorsorgekasse Beispiel AG
+      person_hint: Alex Muster
+
+  - id: b017-ruerup
+    template: contribution_statement
+    variant: photo_jpeg
+    doc:
+      title: Bescheinigung über Beiträge zu einem Basisrentenvertrag 2025
+      member_no: BR-7710
+      rows:
+        - {text: "Beiträge zum Basisrentenvertrag 2025", amount: "2400.00"}
+      notes: ["Die Beiträge wurden monatlich, zuletzt am 01.12.2025, per Lastschrift eingezogen."]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: vorsorge_ruerup
+      gross_amount: "2400.00"
+      deductible_amount: "2400.00"
+      invoice_date: 2026-01-30
+      payment_date: 2025-12-01
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Basisrente Muster Versicherungs-AG
+      person_hint: Sam Muster
+
+  - id: b018-haftpflicht
+    template: contribution_statement
+    variant: png
+    doc:
+      title: Beitragsrechnung Privathaftpflichtversicherung 2025
+      member_no: HV-9914
+      total_label: Zu zahlender Jahresbeitrag
+      rows:
+        - {text: "Privathaftpflicht Familie, 01.01.2025 bis 31.12.2025", amount: "89.50"}
+      notes: ["Der Beitrag wurde am 02.01.2025 per Lastschrift eingezogen."]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: vorsorge_sonstige
+      gross_amount: "89.50"
+      deductible_amount: "89.50"
+      invoice_date: 2024-12-01
+      payment_date: 2025-01-02
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Versicherung Beispiel VVaG
+      person_hint: Alex Muster
+    notes: Rechnung von 2024, Abfluss 2025.
+
+  # --- sonderausgaben ------------------------------------------------------------------
+  - id: b019-spende-zuwendungsbestaetigung
+    template: donation_receipt
+    variant: pdf_text
+    doc:
+      purpose: des Tierschutzes
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: spenden
+      gross_amount: "350.00"
+      deductible_amount: "350.00"
+      invoice_date: 2026-01-31
+      payment_date: 2025-10-01
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Tierschutzverein Muster e.V.
+      person_hint: Alex Muster
+
+  - id: b020-spende-kontoauszug
+    template: bank_statement
+    variant: photo_jpeg
+    doc:
+      number: "12/2025"
+      rows:
+        - date: "15.12.2025"
+          text: "Überweisung an Kinderhilfe Beispiel e.V."
+          details: ["Verwendungszweck: Spende Hochwasserhilfe"]
+          amount: "-150.00"
+          relevant: true
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: spenden
+      gross_amount: "150.00"
+      deductible_amount: "150.00"
+      invoice_date: 2025-12-15
+      payment_date: 2025-12-15
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Kinderhilfe Beispiel e.V.
+      person_hint: Sam Muster
+    notes: Vereinfachter Nachweis (bis 300 EUR) per Kontoauszug.
+
+  - id: b021-sachspende
+    template: donation_receipt
+    variant: pdf_scanned
+    doc:
+      kind: sach
+      purpose: mildtätiger Zwecke
+      sach_description: "Gebrauchte Winterbekleidung (5 Jacken, gut erhalten), Wert nach Marktpreis"
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: spenden
+      gross_amount: "120.00"
+      deductible_amount: "120.00"
+      invoice_date: 2025-11-25
+      payment_date: 2025-11-20
+      tax_year: 2025
+      payment_method: other
+      vendor: Kleiderkammer Beispiel e.V.
+      person_hint: Sam Muster
+    notes: Sachspende; payment_date = Tag der Zuwendung.
+
+  - id: b022-kirchensteuer-nachzahlung
+    template: bank_statement
+    variant: pdf_text
+    doc:
+      number: "05/2025"
+      rows:
+        - date: "12.05.2025"
+          text: "Überweisung an Finanzamt Musterstadt"
+          details: ["Kirchensteuer Nachzahlung 2023"]
+          amount: "-212.40"
+          relevant: true
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: kirchensteuer
+      gross_amount: "212.40"
+      deductible_amount: "212.40"
+      invoice_date: 2025-05-12
+      payment_date: 2025-05-12
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Finanzamt Musterstadt
+      person_hint: Alex Muster
+    notes: Nachzahlung zählt im Jahr der Zahlung.
+
+  # --- kind ----------------------------------------------------------------------------
+  - id: b023-kita-jahresbescheinigung
+    template: fee_statement
+    variant: pdf_text
+    doc:
+      child: Kim Muster
+      rows:
+        - {text: "Betreuungsentgelt Januar bis Dezember 2025 (12 x 210,00 €)", amount: "2520.00"}
+        - {text: "Verpflegungsgeld 2025 (12 x 55,00 €)", amount: "660.00"}
+      payment_line_text: Die Beträge wurden monatlich, zuletzt am 01.12.2025, per Lastschrift eingezogen.
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: kinderbetreuung
+      gross_amount: "3180.00"
+      deductible_amount: "2520.00"
+      invoice_date: 2026-01-10
+      payment_date: 2025-12-01
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Kita Sonnenschein Muster
+      person_hint: Sam Muster
+    notes: Nur Betreuung, nicht Verpflegung.
+
+  - id: b024-tagesmutter
+    template: fee_statement
+    variant: photo_jpeg
+    doc:
+      title: Bescheinigung Kindertagespflege 2025
+      child: Kim Muster
+      rows:
+        - {text: "Betreuung Januar bis Juli 2025 (7 x 300,00 €)", amount: "2100.00"}
+      payment_line_text: Die Beträge wurden monatlich, zuletzt am 01.07.2025, überwiesen.
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: kinderbetreuung
+      gross_amount: "2100.00"
+      deductible_amount: "2100.00"
+      invoice_date: 2025-08-04
+      payment_date: 2025-07-01
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Kindertagespflege Beispiel
+      person_hint: Sam Muster
+
+  - id: b025-schulgeld
+    template: fee_statement
+    variant: pdf_scanned
+    doc:
+      title: Bescheinigung über gezahltes Schulgeld 2025
+      child: Kim Muster
+      rows:
+        - {text: "Schulgeld 2025 (12 x 180,00 €)", amount: "2160.00"}
+        - {text: "Mittagessen 2025", amount: "540.00"}
+      payment_line_text: Die Beträge wurden monatlich, zuletzt am 03.12.2025, per Lastschrift eingezogen.
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: schulgeld
+      gross_amount: "2700.00"
+      deductible_amount: "2160.00"
+      invoice_date: 2026-01-14
+      payment_date: 2025-12-03
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Freie Schule Beispielstadt gGmbH
+      person_hint: Alex Muster
+    notes: Ohne Verpflegung; die 30 %-Regel und die Kappung macht die Engine.
+
+  - id: b026-kita-gutschrift
+    template: fee_statement
+    variant: pdf_text
+    tags: [credit_note]
+    doc:
+      title: Gutschrift Betreuungsentgelt
+      number: GS-2025-09
+      child: Kim Muster
+      total_label: Gutschriftbetrag
+      rows:
+        - {text: "Erstattung Betreuungsentgelt August 2025 (Schließzeit)", amount: "-120.00"}
+      payment_line_text: Der Betrag wurde Ihrem Konto am 15.09.2025 gutgeschrieben.
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: kinderbetreuung
+      gross_amount: "-120.00"
+      deductible_amount: "-120.00"
+      invoice_date: 2025-09-05
+      payment_date: 2025-09-15
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Kita Sonnenschein Muster
+      person_hint: Sam Muster
+    notes: Erstattung mindert die Kinderbetreuungskosten (negativ).
+
+  # --- agb -----------------------------------------------------------------------------
+  - id: b027-zahnarzt-offen
+    template: invoice
+    variant: pdf_text
+    tags: [no_payment_date]
+    doc:
+      title: Privatliquidation
+      number: ZA-25-1907
+      vat_rate: "0"
+      vat_note: Heilbehandlung, umsatzsteuerfrei.
+      items:
+        - {text: "Wurzelkanalbehandlung Zahn 36", price: "186.30"}
+        - {text: "Röntgenaufnahme", price: "32.40"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: krankheitskosten
+      gross_amount: "218.70"
+      deductible_amount: "218.70"
+      invoice_date: 2025-10-14
+      payment_date: null
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Zahnarztpraxis Dr. Beispiel
+      person_hint: Sam Muster
+    notes: Keine Zahlung sichtbar; tax_year nach Rechnungsdatum.
+
+  - id: b028-apotheke-gemischt
+    template: receipt
+    variant: photo_jpeg
+    tags: [mixed_receipt]
+    doc:
+      number: "4471"
+      time: "18:03"
+      given: "30.00"
+      items:
+        - {text: "Ibuprofen 400 Zuzahlung", price: "5.00", marker: "R"}
+        - {text: "Antibiotikum Zuzahlung", price: "5.00", marker: "R"}
+        - {text: "Gesichtscreme", price: "12.95"}
+        - {text: "Lippenpflege", price: "3.49"}
+      notes: ["R = auf Rezept / ärztliche Verordnung"]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: krankheitskosten
+      gross_amount: "26.44"
+      deductible_amount: "10.00"
+      invoice_date: 2025-02-18
+      payment_date: 2025-02-18
+      tax_year: 2025
+      payment_method: cash
+      vendor: Apotheke am Musterplatz
+      person_hint: null
+    notes: Nur die Rezept-Positionen zählen, Kosmetik nicht.
+
+  - id: b029-optiker-brille
+    template: invoice
+    variant: pdf_scanned
+    doc:
+      number: OB-3302
+      items:
+        - {text: "Brillengläser nach ärztlicher Verordnung", price: "420.00"}
+        - {text: "Brillenfassung", price: "180.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: krankheitskosten
+      gross_amount: "600.00"
+      deductible_amount: "600.00"
+      invoice_date: 2025-03-28
+      payment_date: 2025-03-28
+      tax_year: 2025
+      payment_method: card
+      vendor: Optik Beispiel
+      person_hint: Alex Muster
+
+  - id: b030-physiotherapie
+    template: invoice
+    variant: photo_jpeg
+    doc:
+      number: PT-25-560
+      vat_rate: "0"
+      vat_note: Heilbehandlung, umsatzsteuerfrei.
+      items:
+        - {text: "Krankengymnastik laut Verordnung", qty: "6", price: "28.50"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: krankheitskosten
+      gross_amount: "171.00"
+      deductible_amount: "171.00"
+      invoice_date: 2025-06-20
+      payment_date: 2025-06-30
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Physiotherapie Muster
+      person_hint: Sam Muster
+
+  - id: b031-pflege-ambulant
+    template: invoice
+    variant: pdf_text
+    doc:
+      number: PD-2025-10-118
+      vat_rate: "0"
+      vat_note: Pflegeleistungen, umsatzsteuerfrei.
+      items:
+        - {text: "Pflegeleistungen Oktober 2025 (Eigenanteil nach Abzug Pflegekasse)", price: "845.60"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: pflege
+      gross_amount: "845.60"
+      deductible_amount: "845.60"
+      invoice_date: 2025-11-01
+      payment_date: 2025-11-05
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Pflegedienst Beispiel gGmbH
+      person_hint: Sam Muster
+
+  - id: b032-behinderung-fahrdienst
+    template: invoice
+    variant: photo_jpeg
+    doc:
+      number: FD-0425
+      vat_rate: "7"
+      items:
+        - {text: "Fahrdienst für Menschen mit Behinderung (Merkzeichen aG)", qty: "8", price: "24.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: behinderung
+      gross_amount: "192.00"
+      deductible_amount: "192.00"
+      invoice_date: 2025-04-25
+      payment_date: 2025-04-30
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Fahrdienst Beispiel
+      person_hint: Alex Muster
+
+  # --- haushaltsnahe (§35a) ------------------------------------------------------------
+  - id: b033-reinigung
+    template: invoice_35a
+    variant: pdf_text
+    doc:
+      number: RS-2025-061
+      service_period: Juni 2025
+      items:
+        - {text: "Unterhaltsreinigung Wohnung, Termine à 3 Std.", kind: labour, qty: "10", price: "75.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: haushaltsnahe_dienstleistung
+      gross_amount: "750.00"
+      deductible_amount: "750.00"
+      labour_share_35a: "750.00"
+      invoice_date: 2025-06-30
+      payment_date: 2025-07-05
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Reinigungsservice Muster GmbH
+      person_hint: Sam Muster
+
+  - id: b034-gartenpflege
+    template: invoice_35a
+    variant: photo_jpeg
+    doc:
+      number: GS-1127
+      items:
+        - {text: "Rasenmähen und Heckenschnitt", kind: labour, qty: "4", price: "48.00"}
+        - {text: "Häcksler (Maschineneinsatz)", kind: machine, price: "25.00"}
+        - {text: "Entsorgung Grünschnitt (Deponiegebühr)", kind: material, price: "30.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: haushaltsnahe_dienstleistung
+      gross_amount: "247.00"
+      deductible_amount: "217.00"
+      labour_share_35a: "217.00"
+      invoice_date: 2025-09-03
+      payment_date: 2025-09-12
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Gartenservice Beispiel
+      person_hint: Alex Muster
+
+  - id: b035-haushaltshilfe
+    template: invoice_35a
+    variant: pdf_scanned
+    doc:
+      number: HH-10-2025
+      service_period: Oktober 2025
+      items:
+        - {text: "Haushaltshilfe (Stunden)", kind: labour, qty: "12", price: "32.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: haushaltsnahe_dienstleistung
+      gross_amount: "384.00"
+      deductible_amount: "384.00"
+      labour_share_35a: "384.00"
+      invoice_date: 2025-10-31
+      payment_date: 2025-11-03
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Haushaltshilfe Muster GmbH
+      person_hint: Sam Muster
+
+  - id: b036-maler-material-arbeit
+    template: invoice_35a
+    variant: pdf_text
+    tags: [material_and_labour]
+    doc:
+      number: MB-2025-0512
+      items:
+        - {text: "Wände streichen Wohnzimmer (Stunden)", kind: labour, qty: "14", price: "52.00"}
+        - {text: "Anfahrtspauschale", kind: travel, price: "35.00"}
+        - {text: "Wandfarbe und Abdeckmaterial", kind: material, price: "186.40"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: handwerkerleistung
+      gross_amount: "949.40"
+      deductible_amount: "763.00"
+      labour_share_35a: "763.00"
+      invoice_date: 2025-05-12
+      payment_date: 2025-05-20
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Malerbetrieb Beispiel GmbH
+      person_hint: Alex Muster
+    notes: Nur Arbeits- und Fahrtkosten, nicht Material.
+
+  - id: b037-handwerker-bar
+    template: invoice_35a
+    variant: photo_jpeg
+    tags: [cash_35a]
+    doc:
+      number: SM-25-3310
+      items:
+        - {text: "Reparatur Wasserhahn Küche (Stunden)", kind: labour, qty: "2", price: "65.00"}
+        - {text: "Anfahrt", kind: travel, price: "50.00"}
+        - {text: "Kartusche und Dichtungen", kind: material, price: "132.40"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: handwerkerleistung
+      gross_amount: "312.40"
+      deductible_amount: "0.00"
+      labour_share_35a: "180.00"
+      invoice_date: 2025-11-03
+      payment_date: 2025-11-03
+      tax_year: 2025
+      payment_method: cash
+      vendor: Sanitär Muster Meisterbetrieb
+      person_hint: Alex Muster
+    notes: Barzahlung, daher kein §35a.
+
+  - id: b038-heizung-jahreswechsel
+    template: invoice_35a
+    variant: pdf_text
+    tags: [abfluss_year_boundary]
+    doc:
+      number: HB-2025-1218
+      items:
+        - {text: "Wartung Gasheizung", kind: labour, price: "149.00"}
+        - {text: "Anfahrt", kind: travel, price: "39.00"}
+        - {text: "Filter und Dichtungssatz", kind: material, price: "46.20"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: handwerkerleistung
+      gross_amount: "234.20"
+      deductible_amount: "188.00"
+      labour_share_35a: "188.00"
+      invoice_date: 2025-12-18
+      payment_date: 2026-01-08
+      tax_year: 2026
+      payment_method: bank_transfer
+      vendor: Heizungsbau Beispiel GmbH
+      person_hint: Sam Muster
+    notes: Abfluss-Prinzip, bezahlt 2026.
+
+  - id: b039-schornsteinfeger
+    template: invoice_35a
+    variant: png
+    doc:
+      number: SF-0310
+      items:
+        - {text: "Feuerstättenschau und Abgasmessung", kind: labour, price: "96.50"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: handwerkerleistung
+      gross_amount: "96.50"
+      deductible_amount: "96.50"
+      labour_share_35a: "96.50"
+      invoice_date: 2025-03-10
+      payment_date: 2025-03-20
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Schornsteinfegermeister Beispiel
+      person_hint: Alex Muster
+
+  # --- vermietung ----------------------------------------------------------------------
+  - id: b040-schuldzinsen-darlehen
+    template: loan_interest
+    variant: pdf_text
+    doc:
+      object: Musterweg 5, 12345 Musterstadt (vermietete Wohnung)
+      rows:
+        - {text: "Gezahlte Sollzinsen 01.01.2025 bis 31.12.2025", amount: "3184.27"}
+      notes: ["Die Raten wurden monatlich, zuletzt am 30.12.2025, per Lastschrift eingezogen."]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: v_schuldzinsen
+      gross_amount: "3184.27"
+      deductible_amount: "3184.27"
+      invoice_date: 2026-01-12
+      payment_date: 2025-12-30
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Musterbank Baufinanzierung eG
+      person_hint: Alex Muster
+
+  - id: b041-erhaltung-bad-mehrseitig
+    template: invoice
+    variant: pdf_text
+    tags: [multi_page]
+    doc:
+      title: Schlussrechnung Badsanierung, vermietete Wohnung Musterweg 5
+      number: BU-2025-1015
+      items_per_page: 4
+      page_text: Fortsetzung auf der nächsten Seite.
+      items:
+        - {text: "Abbruch alte Fliesen", price: "640.00"}
+        - {text: "Entsorgung Bauschutt", price: "280.00"}
+        - {text: "Estricharbeiten", price: "520.00"}
+        - {text: "Abdichtung Duschbereich", price: "410.00"}
+        - {text: "Wandfliesen liefern", price: "760.00"}
+        - {text: "Wandfliesen verlegen", price: "980.00"}
+        - {text: "Bodenfliesen liefern und verlegen", price: "890.00"}
+        - {text: "Sanitärobjekte montieren", price: "690.00"}
+        - {text: "Elektroarbeiten Beleuchtung", price: "345.00"}
+        - {text: "Endreinigung", price: "120.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: v_erhaltung
+      gross_amount: "5635.00"
+      deductible_amount: "5635.00"
+      invoice_date: 2025-10-15
+      payment_date: 2025-10-28
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Bauunternehmen Beispiel GmbH
+      person_hint: Alex Muster
+    notes: Drei Seiten, Gesamtbetrag nur auf der letzten Seite.
+
+  - id: b042-grundsteuer-vermietung
+    template: invoice
+    variant: pdf_scanned
+    doc:
+      title: Abgabenbescheid 2025 (Grundsteuer B), Musterweg 5 (vermietet)
+      vat_rate: "0"
+      total_label: Jahresbetrag
+      bank_line: false
+      payment_text: Die Raten wurden zum 15.02., 15.05., 15.08. und 15.11.2025 per Lastschrift eingezogen.
+      items:
+        - {text: "Grundsteuer B 2025 (Vierteljahresraten)", qty: "4", price: "98.25"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: v_nebenkosten
+      gross_amount: "393.00"
+      deductible_amount: "393.00"
+      invoice_date: 2025-01-20
+      payment_date: 2025-11-15
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Stadtkasse Musterstadt
+      person_hint: Alex Muster
+
+  - id: b043-gebaeudeversicherung
+    template: contribution_statement
+    variant: photo_jpeg
+    doc:
+      title: Beitragsrechnung 2025 Wohngebäudeversicherung Musterweg 5 (vermietet)
+      member_no: WG-2024
+      total_label: Jahresbeitrag
+      rows:
+        - {text: "Wohngebäudeversicherung 01.02.2025 bis 31.01.2026", amount: "486.00"}
+      notes: ["Der Beitrag wurde am 01.02.2025 per Lastschrift eingezogen."]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: v_nebenkosten
+      gross_amount: "486.00"
+      deductible_amount: "486.00"
+      invoice_date: 2025-01-05
+      payment_date: 2025-02-01
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Gebäudeversicherung Beispiel AG
+      person_hint: Alex Muster
+
+  # --- kapital -------------------------------------------------------------------------
+  - id: b044-jahressteuerbescheinigung
+    template: jstb
+    variant: pdf_text
+    doc:
+      rows:
+        - {text: "Höhe der Kapitalerträge", amount: "1240.55", total: true}
+        - {text: "davon Dividenden", amount: "640.20"}
+        - {text: "In Anspruch genommener Sparer-Pauschbetrag", amount: "1000.00"}
+        - {text: "Kapitalertragsteuer", amount: "60.14"}
+        - {text: "Solidaritätszuschlag", amount: "3.31"}
+    expected:
+      doc_type: jahressteuerbescheinigung
+      tax_relevant: true
+      category: kapital_bescheinigung
+      gross_amount: "1240.55"
+      deductible_amount: "0.00"
+      invoice_date: 2026-02-10
+      payment_date: null
+      tax_year: 2025
+      payment_method: unknown
+      vendor: Musterbank Depot eG
+      person_hint: Alex Muster
+    notes: Bescheinigungsjahr 2025; gross = Kapitalerträge, kein Abzugsbetrag.
+
+  # --- irrelevant ----------------------------------------------------------------------
+  - id: b045-supermarkt-lebensmittel
+    template: receipt
+    variant: photo_jpeg
+    doc:
+      number: "2291"
+      time: "17:48"
+      items:
+        - {text: "Vollmilch 1 l", price: "1.19"}
+        - {text: "Bauernbrot", price: "2.49"}
+        - {text: "Äpfel 1 kg", price: "2.99"}
+        - {text: "Gouda Scheiben", price: "3.79"}
+        - {text: "Spaghetti", price: "0.99"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "11.45"
+      deductible_amount: "0.00"
+      invoice_date: 2025-03-08
+      payment_date: 2025-03-08
+      tax_year: 2025
+      payment_method: card
+      vendor: Frischmarkt Muster
+      person_hint: null
+
+  - id: b046-restaurant
+    template: receipt
+    variant: pdf_scanned
+    doc:
+      number: "118"
+      time: "20:31"
+      given: "50.00"
+      items:
+        - {text: "Schnitzel mit Salat", qty: "2", price: "16.90"}
+        - {text: "Apfelschorle", qty: "2", price: "3.20"}
+        - {text: "Espresso", price: "2.60"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "42.80"
+      deductible_amount: "0.00"
+      invoice_date: 2025-08-15
+      payment_date: 2025-08-15
+      tax_year: 2025
+      payment_method: cash
+      vendor: Gasthaus Zur Beispiellinde
+      person_hint: null
+
+  - id: b047-kleidung
+    template: invoice
+    variant: pdf_text
+    doc:
+      number: WEB-551208
+      items:
+        - {text: "Winterjacke", price: "129.95"}
+        - {text: "Jeans", price: "59.95"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "189.90"
+      deductible_amount: "0.00"
+      invoice_date: 2025-10-20
+      payment_date: 2025-10-20
+      tax_year: 2025
+      payment_method: paypal
+      vendor: Modehaus Beispiel
+      person_hint: Sam Muster
+
+  - id: b048-elektronik-privat
+    template: invoice
+    variant: photo_jpeg
+    doc:
+      number: EM-77310
+      items:
+        - {text: "Spielekonsole", price: "449.00"}
+        - {text: "Zusätzlicher Controller", price: "59.99"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "508.99"
+      deductible_amount: "0.00"
+      invoice_date: 2025-11-28
+      payment_date: 2025-11-28
+      tax_year: 2025
+      payment_method: card
+      vendor: Elektromarkt Muster
+      person_hint: Sam Muster
+
+  - id: b049-tanken-privat
+    template: receipt
+    variant: photo_jpeg
+    doc:
+      number: "7702"
+      time: "08:15"
+      header_lines: ["Zapfsäule 4"]
+      items:
+        - {text: "Super E10 42,15 l", price: "72.46"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "72.46"
+      deductible_amount: "0.00"
+      invoice_date: 2025-06-14
+      payment_date: 2025-06-14
+      tax_year: 2025
+      payment_method: card
+      vendor: Tankstelle Beispiel
+      person_hint: null
+    notes: Privates Tanken; Fahrten zur Arbeit deckt die Entfernungspauschale ab.
+
+  - id: b050-kino
+    template: receipt
+    variant: pdf_text
+    doc:
+      number: "0342"
+      time: "19:55"
+      items:
+        - {text: "Eintritt Erwachsene", qty: "2", price: "12.50"}
+        - {text: "Popcorn groß", price: "6.50"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "31.50"
+      deductible_amount: "0.00"
+      invoice_date: 2025-02-22
+      payment_date: 2025-02-22
+      tax_year: 2025
+      payment_method: card
+      vendor: Muster-Lichtspiele
+      person_hint: null
+
+  - id: b051-spielzeug
+    template: invoice
+    variant: png
+    doc:
+      number: SV-20251205
+      items:
+        - {text: "Holzeisenbahn Starterset", price: "54.99"}
+        - {text: "Versand", price: "4.95"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "59.94"
+      deductible_amount: "0.00"
+      invoice_date: 2025-12-05
+      payment_date: 2025-12-05
+      tax_year: 2025
+      payment_method: paypal
+      vendor: Spielwaren Beispiel Versand
+      person_hint: Sam Muster
+
+  - id: b052-parkschein
+    template: receipt
+    variant: photo_jpeg
+    doc:
+      number: "P-3318"
+      time: "13:40"
+      given: "10.00"
+      items:
+        - {text: "Parkgebühr 3 Std.", price: "6.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "6.00"
+      deductible_amount: "0.00"
+      invoice_date: 2025-04-12
+      payment_date: 2025-04-12
+      tax_year: 2025
+      payment_method: cash
+      vendor: Parkhaus Musterstadt Mitte
+      person_hint: null
+
+  - id: b053-falle-neubau-elektro
+    template: invoice_35a
+    variant: pdf_text
+    doc:
+      title: Schlussrechnung Neubau Einfamilienhaus, Baugebiet Beispielfeld
+      number: EB-2025-0915
+      show_35a: false
+      items:
+        - {text: "Elektroinstallation Neubau (Stunden)", kind: labour, qty: "40", price: "58.00"}
+        - {text: "Kabel, Dosen, Verteiler", kind: material, price: "1480.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "3800.00"
+      deductible_amount: "0.00"
+      invoice_date: 2025-09-15
+      payment_date: 2025-09-30
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Elektro Beispiel GmbH
+      person_hint: Alex Muster
+    notes: Falle. Neubau ist keine Handwerkerleistung im bestehenden Haushalt (kein §35a).
+
+  - id: b054-falle-sportverein
+    template: contribution_statement
+    variant: pdf_scanned
+    doc:
+      title: Beitragsbescheinigung 2025
+      member_no: SV-0193
+      rows:
+        - {text: "Mitgliedsbeitrag Erwachsene 2025", amount: "180.00"}
+      notes: ["Der Beitrag wurde am 15.01.2025 per Lastschrift eingezogen."]
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "180.00"
+      deductible_amount: "0.00"
+      invoice_date: 2025-12-20
+      payment_date: 2025-01-15
+      tax_year: 2025
+      payment_method: direct_debit
+      vendor: Sportverein Beispiel 1920 e.V.
+      person_hint: Sam Muster
+    notes: Falle. Beiträge an Sportvereine sind keine Spenden und keine Berufsverbandsbeiträge.
+
+  - id: b055-streaming-abo
+    template: invoice
+    variant: pdf_text
+    doc:
+      number: ST-1225-4410
+      items:
+        - {text: "Monatsabo Dezember 2025", price: "13.99"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: false
+      category: irrelevant
+      gross_amount: "13.99"
+      deductible_amount: "0.00"
+      invoice_date: 2025-12-01
+      payment_date: 2025-12-01
+      tax_year: 2025
+      payment_method: paypal
+      vendor: Streamingdienst Beispiel
+      person_hint: Sam Muster
+
+  # --- official documents (category: null) --------------------------------------------
+  - id: b056-lstb-alex
+    template: lstb
+    variant: pdf_text
+    doc:
+      personnel_no: P-0815
+      tax_class: "4"
+      rows:
+        - {nr: "3", text: "Bruttoarbeitslohn", amount: "58400.00"}
+        - {nr: "4", text: "Einbehaltene Lohnsteuer", amount: "9102.00"}
+        - {nr: "5", text: "Einbehaltener Solidaritätszuschlag", amount: "0.00"}
+        - {nr: "6", text: "Einbehaltene Kirchensteuer", amount: "728.16"}
+        - {nr: "23a", text: "Arbeitnehmeranteil Rentenversicherung", amount: "5431.20"}
+        - {nr: "25", text: "Arbeitnehmerbeiträge Krankenversicherung", amount: "4760.00"}
+        - {nr: "26", text: "Arbeitnehmerbeiträge Pflegeversicherung", amount: "1051.20"}
+        - {nr: "27", text: "Arbeitnehmerbeiträge Arbeitslosenversicherung", amount: "759.20"}
+    expected:
+      doc_type: lohnsteuerbescheinigung
+      tax_relevant: true
+      category: null
+      gross_amount: null
+      deductible_amount: "0.00"
+      invoice_date: 2026-02-15
+      payment_date: null
+      tax_year: 2025
+      payment_method: unknown
+      vendor: Beispiel Software GmbH
+      person_hint: Alex Muster
+    notes: Felder gehören in official_record (#18), kein tax_item.
+
+  - id: b057-lstb-sam
+    template: lstb
+    variant: photo_jpeg
+    doc:
+      personnel_no: P-2231
+      tax_class: "4"
+      rows:
+        - {nr: "3", text: "Bruttoarbeitslohn", amount: "31200.00"}
+        - {nr: "4", text: "Einbehaltene Lohnsteuer", amount: "3388.00"}
+        - {nr: "5", text: "Einbehaltener Solidaritätszuschlag", amount: "0.00"}
+        - {nr: "23a", text: "Arbeitnehmeranteil Rentenversicherung", amount: "2901.60"}
+        - {nr: "25", text: "Arbeitnehmerbeiträge Krankenversicherung", amount: "2542.80"}
+        - {nr: "26", text: "Arbeitnehmerbeiträge Pflegeversicherung", amount: "561.60"}
+    expected:
+      doc_type: lohnsteuerbescheinigung
+      tax_relevant: true
+      category: null
+      gross_amount: null
+      deductible_amount: "0.00"
+      invoice_date: 2026-02-20
+      payment_date: null
+      tax_year: 2025
+      payment_method: unknown
+      vendor: Pflegeheim Beispielhaus gGmbH
+      person_hint: Sam Muster
+
+  - id: b058-kindergeld-bescheid
+    template: bescheid
+    variant: pdf_scanned
+    doc:
+      title: Bescheid über Kindergeld
+      file_no: FK 115-22
+      paragraphs:
+        - "Für Ihr Kind Kim Muster wird Kindergeld ab Januar 2025 festgesetzt."
+        - "Das Kindergeld wird monatlich auf Ihr Konto überwiesen."
+      rows:
+        - {text: "Kindergeld ab Januar 2025, monatlich", amount: "255.00"}
+    expected:
+      doc_type: kindergeld_bescheid
+      tax_relevant: true
+      category: null
+      gross_amount: null
+      deductible_amount: "0.00"
+      invoice_date: 2025-02-03
+      payment_date: null
+      tax_year: 2025
+      payment_method: unknown
+      vendor: Familienkasse Musterstadt
+      person_hint: Sam Muster
+
+  - id: b059-elterngeld-bescheid
+    template: bescheid
+    variant: pdf_text
+    doc:
+      title: Bescheid über Elterngeld
+      file_no: EG 2025-0310
+      paragraphs:
+        - "Auf Ihren Antrag wird Elterngeld für den 1. bis 12. Lebensmonat bewilligt."
+        - "Elterngeld unterliegt dem Progressionsvorbehalt."
+      rows:
+        - {text: "Elterngeld 1. bis 12. Lebensmonat, monatlich", amount: "1450.00"}
+    expected:
+      doc_type: elterngeld_bescheid
+      tax_relevant: true
+      category: null
+      gross_amount: null
+      deductible_amount: "0.00"
+      invoice_date: 2025-03-10
+      payment_date: null
+      tax_year: 2025
+      payment_method: unknown
+      vendor: Elterngeldstelle Musterstadt
+      person_hint: Sam Muster
+
+  - id: b060-winterdienst
+    template: invoice_35a
+    variant: pdf_text
+    doc:
+      number: HM-2025-031
+      service_period: Januar bis Februar 2025
+      items:
+        - {text: "Winterdienst Gehweg (Einsätze)", kind: labour, qty: "4", price: "30.00"}
+    expected:
+      doc_type: generic_bill
+      tax_relevant: true
+      category: haushaltsnahe_dienstleistung
+      gross_amount: "120.00"
+      deductible_amount: "120.00"
+      labour_share_35a: "120.00"
+      invoice_date: 2025-03-05
+      payment_date: 2025-03-12
+      tax_year: 2025
+      payment_method: bank_transfer
+      vendor: Hausmeisterservice Beispiel
+      person_hint: Sam Muster

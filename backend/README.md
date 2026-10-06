@@ -10,7 +10,7 @@ Python 3.12 backend (FastAPI, Postgres via SQLAlchemy 2.0 + psycopg 3, Alembic),
 - `app/observability/` — structlog JSON logging + OpenTelemetry (`setup_observability`)
 - `app/worker/` — worker process (`python -m app.worker`; placeholder until #6)
 - `tests/` — pytest suite, incl. tax golden tests (later)
-- `evals/` — LLM eval sets and runner (see `_docs/adlc.md`)
+- `evals/` — LLM eval harness: synthetic dataset `bills_v0`, runner, gate (see `evals/README.md`)
 
 See `plan.md` §4 for the full layout.
 
@@ -52,7 +52,7 @@ Startup fails if `DATABASE_URL` is missing.
 ```bash
 uv run pytest
 uv run ruff check . && uv run ruff format --check .
-uv run mypy app
+uv run mypy app evals
 ```
 
 Tests use a separate database: `TEST_DATABASE_URL`, or `DATABASE_URL` with the name

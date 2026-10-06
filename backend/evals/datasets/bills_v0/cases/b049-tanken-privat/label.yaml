@@ -1,0 +1,20 @@
+schema_version: 1
+id: b049-tanken-privat
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: false
+  category: irrelevant
+  gross_amount: '72.46'
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2025-06-14
+  payment_date: 2025-06-14
+  tax_year: 2025
+  payment_method: card
+  vendor: Tankstelle Beispiel
+  person_hint: null
+notes: Privates Tanken; Fahrten zur Arbeit deckt die Entfernungspauschale ab.

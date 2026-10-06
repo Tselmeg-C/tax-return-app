@@ -1,0 +1,20 @@
+schema_version: 1
+id: b025-schulgeld
+source: synthetic
+file: document.pdf
+variant: pdf_scanned
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: schulgeld
+  gross_amount: '2700.00'
+  deductible_amount: '2160.00'
+  labour_share_35a: null
+  invoice_date: 2026-01-14
+  payment_date: 2025-12-03
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Freie Schule Beispielstadt gGmbH
+  person_hint: Alex Muster
+notes: Ohne Verpflegung; die 30 %-Regel und die Kappung macht die Engine.

@@ -1,0 +1,19 @@
+schema_version: 1
+id: b046-restaurant
+source: synthetic
+file: document.pdf
+variant: pdf_scanned
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: false
+  category: irrelevant
+  gross_amount: '42.80'
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2025-08-15
+  payment_date: 2025-08-15
+  tax_year: 2025
+  payment_method: cash
+  vendor: Gasthaus Zur Beispiellinde
+  person_hint: null

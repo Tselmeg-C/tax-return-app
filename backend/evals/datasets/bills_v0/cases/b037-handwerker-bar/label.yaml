@@ -1,0 +1,21 @@
+schema_version: 1
+id: b037-handwerker-bar
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags:
+- cash_35a
+expected:
+  doc_type: generic_bill
+  tax_relevant: false
+  category: handwerkerleistung
+  gross_amount: '312.40'
+  deductible_amount: '0.00'
+  labour_share_35a: '180.00'
+  invoice_date: 2025-11-03
+  payment_date: 2025-11-03
+  tax_year: 2025
+  payment_method: cash
+  vendor: Sanitär Muster Meisterbetrieb
+  person_hint: Alex Muster
+notes: Barzahlung, daher kein §35a.

@@ -1,0 +1,19 @@
+schema_version: 1
+id: b024-tagesmutter
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: kinderbetreuung
+  gross_amount: '2100.00'
+  deductible_amount: '2100.00'
+  labour_share_35a: null
+  invoice_date: 2025-08-04
+  payment_date: 2025-07-01
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Kindertagespflege Beispiel
+  person_hint: Sam Muster

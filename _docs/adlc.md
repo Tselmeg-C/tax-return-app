@@ -18,13 +18,42 @@ The issue for such a task uses the **llm-feature** template and fills in its
    `backend/evals/` (anonymised inputs + expected output). Pick the metrics
    (e.g. relevance precision/recall, category accuracy, amount exact-match,
    € error) and record a baseline. No real document contents or Steuer-IDs in
-   fixtures.
+   fixtures. The repo is public, so committed datasets are synthetic (generated
+   from a spec by `evals/synth`); real samples stay in the git-ignored
+   `evals/datasets_private/` (#39). Commands (from `backend/`, see
+   `backend/evals/README.md`):
+
+   ```bash
+   uv run python -m evals.synth --dataset bills_v0            # render from the spec
+   uv run python -m evals.validate --dataset bills_v0         # labels, coverage, privacy
+   uv run python -m evals.run --dataset bills_v0 --predictor heuristic \
+       --save-baseline heuristic                               # trivial baseline
+   ```
 3. **Build** — implement the feature against the spec; the eval runner can run
    it end to end.
 4. **Eval gate** — run the eval and compare with the thresholds in the issue
    (and the current default). The PR only merges if the gate passes: a new
    prompt / model / provider becomes default only if it scores ≥ the current
    one. Results go into the PR description.
+
+   ```bash
+   uv run python -m evals.run --dataset bills_v0 --predictor pipeline \
+       --provider openai --model <m> --prompt-version <v> --record <name> --gate
+   uv run python -m evals.run --dataset bills_v0 --predictor replay \
+       --recording <name> --gate                               # offline, in CI
+   ```
+
+   - Thresholds live in `backend/evals/thresholds.yaml` per dataset
+     (`status: proposed | confirmed`); `compare_to` names the baseline
+     (`evals/baselines/<dataset>/<name>.json`) the candidate must not fall
+     below on the `regression.metrics` (± `tolerance`). `--compare-to` overrides
+     it for one run.
+   - Exit codes: `0` pass (or skipped: the predictor's key is not set), `1`
+     gate failed, `2` usage / config / dataset error.
+   - Real runs are recorded once (`--record`, by the user or #27) and replayed
+     in CI (`--predictor replay`); recordings hold prediction fields only, no
+     prompts, raw LLM output or document text.
+   - The PR description gets the run's `report.md`.
 5. **Observe** — after deploy, watch the feature in Grafana: **user override
    rate** (proxy for error rate, since the flow is fully automatic), **cost**
    (€ per document / per call, tokens), latency, schema-validation failure and
