@@ -171,6 +171,7 @@ ERROR_CASES: list[tuple[str, type[LLMError], bool, int | None]] = [
     ("error_404_model", LLMBadRequest, False, 404),
     ("error_429_retry_after", LLMRateLimited, True, 429),
     ("error_429_insufficient_quota", LLMQuotaExceeded, False, 429),
+    ("error_429_credit_balance_exhausted", LLMQuotaExceeded, False, 429),
     ("error_500", LLMUnavailable, True, 500),
     ("error_503", LLMUnavailable, True, 503),
     ("failed", LLMUnavailable, True, None),

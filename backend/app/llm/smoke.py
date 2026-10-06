@@ -11,6 +11,7 @@ import argparse
 import asyncio
 import io
 import logging
+import os
 import sys
 from enum import StrEnum
 
@@ -112,8 +113,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     from app.observability import WORKER_SERVICE_NAME, setup_observability
 
-    observability = setup_observability(WORKER_SERVICE_NAME)
-    # Keep stdout to the one result line; telemetry still goes to OTLP when configured.
+    # Keep stdout to the one result line (warnings only); metrics and spans still go to
+    # OTLP when OTEL_EXPORTER_OTLP_ENDPOINT is set.
+    observability = setup_observability(
+        WORKER_SERVICE_NAME, env={**os.environ, "LOG_LEVEL": "WARNING"}
+    )
     logging.getLogger().setLevel(logging.WARNING)
     try:
         return asyncio.run(_run(args.task))

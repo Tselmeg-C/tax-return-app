@@ -40,6 +40,11 @@ from app.llm.types import ImagePart, LLMRequest, LLMResult, LLMUsage, PdfPart, T
 OPENAI_PROVIDER = "openai"
 PDF_FILENAME = "document.pdf"  # constant: never the original file name
 IMAGE_DETAIL = "high"
+# 429s that are billing problems (permanent), not rate limits. Seen live on 2026-10-06:
+# type "insufficient_quota" with code "credit_balance_exhausted".
+_QUOTA_CODES = frozenset(
+    {"insufficient_quota", "credit_balance_exhausted", "billing_hard_limit_reached"}
+)
 
 # The SDK logs request options (incl. the prompt) at DEBUG and httpx logs URLs at INFO.
 for _name in ("openai", "httpx", "httpcore"):
@@ -224,7 +229,7 @@ class OpenAIProvider:
         if status in (401, 403):
             return self._error(LLMAuthError, request, **kwargs)
         if status == 429:
-            if code == "insufficient_quota":
+            if code in _QUOTA_CODES or exc.type == "insufficient_quota":
                 return self._error(LLMQuotaExceeded, request, **kwargs)
             return self._error(
                 LLMRateLimited, request, retry_after_s=_retry_after_s(headers), **kwargs
