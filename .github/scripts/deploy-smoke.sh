@@ -95,6 +95,7 @@ docker volume create "$VOLUME" >/dev/null
 docker run -d --name "$API" --network "$NET" -p 8000:8000 \
   -v "$VOLUME":/data -e STORAGE_PATH=/data/storage \
   -e DATABASE_URL="$DB_URL" -e APP_ENV=ci -e GIT_SHA="${GITHUB_SHA:-unknown}" \
+  -e LLM_CLASSIFY_MODEL=fake:test -e LLM_EXTRACT_MODEL=fake:test \
   "$API_IMAGE" >/dev/null
 docker run -d --name "$WEB" --network "$NET" -p 3000:3000 \
   -e API_INTERNAL_URL="http://${API}:8000" \
