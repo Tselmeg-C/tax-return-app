@@ -63,6 +63,33 @@ telemetry) and `RAILWAY_GIT_COMMIT_SHA` (→ `/version` `commit` and `vcs.ref.he
 Restart policy is `ON_FAILURE` (max 5 retries). If either process inside `api` dies, honcho
 stops the other and exits non-zero, so Railway restarts the whole container.
 
+## Storage volume (#6)
+
+Uploaded originals live on a Railway **volume on the `api` service** (api and worker are two
+processes in that one container, so both see it). A volume attaches to one service only, so
+`api` runs **one replica**.
+
+- Mount path `/data`, variable `STORAGE_PATH=/data/storage` on `api`. With
+  `APP_ENV=production` the api and the worker refuse to start unless `STORAGE_PATH` is set and
+  absolute, and both write and delete a probe file there at startup (a failure names
+  `STORAGE_PATH`).
+- Railway mounts volumes owned by root, while every app process runs as `belegbot` (uid
+  10001). The image therefore starts as root only in `docker-entrypoint.sh`: it creates
+  `STORAGE_PATH`, chowns it to the app user (first boot only) and `setpriv`s to uid 10001
+  before `exec`ing honcho (or the pre-deploy `alembic upgrade head`). Do not set
+  `RAILWAY_RUN_UID=0`.
+- `drainingSeconds = 15` in `backend/railway.toml`: Railway waits that long after SIGTERM, so
+  honcho can stop the worker (it releases a running job within
+  `WORKER_SHUTDOWN_GRACE_SECONDS=3`, below honcho's 5 s kill wait) and uvicorn.
+- **Uploads in flight during a deploy:** with a volume Railway stops the old deployment before
+  the new one starts, so an upload in that window gets a 5xx; the web UI shows "Upload
+  fehlgeschlagen – bitte erneut hochladen" and the button re-sends the same file. A job that
+  was running is released (or, if the container is killed, re-claimed after its lease) and
+  finishes on the new deployment. Nothing is lost or duplicated (per-household sha256 dedupe).
+- Layout on the volume: `households/<h>/documents/<d>/original` plus `tmp/`. The worker's sweep
+  (startup and every 6 h) removes stale temp files and orphan directories. Backups of
+  `households/`: #24.
+
 ## When a migration fails
 
 The pre-deploy command exits non-zero → the new deployment is marked failed and is **never
@@ -83,7 +110,10 @@ the old code needs it.
 With PR environments enabled, every PR against `main` gets its own environment (copied
 services and variables, its own empty Postgres). The pre-deploy step migrates that database.
 Telemetry is tagged with the environment name (e.g. `tax-return-app-pr-42`). The environment
-is deleted when the PR is closed or merged. To keep preview telemetry out of Grafana, override
+is deleted when the PR is closed or merged. PR environments get **no volume**: either attach
+their own empty volume with the same `STORAGE_PATH`, or accept that uploads there land on the
+ephemeral container disk and vanish on redeploy (fine for previews; decided at the final
+deployment, #42). To keep preview telemetry out of Grafana, override
 `OTEL_EXPORTER_OTLP_ENDPOINT` to empty in the PR environment settings.
 
 ## Finding a request in Grafana
@@ -134,7 +164,7 @@ and CI use no exporter or in-memory exporters). These #3 checks wait until then:
   watch paths (backend-only merge redeploys only `api`, frontend-only only `web`); **Wait for CI**
 - Grafana: Tempo trace `belegbot-web` → `belegbot-api` → DB span with
   `deployment.environment.name=production`; Loki request line with the same `trace_id` and the
-  worker's `no queue yet` line; an HTTP server duration metric for `belegbot-api`
+  worker's `worker started` line; an HTTP server duration metric for `belegbot-api`
 - PR environment: own empty Postgres, migrated, `/api/health` 200, traces tagged with the PR
   environment name, removed on close/merge
 - Broken-migration PR (agent creates it on request): fails in the pre-deploy step, never active
@@ -165,6 +195,23 @@ These #8 (LLM layer, `_docs/llm.md`) checks wait as well (tracked in #42):
 - OpenAI project settings confirmed by the user: data retention (Zero Data Retention if
   eligible), EU data residency (if yes: an EU project and `OPENAI_BASE_URL`), a project spend
   limit; the project has credits (the live run on 2026-10-06 got `credit_balance_exhausted`)
+
+These #6 (uploads, queue, volume) checks wait as well (tracked in #42):
+
+- `curl -si https://<web>/api/documents` without a cookie → 401; `POST` without the CSRF
+  header → 403
+- The `api` service has a volume at `/data`, `STORAGE_PATH=/data/storage`, the deploy log shows
+  no permission error (root-owned mount + privilege drop), and `drainingSeconds` is honoured
+- Phone uploads (iPhone camera HEIC/JPEG, Android camera, a ~20 MB desktop PDF) against the
+  public web URL reach "verarbeitet"; "Original öffnen" shows the right file
+- Railway "Redeploy" of `api` right after uploading 3 files: all 3 reach "verarbeitet", none is
+  lost, no file duplicated
+- A second family member sees the documents; signed out, "Original öffnen" in a new tab gets
+  401
+- PR environments: own empty volume or no uploads (see "PR environments")
+- Grafana: Loki shows `job.succeeded` lines; Tempo shows the `job process_document` span linked
+  to the upload request; `belegbot.queue.depth` and `belegbot.storage.free_bytes` exist. No
+  file name or content appears in Loki or Tempo
 
 ## Setup (repo owner, at the final deployment)
 
@@ -197,7 +244,9 @@ in your password manager and Railway only.
   domain**.
 - Variables: `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `PORT=8000`, `APP_ENV=production`,
   `LOG_LEVEL=INFO`, references to the three shared `OTEL_*` variables. Do not set
-  `OTEL_SERVICE_NAME`.
+  `OTEL_SERVICE_NAME`. `STORAGE_PATH=/data/storage`.
+- Volume (#6): *Settings → Volumes → New volume*, mount path `/data`, region EU West, size as
+  the plan allows (5 GB is plenty; about 2–5 MB per photo). Keep one replica.
 
 **4. Service `web`** (same repo, rename to `web`)
 

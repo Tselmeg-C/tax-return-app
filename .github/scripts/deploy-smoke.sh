@@ -6,6 +6,7 @@ set -euo pipefail
 
 NET=belegbot-smoke
 PG=smoke-db
+VOLUME=smoke-storage
 API=smoke-api
 WEB=smoke-web
 API_IMAGE=belegbot-api:smoke
@@ -23,6 +24,7 @@ cleanup() {
   echo "::endgroup::"
   docker rm -f "$API" "$WEB" "$PG" >/dev/null 2>&1 || true
   docker network rm "$NET" >/dev/null 2>&1 || true
+  docker volume rm "$VOLUME" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -88,7 +90,10 @@ echo "alembic_version rows: $ROWS"
 [ "$ROWS" = 1 ] || fail "alembic_version has $ROWS rows"
 
 echo "== start api (honcho, no OTel env) and web"
+# A fresh named volume is root-owned, like a Railway volume (#6 Decision 13).
+docker volume create "$VOLUME" >/dev/null
 docker run -d --name "$API" --network "$NET" -p 8000:8000 \
+  -v "$VOLUME":/data -e STORAGE_PATH=/data/storage \
   -e DATABASE_URL="$DB_URL" -e APP_ENV=ci -e GIT_SHA="${GITHUB_SHA:-unknown}" \
   "$API_IMAGE" >/dev/null
 docker run -d --name "$WEB" --network "$NET" -p 3000:3000 \
@@ -119,10 +124,77 @@ for line in sys.stdin:
     n += 1
 print(f"{n} JSON log lines ok")
 ' || fail "api log lines are not all JSON"
-docker logs "$API" 2>&1 | grep -q 'no queue yet' || fail "worker did not start"
+docker logs "$API" 2>&1 | grep -q '"worker started"' || fail "worker did not start"
+
+echo "== upload through the web proxy lands on the volume and the job reaches done"
+# Test helper: a household, a user and a session in the throwaway DB. The cookie value is
+# kept in a shell variable and never printed.
+SESSION_LINE=$(docker exec "$API" python -c '
+import asyncio
+from datetime import timedelta
+from app.auth.clock import SystemClock
+from app.auth.service import create_session
+from app.config import get_settings
+from app.db.models import AppUser, Household
+from app.db.session import create_engine, create_sessionmaker
+from app.domain.enums import UserRole
+
+async def main() -> None:
+    engine = create_engine(get_settings())
+    async with create_sessionmaker(engine)() as s:
+        hh = Household(name="Smoke")
+        s.add(hh)
+        await s.flush()
+        user = AppUser(household_id=hh.id, email="smoke@example.com", role=UserRole.OWNER)
+        s.add(user)
+        await s.flush()
+        token, _ = await create_session(s, user, now=SystemClock().now(), max_age=timedelta(hours=1))
+        await s.commit()
+        print(hh.id, token)
+    await engine.dispose()
+
+asyncio.run(main())
+' | tail -n1)
+HH_ID=${SESSION_LINE%% *}
+SESSION=${SESSION_LINE#* }
+{ printf '\377\330\377\340'; head -c 2000 /dev/urandom; } >/tmp/smoke.jpg
+UP_STATUS=$(curl -s -m 30 -o /tmp/smoke-upload.json -w '%{http_code}' \
+  -b "belegbot_session=${SESSION}" -H 'X-Requested-With: belegbot' \
+  -H 'Content-Type: application/octet-stream' -H "X-Filename: UTF-8''smoke.jpg" \
+  --data-binary @/tmp/smoke.jpg http://localhost:3000/api/documents || true)
+echo "POST /api/documents -> $UP_STATUS"
+DOC_ID=$(python3 -c 'import json; print(json.load(open("/tmp/smoke-upload.json"))["document"]["id"])' 2>/dev/null || true)
+if [ "$UP_STATUS" != 201 ] || [ -z "$DOC_ID" ]; then
+  fail "upload: expected 201 with a document id"
+else
+  STATUS=none
+  for _ in $(seq 1 30); do
+    STATUS=$(curl -s -m 5 -b "belegbot_session=${SESSION}" "http://localhost:3000/api/documents/${DOC_ID}" \
+      | python3 -c 'import json, sys; print(json.load(sys.stdin)["status"])' 2>/dev/null || true)
+    [ "$STATUS" = done ] && break
+    sleep 1
+  done
+  echo "document $DOC_ID status: $STATUS"
+  [ "$STATUS" = done ] || fail "job did not reach done"
+  KEY="/data/storage/households/${HH_ID}/documents/${DOC_ID}/original"
+  docker exec "$API" cat "$KEY" >/tmp/smoke-back.jpg || fail "file not on the volume"
+  cmp -s /tmp/smoke.jpg /tmp/smoke-back.jpg || fail "stored bytes differ"
+  OWNER_UID=$(docker exec "$API" stat -c %u "$KEY" || echo none)
+  echo "stored file owner uid: $OWNER_UID"
+  [ "$OWNER_UID" = 10001 ] || fail "stored file not owned by the app user"
+  curl -s -m 10 -b "belegbot_session=${SESSION}" -o /tmp/smoke-dl.jpg \
+    "http://localhost:3000/api/documents/${DOC_ID}/file" || true
+  cmp -s /tmp/smoke.jpg /tmp/smoke-dl.jpg || fail "download differs"
+fi
 
 echo "== non-root users"
-for c in "$API" "$WEB"; do
+# The api container starts as root (entrypoint chowns the volume) and drops privileges:
+# every honcho, uvicorn and worker process must run with a non-zero uid.
+docker exec "$API" ps -eo uid=,args= | tee /tmp/smoke-ps.txt
+grep -E 'honcho|uvicorn|app\.worker' /tmp/smoke-ps.txt >/tmp/smoke-app-ps.txt || true
+[ "$(wc -l </tmp/smoke-app-ps.txt)" -ge 3 ] || fail "expected honcho, uvicorn and worker processes"
+if awk '$1 == 0' /tmp/smoke-app-ps.txt | grep -q .; then fail "an api process runs as root"; fi
+for c in "$WEB"; do
   uid=$(docker exec "$c" id -u)
   echo "$c runs as uid $uid ($(docker exec "$c" id -un))"
   [ "$uid" != 0 ] || fail "$c runs as root"

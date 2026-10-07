@@ -81,7 +81,9 @@ export function DocumentUploads() {
     setPending((p) => p.map((u) => (u.key === key ? { ...u, problem: null } : u)));
     const problem = await upload(file);
     setPending((p) =>
-      problem === null ? p.filter((u) => u.key !== key) : p.map((u) => (u.key === key ? { ...u, problem } : u)),
+      problem === null
+        ? p.filter((u) => u.key !== key)
+        : p.map((u) => (u.key === key ? { ...u, problem } : u)),
     );
   };
 
@@ -199,11 +201,7 @@ export function DocumentUploads() {
                   <span className="text-destructive">{item.problem.message}</span>
                 )
               }
-              actions={
-                item.problem !== null && (
-                  <RetryButton onClick={() => retryPending(item)} />
-                )
-              }
+              actions={item.problem !== null && <RetryButton onClick={() => retryPending(item)} />}
             />
           ))}
           {(documents.data ?? []).map((doc) => (
@@ -270,9 +268,7 @@ function Row(props: {
       <div className="min-w-0 flex-1">
         {/* Rendered as text, never as HTML. */}
         <p className="truncate font-medium">{props.label}</p>
-        {props.secondary && (
-          <p className="num text-xs text-muted-foreground">{props.secondary}</p>
-        )}
+        {props.secondary && <p className="num text-xs text-muted-foreground">{props.secondary}</p>}
       </div>
       <div className="text-sm">{props.status}</div>
       <div className="flex items-center gap-1">{props.actions}</div>

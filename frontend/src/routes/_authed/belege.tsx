@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import { Camera, Pencil, Send, Upload, Globe, Check } from "lucide-react";
+import { useState } from "react";
+import { Pencil, Send, Globe, Check } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { DocumentUploads } from "@/components/documents/DocumentUploads";
 import { anlageLabel, eur, items as seed, type TaxItem } from "@/lib/mock";
 
 export const Route = createFileRoute("/_authed/belege")({
@@ -26,31 +27,10 @@ export const Route = createFileRoute("/_authed/belege")({
 });
 
 function Belege() {
+  // Mock tax items until #10 replaces this table.
   const [list, setList] = useState<TaxItem[]>(seed);
   const [filter, setFilter] = useState<"alle" | "relevant" | "unsicher">("alle");
   const [editing, setEditing] = useState<string | null>(null);
-  const [drag, setDrag] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const addFiles = (files: FileList | null) => {
-    if (!files) return;
-    const added: TaxItem[] = Array.from(files).map((f, n) => ({
-      id: `new-${Date.now()}-${n}`,
-      vendor: f.name,
-      date: new Date().toISOString().slice(0, 10),
-      gross: 0,
-      deductible: 0,
-      anlage: "N",
-      zeile: "…",
-      category: "Wird analysiert…",
-      person: "Haushalt",
-      channel: "web",
-      confidence: 0,
-      relevant: true,
-    }));
-    setList((l) => [...added, ...l]);
-  };
-
   const shown = list.filter(
     (i) =>
       filter === "alle" ||
@@ -62,51 +42,7 @@ function Belege() {
   return (
     <AppShell>
       <h1 className="text-4xl">Belege</h1>
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDrag(true);
-        }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDrag(false);
-          addFiles(e.dataTransfer.files);
-        }}
-        className={`mt-6 flex flex-col items-center gap-3 rounded-lg border-2 border-dashed p-10 text-center transition-colors ${drag ? "border-primary bg-primary/5" : "bg-card"}`}
-      >
-        <Upload className="h-8 w-8 text-primary" />
-        <p className="font-display text-xl">Fotos oder PDFs hier ablegen</p>
-        <p className="text-sm text-muted-foreground">
-          Oder einfach an den Telegram-Bot schicken — er sortiert automatisch.
-        </p>
-        <div className="flex gap-2">
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
-          >
-            <Upload className="h-4 w-4" /> Dateien wählen
-          </button>
-          <label className="flex cursor-pointer items-center gap-2 rounded-md border bg-background px-4 py-2 text-sm hover:bg-secondary">
-            <Camera className="h-4 w-4" /> Foto
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => addFiles(e.target.files)}
-            />
-          </label>
-        </div>
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          accept="image/*,application/pdf"
-          className="hidden"
-          onChange={(e) => addFiles(e.target.files)}
-        />
-      </div>
+      <DocumentUploads />
 
       <div className="mt-8 flex gap-2">
         {(["alle", "relevant", "unsicher"] as const).map((f) => (

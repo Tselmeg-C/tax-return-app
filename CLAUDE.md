@@ -60,6 +60,24 @@ before starting a task.
 
   `disable` never touches documents; there is no `delete` command.
 
+## Files, queue and worker (rules from #6)
+
+- Everything that touches uploaded files goes through a `Storage` (`app/storage/`,
+  `LocalVolume` under `STORAGE_PATH`); nothing else reads or writes document files. Keys are
+  opaque (`households/<h>/documents/<d>/original`).
+- `document.original_filename` is display metadata (sanitised by
+  `app.documents.filenames.sanitize_filename`). Never use it in a path or a `Storage` call,
+  and never log, trace or meter it (or the `X-Filename` / `Content-Disposition` headers).
+- Never log file bytes or `str(exc)` from storage or job handlers; log `type(exc).__name__`
+  (jobs store the class name, or `PermanentJobError.error_kind`, in `last_error_kind`).
+- Job handlers (`app/queue/handlers.py`) must be idempotent (a job can run again after a crash
+  or a lost lease) and raise `PermanentJobError` for non-retryable failures; the runner sets
+  the document status. Enqueue with `app.queue.enqueue` inside the caller's transaction.
+- Paths that change a document and its job lock the `document` row before the `job` row.
+- Run the worker locally with `PORT=8000 uv run honcho start -f Procfile` (api + worker) or
+  `uv run python -m app.worker`. Sweep: `uv run python -m app.storage.sweep [--dry-run]`.
+  Queue ops: `uv run python -m app.queue.cli stats | retry <job_id>` (ids and counts only).
+
 ## New tables (rules from #4)
 
 Every new table gets its own Alembic migration in the issue that first uses it. The
@@ -165,8 +183,9 @@ and on `workflow_dispatch`:
 - `frontend`: `npm ci`, lint, typecheck, test, build
 - `deploy-smoke`: (docker, GitHub runner only) builds both images, runs `alembic upgrade head`
   twice concurrently against a throwaway Postgres 16, starts api + web and curls `/health`,
-  `/version`, `/healthz`, `/`, `/api/health`, `/api/version`, then 502 with the api stopped;
-  checks non-root users. Runs for `backend/**`, `frontend/**`, `.github/**` changes and on `main`
+  `/version`, `/healthz`, `/`, `/api/health`, `/api/version`, uploads a file through the web
+  proxy onto a root-owned docker volume at `STORAGE_PATH` (job must reach `done`), then 502 with
+  the api stopped; checks that honcho, uvicorn and the worker run with a non-zero uid. Runs for `backend/**`, `frontend/**`, `.github/**` changes and on `main`
 - `ci-ok`: passes when every needed job succeeded or was skipped by the path filter,
   fails on any failure or cancellation. This is the only check branch protection needs
 

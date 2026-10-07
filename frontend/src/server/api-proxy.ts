@@ -8,7 +8,8 @@
  *   peer by default, or with `TRUSTED_PROXY_HOPS=n` the n-th entry from the right of the
  *   incoming header (Railway's edge appends the real client, so n=1 there). A client can never
  *   choose its own value.
- * - Unreachable upstream → 502, no response headers within the timeout → 504,
+ * - Unreachable upstream → 502, no response headers within the timeout (counted from the end
+ *   of the forwarded request body, so slow uploads are never cut off) → 504,
  *   no `API_INTERNAL_URL` in production → 503.
  * - One span per request (`web /api proxy`); its W3C `traceparent` is sent upstream so the
  *   api span becomes its child. Spans and logs never carry query strings, cookies or bodies.
@@ -269,10 +270,18 @@ export function createApiProxy(options: ApiProxyOptions): ApiProxy {
     const hasBody = method !== "GET" && method !== "HEAD" && request.body !== null;
     const controller = new AbortController();
     let timedOut = false;
-    const timer = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-    }, timeoutMs);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let settled = false; // response head received (or failed): never start the timer after
+    // The timeout counts from the moment the request body has been fully forwarded, so a
+    // slow upload is never cut off; without a body it starts right away.
+    const startTimer = () => {
+      if (settled) return;
+      timer ??= setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, timeoutMs);
+    };
+    if (!hasBody) startTimer();
 
     let upstream: Response;
     try {
@@ -282,9 +291,12 @@ export function createApiProxy(options: ApiProxyOptions): ApiProxy {
         redirect: "manual",
         signal: controller.signal,
       };
-      if (hasBody) {
-        init.body = request.body;
-        init.duplex = "half"; // stream the request body instead of buffering it
+      if (hasBody && request.body) {
+        // Streamed, never buffered; the flush (body end) starts the response-head timeout.
+        init.body = request.body.pipeThrough(
+          new TransformStream<Uint8Array, Uint8Array>({ flush: startTimer }),
+        );
+        init.duplex = "half";
       }
       upstream = await fetchImpl(target, init);
     } catch (error) {
@@ -300,6 +312,7 @@ export function createApiProxy(options: ApiProxyOptions): ApiProxy {
       );
     } finally {
       // Only waiting for the response head is bounded; a streaming body may take longer.
+      settled = true;
       clearTimeout(timer);
     }
 

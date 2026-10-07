@@ -25,10 +25,18 @@ COPY alembic.ini Procfile ./
 COPY app ./app
 RUN uv sync --locked --no-dev --no-editable
 
+# procps: `ps` for the deploy smoke's non-root check; setpriv (util-linux) drops privileges.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends procps \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --system --gid 10001 belegbot \
     && useradd --system --uid 10001 --gid belegbot --home-dir /app --no-create-home belegbot \
     && chown -R belegbot:belegbot /app
-USER belegbot
+COPY --chmod=0755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+# No `USER` here: the entrypoint starts as root only to chown STORAGE_PATH (Railway mounts
+# volumes owned by root), then runs every process as belegbot (uid 10001) via setpriv.
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 # Run from the venv directly (not `uv run`), so nothing syncs at start.
 ENV PATH="/app/.venv/bin:${PATH}" \

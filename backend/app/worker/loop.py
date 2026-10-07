@@ -102,6 +102,7 @@ class Worker:
         log.info(
             "job.claimed",
             job_id=str(job.id),
+            document_id=str(job.document_id),
             kind=job.kind.value,
             attempt=job.attempt,
             reclaimed=job.reclaimed,
@@ -170,7 +171,10 @@ class Worker:
                 ok = await runner.succeed(self.sessionmaker, job)
                 if ok:
                     log.info(
-                        "job.succeeded", job_id=str(job.id), duration_ms=round(duration * 1000)
+                        "job.succeeded",
+                        job_id=str(job.id),
+                        document_id=str(job.document_id),
+                        duration_ms=round(duration * 1000),
                     )
             if not ok:
                 outcome = "lease_lost"
