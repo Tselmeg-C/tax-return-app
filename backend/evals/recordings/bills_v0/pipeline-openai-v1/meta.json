@@ -1,0 +1,20 @@
+{
+  "dataset": "bills_v0",
+  "dataset_hash": "5945bebd0cc8309c5a102c0f29b0e563815a70c2f4644a32924e953b1df6b94c",
+  "git_sha": "966f9dc75de48b8e291b522d82939f254abab2ca",
+  "label_schema_version": 1,
+  "n_cases": 60,
+  "predictor": {
+    "classify_model": "openai:gpt-4.1-mini",
+    "extract_model": "openai:gpt-4.1",
+    "model": "classify=openai:gpt-4.1-mini,extract=openai:gpt-4.1",
+    "name": "pipeline",
+    "pricing_version": "2026-10-06",
+    "prompt_sha256": "26a93aa5e5b376cb2508bb91ddaea9ba93913294aa9db67607915c504033ccdc",
+    "prompt_version": "v1",
+    "provider": "openai",
+    "routing_version": "1"
+  },
+  "recorded_at": "2026-10-07T13:48:41.436213+00:00",
+  "subset": false
+}
