@@ -95,6 +95,13 @@ class PaymentMethod(StrEnum):
     UNKNOWN = "unknown"
 
 
+class FilingStatus(StrEnum):
+    """Tariff for the tax core (#14): Grundtarif or Splitting (§ 32a Abs. 5 EStG)."""
+
+    SINGLE = "single"
+    JOINT = "joint"
+
+
 class AuditAction(StrEnum):
     CREATE = "create"
     UPDATE = "update"
@@ -271,6 +278,10 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         DocumentStatus.NEEDS_ATTENTION: "Prüfung nötig",
         DocumentStatus.FAILED: "Fehlgeschlagen",
     },
+    FilingStatus: {
+        FilingStatus.SINGLE: "Grundtarif",
+        FilingStatus.JOINT: "Splittingtarif (Zusammenveranlagung)",
+    },
     PaymentMethod: {
         PaymentMethod.CASH: "Bar",
         PaymentMethod.BANK_TRANSFER: "Überweisung",
@@ -294,6 +305,7 @@ ALL_ENUMS: tuple[type[StrEnum], ...] = (
     ExtractionStep,
     Anlage,
     PaymentMethod,
+    FilingStatus,
     AuditAction,
     ActorType,
     CategoryGroup,

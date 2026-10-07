@@ -39,6 +39,10 @@ dev = [
     "reportlab>=5.0.1",
     "types-reportlab>=5.0.0.20260911",
 ]
+# Golden tariff values from the BMF calculator (tests/tax/golden/collect.py); not in CI.
+golden = [
+    "playwright",
+]
 
 [build-system]
 requires = ["hatchling"]

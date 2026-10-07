@@ -1,0 +1,70 @@
+"""`app/tax/` stays pure: allowlisted imports only, no `open`, no floats (#14)."""
+
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+import pytest
+
+TAX_DIR = Path(__file__).resolve().parents[2] / "app" / "tax"
+
+ALLOWED = {
+    "__future__",
+    "decimal",
+    "dataclasses",
+    "enum",
+    "typing",
+    "collections.abc",
+    "functools",
+    "datetime",
+    "pydantic",
+    "app.domain.enums",
+}
+
+
+def violations(source: str) -> list[str]:
+    found = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Import):
+            modules = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom):
+            modules = [node.module or ""] if node.level == 0 else []
+        else:
+            modules = []
+        for module in modules:
+            if module not in ALLOWED and not module.startswith("app.tax."):
+                found.append(f"line {node.lineno}: import {module}")
+        if isinstance(node, ast.Constant) and isinstance(node.value, float):
+            found.append(f"line {node.lineno}: float literal {node.value!r}")
+        if isinstance(node, ast.Name) and node.id in ("float", "open"):
+            found.append(f"line {node.lineno}: uses {node.id}")
+    return found
+
+
+MODULES = sorted(TAX_DIR.rglob("*.py"))
+
+
+def test_tax_package_has_modules() -> None:
+    assert {p.name for p in MODULES} >= {"__init__.py", "models.py", "tariff.py"}
+
+
+@pytest.mark.parametrize("path", MODULES, ids=lambda p: p.name)
+def test_module_is_pure(path: Path) -> None:
+    assert violations(path.read_text(encoding="utf-8")) == []
+
+
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        "import os",
+        "from pathlib import Path",
+        "import yaml",
+        "from app.tax_params import load_params",
+        "x = 0.5",
+        "y = float('1')",
+        "z = open('f')",
+    ],
+)
+def test_checker_catches(snippet: str) -> None:
+    assert violations(snippet)

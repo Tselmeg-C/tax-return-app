@@ -100,6 +100,23 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   and encrypted columns as `sa.LargeBinary()`; write `downgrade()` by hand
 - Test data uses fictional names and runtime-generated sentinels (never a real-looking Steuer-ID)
 
+## Tax engine (rules from #14)
+
+- Params: one file per year, `backend/app/tax/params/{year}.yaml`. Top-level sections are
+  owned by issues and only their owner edits them: `year`, `mapping` (#9); `tariff`, `soli`,
+  `church_tax` (#14); Werbungskosten / Sonderausgaben / agB / § 35a (#15); Vorsorge / Kinder /
+  Progressionsvorbehalt (#16). Every section has a `source` (paragraph + BGBl. or official
+  page); `provisional: true` (+ reason in `source`) marks a value not confirmed against the law.
+- Money and rates are quoted strings in the YAML (`"0.42"`), `Decimal` in code; an unquoted
+  number fails to load. Never `float` anywhere in the tax path.
+- I/O only in `backend/app/tax_params.py` (`load_params(year)`, `supported_years()`); the
+  models are in `app/tax/models.py`. `app/tax/` is pure: `tests/tax/test_purity.py` enforces
+  an import allowlist, no `open`, no float literal / `float`.
+- Golden tests (`tests/tax/test_golden_tariff.py`) compare with the BMF Einkommensteuerrechner
+  at tolerance 0 (ESt to the euro, Soli to the cent). Expected values come only from the
+  calculator, never from the engine; collect / re-verify them with
+  `uv run python -m tests.tax.golden.collect --year YYYY` (`tests/tax/golden/README.md`).
+
 ## Stack
 
 - Backend (`backend/`): Python 3.12, `uv`, FastAPI, SQLAlchemy 2.0 + Alembic, Postgres 16, Postgres-based job queue

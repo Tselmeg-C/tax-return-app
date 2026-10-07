@@ -1,0 +1,40 @@
+# Tax parameters for Veranlagungszeitraum 2025. Sections are owned by issues (#14 Decision 2):
+# year + mapping: #9; tariff, soli, church_tax: #14; later sections: #15, #16.
+# Money and rates are quoted strings (Decimal); an unquoted number fails to load.
+year: 2025
+
+tariff: # § 32a Abs. 1 EStG
+  source: "§ 32a Abs. 1 EStG i.d.F. Art. 1 SteFeG v. 23.12.2024 (BGBl. 2024 I Nr. 449), anzuwenden ab VZ 2025; https://www.gesetze-im-internet.de/estg/__32a.html (the current text shows VZ 2026; the VZ 2025 text is Art. 1 Nr. 2 SteFeG, checked 2026-10-07 via buzer.de/gesetz/16838/a321118.htm)"
+  grundfreibetrag: "12096" # Nr. 1: zvE ≤ grundfreibetrag → 0
+  zone2: {upper: "17443", a: "932.30", b: "1400"} # Nr. 2: (a·y + b)·y, y = (zvE − grundfreibetrag) / 10000
+  zone3: {upper: "68480", a: "176.64", b: "2397", c: "1015.13"} # Nr. 3: (a·z + b)·z + c, z = (zvE − zone2.upper) / 10000
+  zone4: {upper: "277825", rate: "0.42", minus: "10911.92"} # Nr. 4: rate·x − minus
+  zone5: {rate: "0.45", minus: "19246.67"} # Nr. 5: rate·x − minus
+
+soli: # §§ 3, 4 SolzG 1995
+  source: "§ 3 Abs. 3 SolzG 1995 i.d.F. Art. 3 SteFeG v. 23.12.2024 (BGBl. 2024 I Nr. 449), anzuwenden ab VZ 2025; § 4 SolzG 1995 (5,5 %, Milderung 11,9 %, Bruchteile eines Cents bleiben außer Ansatz); https://www.gesetze-im-internet.de/solzg_1995/"
+  rate: "0.055"
+  freigrenze_single: "19950"
+  freigrenze_joint: "39900"
+  milderung_rate: "0.119" # Soli ≤ 11.9 % of (Bemessungsgrundlage − Freigrenze)
+
+church_tax:
+  provisional: true
+  source: "Kirchensteuersätze aus den Kirchensteuerbeschlüssen der Länder (bekannt gemacht im BStBl. I): BW, BY 8 %, übrige Länder 9 %. provisional: the per-Land official source was not verified in #14 (gesetze-im-internet.de / Landesrecht not reachable from the session); rounding down to cents (#14 Decision 5) is not confirmed by the BMF Einkommensteuerrechner, which does not compute Kirchensteuer. Re-check in #53."
+  rate_by_state: # ISO 3166-2:DE without "DE-"
+    BW: "0.08"
+    BY: "0.08"
+    BE: "0.09"
+    BB: "0.09"
+    HB: "0.09"
+    HH: "0.09"
+    HE: "0.09"
+    MV: "0.09"
+    NI: "0.09"
+    NW: "0.09"
+    RP: "0.09"
+    SL: "0.09"
+    SN: "0.09"
+    ST: "0.09"
+    SH: "0.09"
+    TH: "0.09"
