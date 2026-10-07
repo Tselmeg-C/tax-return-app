@@ -30,6 +30,7 @@ trap cleanup EXIT
 
 fail() {
   echo "FAIL: $*"
+  echo "::error title=deploy-smoke::$*"
   FAILURES=$((FAILURES + 1))
 }
 
@@ -176,7 +177,7 @@ else
     sleep 1
   done
   echo "document $DOC_ID status: $STATUS"
-  [ "$STATUS" = done ] || fail "job did not reach done"
+  [ "$STATUS" = done ] || fail "job did not reach done (status: $STATUS; worker log: $(docker logs "$API" 2>&1 | grep -oE '"event": *"(job|pipeline)[^"]*"|"error_kind": *"[^"]*"|"attention_reason": *"[^"]*"' | tail -6 | tr '\n' ' '))"
   KEY="/data/storage/households/${HH_ID}/documents/${DOC_ID}/original"
   docker exec "$API" cat "$KEY" >/tmp/smoke-back.jpg || fail "file not on the volume"
   cmp -s /tmp/smoke.jpg /tmp/smoke-back.jpg || fail "stored bytes differ"
