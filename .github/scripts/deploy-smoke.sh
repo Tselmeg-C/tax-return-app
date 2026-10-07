@@ -126,7 +126,12 @@ for line in sys.stdin:
     n += 1
 print(f"{n} JSON log lines ok")
 ' || fail "api log lines are not all JSON"
-docker logs "$API" 2>&1 | grep -q '"worker started"' || fail "worker did not start"
+WORKER_UP=no
+for _ in $(seq 1 30); do
+  docker logs "$API" 2>&1 | grep -q '"worker started"' && { WORKER_UP=yes; break; }
+  sleep 1
+done
+[ "$WORKER_UP" = yes ] || fail "worker did not start"
 
 echo "== upload through the web proxy lands on the volume and the job reaches done"
 # Test helper: a household, a user and a session in the throwaway DB. The cookie value is
@@ -159,7 +164,8 @@ asyncio.run(main())
 ' | tail -n1)
 HH_ID=${SESSION_LINE%% *}
 SESSION=${SESSION_LINE#* }
-{ printf '\377\330\377\340'; head -c 2000 /dev/urandom; } >/tmp/smoke.jpg
+# A real, decodable JPEG (the pipeline decodes it); Pillow ships in the api image.
+docker run --rm --entrypoint python "$API_IMAGE" -c 'import io, sys; from PIL import Image; b = io.BytesIO(); Image.new("RGB", (400, 300), (250, 250, 245)).save(b, "JPEG"); sys.stdout.buffer.write(b.getvalue())' >/tmp/smoke.jpg
 UP_STATUS=$(curl -s -m 30 -o /tmp/smoke-upload.json -w '%{http_code}' \
   -b "belegbot_session=${SESSION}" -H 'X-Requested-With: belegbot' \
   -H 'Content-Type: application/octet-stream' -H "X-Filename: UTF-8''smoke.jpg" \
