@@ -93,10 +93,12 @@ echo "alembic_version rows: $ROWS"
 echo "== start api (honcho, no OTel env) and web"
 # A fresh named volume is root-owned, like a Railway volume (#6 Decision 13).
 docker volume create "$VOLUME" >/dev/null
+# Throwaway CI-only key for encrypted columns (raw LLM output); never printed.
+FIELD_KEY=$(docker run --rm --entrypoint python "$API_IMAGE" -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')
 docker run -d --name "$API" --network "$NET" -p 8000:8000 \
   -v "$VOLUME":/data -e STORAGE_PATH=/data/storage \
   -e DATABASE_URL="$DB_URL" -e APP_ENV=ci -e GIT_SHA="${GITHUB_SHA:-unknown}" \
-  -e LLM_CLASSIFY_MODEL=fake:test -e LLM_EXTRACT_MODEL=fake:test \
+  -e LLM_CLASSIFY_MODEL=fake:test -e LLM_EXTRACT_MODEL=fake:test -e FIELD_ENCRYPTION_KEY="$FIELD_KEY" \
   "$API_IMAGE" >/dev/null
 docker run -d --name "$WEB" --network "$NET" -p 3000:3000 \
   -e API_INTERNAL_URL="http://${API}:8000" \
