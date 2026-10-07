@@ -17,7 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.models._common import HouseholdOwned, Timestamps, UUIDPrimaryKey
 from app.db.types import enum_type
-from app.domain.enums import Channel, DocType, DocumentStatus
+from app.domain.enums import AttentionReason, Channel, DocType, DocumentStatus
 
 
 class Document(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
@@ -37,6 +37,10 @@ class Document(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
         CheckConstraint(
             "original_filename IS NULL OR octet_length(original_filename) BETWEEN 1 AND 255",
             name="original_filename_length",
+        ),
+        CheckConstraint(
+            "status <> 'needs_attention' OR attention_reason IS NOT NULL",
+            name="needs_attention_has_reason",
         ),
         Index("ix_document_household_id_created_at", "household_id", "created_at"),
         Index(None, "uploaded_by_user_id"),
@@ -61,3 +65,7 @@ class Document(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
     # Exception class name only, never a message (messages can carry document content).
     error_kind: Mapped[str | None] = mapped_column(String(100), nullable=True)
     original_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # #9: the highest-priority reason when `status = needs_attention`, else NULL.
+    attention_reason: Mapped[AttentionReason | None] = mapped_column(
+        enum_type(AttentionReason, "attention_reason"), nullable=True
+    )

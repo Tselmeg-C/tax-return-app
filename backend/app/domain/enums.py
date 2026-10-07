@@ -95,6 +95,32 @@ class PaymentMethod(StrEnum):
     UNKNOWN = "unknown"
 
 
+class AttentionReason(StrEnum):
+    """Why a document ended `needs_attention` (#9). Definition order = priority: when several
+    reasons apply, the first one is stored in `document.attention_reason`."""
+
+    CLASSIFICATION_FAILED = "classification_failed"
+    EXTRACTION_FAILED = "extraction_failed"
+    UNREADABLE = "unreadable"
+    MULTIPLE_DOCUMENTS = "multiple_documents"
+    DOC_TYPE_NOT_SUPPORTED = "doc_type_not_supported"
+    POSSIBLE_DUPLICATE = "possible_duplicate"
+    FOREIGN_CURRENCY = "foreign_currency"
+    IMPLAUSIBLE_AMOUNT = "implausible_amount"
+    IMPLAUSIBLE_DATE = "implausible_date"
+    SUM_MISMATCH = "sum_mismatch"
+    SIGN_MISMATCH = "sign_mismatch"
+    CREDIT_NOTE_35A = "credit_note_35a"
+    LABOUR_SHARE_MISSING = "labour_share_missing"
+    PAYMENT_METHOD_UNKNOWN_35A = "payment_method_unknown_35a"
+    MULTIPLE_CATEGORIES = "multiple_categories"
+    ASSET_DEPRECIATION = "asset_depreciation"
+    DATE_MISSING = "date_missing"
+    UNSUPPORTED_YEAR = "unsupported_year"
+    YEAR_BOUNDARY_RECURRING = "year_boundary_recurring"
+    LOW_CONFIDENCE = "low_confidence"
+
+
 class AuditAction(StrEnum):
     CREATE = "create"
     UPDATE = "update"
@@ -271,6 +297,28 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         DocumentStatus.NEEDS_ATTENTION: "Prüfung nötig",
         DocumentStatus.FAILED: "Fehlgeschlagen",
     },
+    AttentionReason: {
+        AttentionReason.CLASSIFICATION_FAILED: "Belegart konnte nicht erkannt werden",
+        AttentionReason.EXTRACTION_FAILED: "Werte konnten nicht ausgelesen werden",
+        AttentionReason.UNREADABLE: "Beleg nicht lesbar",
+        AttentionReason.MULTIPLE_DOCUMENTS: "Mehrere Belege in einer Datei",
+        AttentionReason.DOC_TYPE_NOT_SUPPORTED: "Dokumentart wird noch nicht ausgewertet",
+        AttentionReason.POSSIBLE_DUPLICATE: "Möglicherweise doppelt erfasst",
+        AttentionReason.FOREIGN_CURRENCY: "Fremdwährung",
+        AttentionReason.IMPLAUSIBLE_AMOUNT: "Betrag unplausibel",
+        AttentionReason.IMPLAUSIBLE_DATE: "Datum unplausibel",
+        AttentionReason.SUM_MISMATCH: "Positionen ergeben nicht den Gesamtbetrag",
+        AttentionReason.SIGN_MISMATCH: "Gutschrift und Vorzeichen passen nicht zusammen",
+        AttentionReason.CREDIT_NOTE_35A: "Gutschrift zu haushaltsnahen Aufwendungen",
+        AttentionReason.LABOUR_SHARE_MISSING: "Arbeitskostenanteil fehlt",
+        AttentionReason.PAYMENT_METHOD_UNKNOWN_35A: "Zahlungsart unbekannt (§35a nur unbar)",
+        AttentionReason.MULTIPLE_CATEGORIES: "Mehrere Kategorien auf einem Beleg",
+        AttentionReason.ASSET_DEPRECIATION: "Abschreibung (AfA) geschätzt, Nutzungsdauer prüfen",
+        AttentionReason.DATE_MISSING: "Datum fehlt",
+        AttentionReason.UNSUPPORTED_YEAR: "Steuerjahr wird nicht unterstützt",
+        AttentionReason.YEAR_BOUNDARY_RECURRING: "Zahlung um den Jahreswechsel (10-Tage-Regel)",
+        AttentionReason.LOW_CONFIDENCE: "Unsichere Erkennung",
+    },
     PaymentMethod: {
         PaymentMethod.CASH: "Bar",
         PaymentMethod.BANK_TRANSFER: "Überweisung",
@@ -300,4 +348,5 @@ ALL_ENUMS: tuple[type[StrEnum], ...] = (
     Category,
     JobKind,
     JobStatus,
+    AttentionReason,
 )

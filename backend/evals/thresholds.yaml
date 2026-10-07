@@ -9,7 +9,7 @@
 #                      per_metric: {metric: tolerance} overrides the default tolerance.
 
 bills_v0:
-  status: proposed
+  status: confirmed
   compare_to: null
   thresholds:
     relevance_precision:                 {min: 0.95, required: true}

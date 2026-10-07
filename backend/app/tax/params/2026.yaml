@@ -1,0 +1,72 @@
+# Tax parameters for Veranlagungszeitraum 2026. Sections are owned by issues (#14 Decision 2):
+# year + mapping: #9; tariff, soli, church_tax: #14; later sections: #15, #16.
+# Money and rates are quoted strings (Decimal); an unquoted number fails to load.
+year: 2026
+
+tariff: # § 32a Abs. 1 EStG
+  source: "§ 32a Abs. 1 EStG i.d.F. Art. 2 SteFeG v. 23.12.2024 (BGBl. 2024 I Nr. 449), anzuwenden ab VZ 2026; https://www.gesetze-im-internet.de/estg/__32a.html (checked 2026-10-07 against the current text via buzer.de/32a_EStG.htm: no amendment after SteFeG Art. 2)"
+  grundfreibetrag: "12348" # Nr. 1: zvE ≤ grundfreibetrag → 0
+  zone2: {upper: "17799", a: "914.51", b: "1400"} # Nr. 2: (a·y + b)·y, y = (zvE − grundfreibetrag) / 10000
+  zone3: {upper: "69878", a: "173.10", b: "2397", c: "1034.87"} # Nr. 3: (a·z + b)·z + c, z = (zvE − zone2.upper) / 10000
+  zone4: {upper: "277825", rate: "0.42", minus: "11135.63"} # Nr. 4: rate·x − minus
+  zone5: {rate: "0.45", minus: "19470.38"} # Nr. 5: rate·x − minus
+
+soli: # §§ 3, 4 SolzG 1995
+  source: "§ 3 Abs. 3 SolzG 1995 i.d.F. Art. 4 SteFeG v. 23.12.2024 (BGBl. 2024 I Nr. 449), anzuwenden ab VZ 2026; § 4 SolzG 1995 (5,5 %, Milderung 11,9 %, Bruchteile eines Cents bleiben außer Ansatz); https://www.gesetze-im-internet.de/solzg_1995/"
+  rate: "0.055"
+  freigrenze_single: "20350"
+  freigrenze_joint: "40700"
+  milderung_rate: "0.119" # Soli ≤ 11.9 % of (Bemessungsgrundlage − Freigrenze)
+
+church_tax:
+  provisional: true
+  source: "Kirchensteuersätze aus den Kirchensteuerbeschlüssen der Länder (bekannt gemacht im BStBl. I): BW, BY 8 %, übrige Länder 9 %. provisional: the per-Land official source was not verified in #14 (gesetze-im-internet.de / Landesrecht not reachable from the session); rounding down to cents (#14 Decision 5) is not confirmed by the BMF Einkommensteuerrechner, which does not compute Kirchensteuer. Re-check in #53."
+  rate_by_state: # ISO 3166-2:DE without "DE-"
+    BW: "0.08"
+    BY: "0.08"
+    BE: "0.09"
+    BB: "0.09"
+    HB: "0.09"
+    HH: "0.09"
+    HE: "0.09"
+    MV: "0.09"
+    NI: "0.09"
+    NW: "0.09"
+    RP: "0.09"
+    SL: "0.09"
+    SN: "0.09"
+    ST: "0.09"
+    SH: "0.09"
+    TH: "0.09"
+
+mapping: # #9: Category -> (Anlage, Zeile); every Category except irrelevant exactly once
+  # 2026 forms not published yet: Zeilen copied from 2025, provisional (#54 verifies).
+  wk_arbeitsmittel: {anlage: n, zeile: "54", source: "Anlage N 2025, Aufwendungen für Arbeitsmittel (Zeilen 54-56) (2026: copied from 2025)", provisional: true}
+  wk_fortbildung: {anlage: n, zeile: "60", source: "Anlage N 2025, Fortbildungskosten (2026: copied from 2025)", provisional: true}
+  wk_fahrtkosten: {anlage: n, zeile: "66", source: "Anlage N 2025, Reisekosten bei beruflich veranlassten Auswärtstätigkeiten, Fahrtkosten (2026: copied from 2025)", provisional: true}
+  wk_homeoffice: {anlage: n, zeile: "58", source: "Anlage N 2025, Tagespauschale (Homeoffice), Zeilen 58-59 (Anzahl Tage) (2026: copied from 2025)", provisional: true}
+  wk_arbeitszimmer: {anlage: n, zeile: "57", source: "Anlage N 2025, Häusliches Arbeitszimmer (Mittelpunkt der Tätigkeit) (2026: copied from 2025)", provisional: true}
+  wk_bewerbung: {anlage: n, zeile: "62", source: "Anlage N 2025, Weitere Werbungskosten, Sonstiges (z. B. Bewerbungskosten) (2026: copied from 2025)", provisional: true}
+  wk_kontofuehrung: {anlage: n, zeile: "62", source: "Anlage N 2025, Weitere Werbungskosten, Sonstiges (z. B. Kontoführungsgebühren) (2026: copied from 2025)", provisional: true}
+  wk_berufsverband: {anlage: n, zeile: "53", source: "Anlage N 2025, Beiträge zu Berufsverbänden (2026: copied from 2025)", provisional: true}
+  wk_doppelte_haushaltsfuehrung: {anlage: n, zeile: null, source: "Anlage N-Doppelte Haushaltsführung 2025 (eigene Anlage; Zeile not mapped in v1) (2026: copied from 2025)", provisional: true}
+  steuerberatung: {anlage: n, zeile: "62", source: "Anlage N 2025, Weitere Werbungskosten, Sonstiges (beruflicher Anteil der Steuerberatung) (2026: copied from 2025)", provisional: true}
+  vorsorge_kv_pv: {anlage: vorsorgeaufwand, zeile: "16", source: "Anlage Vorsorgeaufwand 2025, Beiträge zu Krankenversicherungen (Zeilen 16-18; privat: Zeilen 23-24) (2026: copied from 2025)", provisional: true}
+  vorsorge_rv: {anlage: vorsorgeaufwand, zeile: "6", source: "Anlage Vorsorgeaufwand 2025, Beiträge zu gesetzlichen Rentenversicherungen (2026: copied from 2025)", provisional: true}
+  vorsorge_riester: {anlage: av, zeile: null, source: "Anlage AV 2025 (Altersvorsorgebeiträge; Zeile not mapped in v1) (2026: copied from 2025)", provisional: true}
+  vorsorge_ruerup: {anlage: vorsorgeaufwand, zeile: "8", source: "Anlage Vorsorgeaufwand 2025, Beiträge zu zertifizierten Basisrentenverträgen (2026: copied from 2025)", provisional: true}
+  vorsorge_sonstige: {anlage: vorsorgeaufwand, zeile: "46", source: "Anlage Vorsorgeaufwand 2025, Weitere sonstige Vorsorgeaufwendungen (Unfall-, Haftpflicht-, Risikoversicherungen) (2026: copied from 2025)", provisional: true}
+  spenden: {anlage: sonderausgaben, zeile: "5", source: "Anlage Sonderausgaben 2025, Zuwendungen an Empfänger im Inland (2026: copied from 2025)", provisional: true}
+  kirchensteuer: {anlage: sonderausgaben, zeile: "4", source: "Anlage Sonderausgaben 2025, Kirchensteuer (2026: copied from 2025)", provisional: true}
+  kinderbetreuung: {anlage: kind, zeile: "67", source: "Anlage Kind 2025, Kinderbetreuungskosten (2026: copied from 2025)", provisional: true}
+  schulgeld: {anlage: kind, zeile: "56", source: "Anlage Kind 2025, Schulgeld (2026: copied from 2025)", provisional: true}
+  krankheitskosten: {anlage: agb, zeile: "24", source: "Anlage Außergewöhnliche Belastungen 2025, Krankheitskosten (Summe der Aufwendungen) (2026: copied from 2025)", provisional: true}
+  pflege: {anlage: agb, zeile: "27", source: "Anlage Außergewöhnliche Belastungen 2025, Pflegekosten (Summe der Aufwendungen) (2026: copied from 2025)", provisional: true}
+  behinderung: {anlage: agb, zeile: "30", source: "Anlage Außergewöhnliche Belastungen 2025, Behinderungsbedingte Aufwendungen (Summe der Aufwendungen) (2026: copied from 2025)", provisional: true}
+  haushaltsnahe_dienstleistung: {anlage: haushaltsnahe_aufwendungen, zeile: "5", source: "Anlage Haushaltsnahe Aufwendungen 2025, Haushaltsnahe Beschäftigungsverhältnisse / Dienstleistungen (2026: copied from 2025)", provisional: true}
+  handwerkerleistung: {anlage: haushaltsnahe_aufwendungen, zeile: "6", source: "Anlage Haushaltsnahe Aufwendungen 2025, Handwerkerleistungen (2026: copied from 2025)", provisional: true}
+  v_afa: {anlage: v, zeile: "33", source: "Anlage V 2025, Absetzung für Abnutzung für Gebäude (computed from property data, #13 / #20) (2026: copied from 2025)", provisional: true}
+  v_schuldzinsen: {anlage: v, zeile: "46", source: "Anlage V 2025, Schuldzinsen (2026: copied from 2025)", provisional: true}
+  v_erhaltung: {anlage: v, zeile: "55", source: "Anlage V 2025, 2025 voll abzuziehende Erhaltungsaufwendungen (2026: copied from 2025)", provisional: true}
+  v_nebenkosten: {anlage: v, zeile: "73", source: "Anlage V 2025, umgelegte / sonstige Kosten (Grundsteuer, Hausversicherungen, ...) (2026: copied from 2025)", provisional: true}
+  kapital_bescheinigung: {anlage: kap, zeile: null, source: "Anlage KAP 2025 (from the Jahressteuerbescheinigung, #19; Zeile not mapped in v1) (2026: copied from 2025)", provisional: true}
