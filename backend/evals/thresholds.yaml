@@ -10,7 +10,7 @@
 
 bills_v0:
   status: confirmed
-  compare_to: null
+  compare_to: pipeline-openai-v2
   thresholds:
     relevance_precision:                 {min: 0.95, required: true}
     relevance_recall:                    {min: 0.90, required: true}
