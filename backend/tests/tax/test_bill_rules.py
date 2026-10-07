@@ -88,7 +88,8 @@ CASES = [
         "drugstore-prescription-and-cosmetics",
         classify(),
         extraction([line("5.00", "krankheitskosten"), line("12.95", "irrelevant")]),
-        {"category": C.KRANKHEITSKOSTEN, "deductible_amount": D("5.00"), "gross_amount": D("17.95")},
+        {"category": C.KRANKHEITSKOSTEN, "deductible_amount": D("5.00"),
+         "gross_amount": D("17.95")},
     ),
     Case(
         "handwerker-labour-and-material-transfer",
@@ -257,7 +258,8 @@ CASES = [
     Case(
         "extract-all-lines-irrelevant",
         classify(),
-        extraction([line("2320.00", "irrelevant", "labour"), line("1480.00", "irrelevant", "material")]),
+        extraction([line("2320.00", "irrelevant", "labour"),
+                    line("1480.00", "irrelevant", "material")]),
         {"category": C.IRRELEVANT, "is_relevant": False, "gross_amount": D("3800.00"),
          "deductible_amount": D("0.00")},
     ),

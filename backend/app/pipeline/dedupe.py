@@ -62,5 +62,6 @@ async def find_duplicate(
         if normalise_vendor(item.vendor) == key and _same_date(
             invoice_date, payment_date, item.invoice_date, item.payment_date
         ):
-            return created_at.astimezone(BERLIN).date()
+            uploaded: date = created_at.astimezone(BERLIN).date()
+            return uploaded
     return None

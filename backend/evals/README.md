@@ -2,7 +2,8 @@
 
 Defines "correct" for the bill pipeline (`plan.md` §7, §12; `_docs/adlc.md`) and measures any
 predictor against it. Everything runs offline: no network, no API key, no DB. The harness never
-imports `app.llm`; a real model is plugged in by #9 as a registered predictor.
+imports `app.llm` directly; the `pipeline` predictor (#9) runs the production pipeline through
+`app.pipeline`.
 
 All commands run from `backend/`.
 
@@ -16,7 +17,8 @@ evals/
                       #   templates/*.py, specs/bills_v0.yaml (single source of truth)
   schema.py           # ExpectedLabel, Prediction, CallUsage, CaseResult, Report (pydantic)
   dataset.py          # load + hash a dataset, EvalCase (has no label)
-  predictors/         # registry (__init__), Protocol (base), oracle, heuristic, replay
+  predictors/         # registry (__init__), Protocol (base), oracle, heuristic, replay, pipeline (#9)
+  fakes/              # perfect_reader.py: flawless classify / extract replies per bills_v0 case
   recording.py        # record / load recordings
   metrics.py  report.py  gate.py  privacy.py  paths.py
   datasets/bills_v0/  # manifest.yaml + cases/<id>/{document.*, label.yaml}  (generated, committed)
@@ -108,12 +110,31 @@ regression rule is skipped (one warning), absolute thresholds still apply.
 The heuristic baseline's metrics are deterministic except `latency_ms_*` (wall time), so tests
 compare everything but latency.
 
+## The `pipeline` predictor (#9)
+
+Runs `app.pipeline.core.run_pipeline` (the code the worker runs) on the case bytes, without DB
+steps (person matching and dedupe are tested with pytest). Options: `--provider openai`
+(default; `requires_env` = `OPENAI_API_KEY`) or `fake`; `--model provider:model` (both steps)
+or `classify=…,extract=…`; `--prompt-version vN` (default: highest). `describe()` adds both
+effective models, `prompt_sha256` (from `app/pipeline/prompts/LOCK.yaml`), `routing_version`
+and `pricing_version`. `tax_relevant` is the final item's `is_relevant` (after the rules);
+documents without an item (official ones) predict `deductible_amount` 0.00 and the
+`certificate_year` as `tax_year`.
+
+`--provider fake` answers with the **perfect reader** (`evals/fakes/perfect_reader.py`): what a
+flawless reader returns, built from the values the spec prints (never the computed label
+fields). It must pass the gate with 1.0 on the rule-derived metrics; by design
+`b044-jahressteuerbescheinigung` misses category / gross (only classified in v1, #19). It is a
+test fixture, never a baseline.
+
+Recording names: `pipeline-<provider>-<prompt_version>` (e.g. `pipeline-openai-v1`).
+
 ## Record and replay a real run
 
 ```bash
-# once, with the key (by the user or the manual workflow #27):
-OPENAI_API_KEY=... uv run python -m evals.run --dataset bills_v0 --predictor pipeline \
-    --provider openai --model <m> --prompt-version <v> --record pipeline-openai-v1
+# once, with the key exported in the shell (by the user or the manual workflow #27):
+uv run python -m evals.run --dataset bills_v0 --predictor pipeline --provider openai \
+    --prompt-version v1 --record pipeline-openai-v1 --compare-to heuristic --gate
 # offline, anywhere (CI):
 uv run python -m evals.run --dataset bills_v0 --predictor replay --recording pipeline-openai-v1 --gate
 ```

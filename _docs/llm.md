@@ -53,7 +53,7 @@ result.calls       # one LLMCallRecord per HTTP attempt incl. failed ones (persi
 4. **Fallback.** When the primary is exhausted by transient or output errors, each `fallback`
    model is tried in order with the same rules (`belegbot.llm.fallbacks` +1 per switch).
    Permanent errors never retry or fall back.
-5. **Deadline** `LLM_DEADLINE_SECONDS` (300, below #6's `JOB_TIMEOUT_SECONDS` = 600) covers the
+5. **Deadline** `LLM_DEADLINE_SECONDS` (300; #9 requires `JOB_TIMEOUT_SECONDS` ≥ 2 × 300 + 120, default 900) covers the
    whole call incl. sleeps; when exceeded → `LLMTimeout` with the calls so far.
 6. The final exception is the last error, with all `calls` and `fallback_used`; output errors
    are raised with `retryable=False`.

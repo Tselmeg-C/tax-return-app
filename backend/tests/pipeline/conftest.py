@@ -57,3 +57,29 @@ def _offline(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     yield
     get_llm_settings.cache_clear()
     get_router.cache_clear()
+
+
+# DB / worker fixtures shared with #6's tests (committed sessions, clock, spans, logs).
+from tests.documents.conftest import (  # noqa: E402, F401
+    _auth_span_exporter,
+    clock,
+    committed,
+    json_log,
+    meter_provider,
+    metric_reader,
+    spans,
+)
+
+
+@pytest.fixture(autouse=True)
+def _keys(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """A throwaway Fernet key per test (extraction.raw_json is encrypted)."""
+    from cryptography.fernet import Fernet
+
+    from app.config import Settings, get_settings
+
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
+    monkeypatch.setenv("FIELD_ENCRYPTION_KEY", Fernet.generate_key().decode())
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()

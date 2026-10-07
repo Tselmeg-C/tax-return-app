@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from app.config import LLMSettings
 from app.llm import LLMError, LLMRouter
 from app.llm.fake import FakeProvider, FakeReply
 from app.pipeline.schemas import ClassifyOutput, GenericBillExtraction
@@ -25,7 +26,7 @@ DEV_CLASSIFY = ClassifyOutput(
     multiple_documents=False,
     total_gross="12.34",
     currency="EUR",
-    document_date=None,
+    document_date="2025-06-01",  # type: ignore[arg-type]
     vendor="Testmodus Beispiel GmbH",
     certificate_year=None,
     reason_de=DEV_REASON,
@@ -35,8 +36,8 @@ DEV_EXTRACT = GenericBillExtraction.model_validate(
     {
         "vendor": "Testmodus Beispiel GmbH",
         "recipient_name": None,
-        "invoice_date": None,
-        "payment_date": None,
+        "invoice_date": "2025-06-01",
+        "payment_date": "2025-06-01",
         "payment_method": "card",
         "currency": "EUR",
         "total_gross": "12.34",
@@ -71,3 +72,14 @@ def scripted_router(
 
 def dev_router(base: LLMRouter) -> LLMRouter:
     return scripted_router(base, [DEV_CLASSIFY, DEV_EXTRACT])
+
+
+def fake_base_router() -> LLMRouter:
+    """A router whose tasks both route to `fake:test` (no fallback), for scripted runs."""
+    settings = LLMSettings(
+        _env_file=None,
+        llm_classify_model=FAKE_MODEL,
+        llm_extract_model=FAKE_MODEL,
+        llm_fallback_model="none",
+    )
+    return LLMRouter(settings)

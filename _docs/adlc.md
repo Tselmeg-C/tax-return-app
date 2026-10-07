@@ -61,6 +61,23 @@ The issue for such a task uses the **llm-feature** template and fills in its
 6. **Iterate** — every user override becomes a new labelled example; grow the
    eval set, adjust spec / prompt / model, and go through the gate again.
 
+## Worked example: #9 (bill pipeline v1)
+
+1. **Spec**: `ClassifyOutput` / `GenericBillExtraction` (`backend/app/pipeline/schemas.py`),
+   prompt set `prompts/v1/` pinned in `prompts/LOCK.yaml`, routing `classify` → gpt-4.1-mini,
+   `extract` → gpt-4.1 (fallback gpt-4.1-mini), failure behaviour in `_docs/pipeline.md`.
+2. **Eval set**: `bills_v0` (#7). Offline proof of the rules: the perfect reader
+   (`--predictor pipeline --provider fake --gate`, in CI) scores 1.0 on every rule-derived
+   metric except one documented by-design case.
+3. **Gate**: thresholds `status: confirmed` by the user; one real run, recorded:
+   `--predictor pipeline --provider openai --prompt-version v1 --record pipeline-openai-v1
+   --compare-to heuristic --gate`; its `report.md` goes into the PR.
+4. **Baseline**: the accepted run is saved (`--predictor replay --recording pipeline-openai-v1
+   --save-baseline pipeline-openai-v1`) and becomes `compare_to` in `thresholds.yaml`; the
+   recording is replayed in CI (`tests/evals/test_pipeline_recording.py`, which also fails when
+   the prompt hash no longer matches). Every later prompt / model / schema change (a new
+   `prompts/vN`) needs a new recording that is ≥ this baseline.
+
 ## Labels
 
 - **`adlc:spec`** — add when the issue defines or changes an LLM spec: a new

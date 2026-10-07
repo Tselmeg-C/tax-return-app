@@ -299,9 +299,10 @@ async def _persist(
         ).scalar_one_or_none()
         if locked is None:
             raise DocumentMissing()
-        overridden = (
+        overridden: Any = (
             await session.execute(
-                scope.select(TaxItem.id)  # type: ignore[arg-type]
+                scope.select(TaxItem)
+                .with_only_columns(TaxItem.id)
                 .where(TaxItem.document_id == doc.id, TaxItem.overridden_by_user.is_(True))
                 .limit(1)
             )

@@ -1,13 +1,17 @@
 """Decode a stored file into parts #8 accepts (#9 Decision 10). Sync: run it in a thread.
 
+- JPEG, PNG, WebP: the original bytes after a full decode check (#8 rotates, strips
+  metadata and downscales).
+
 | stored type           | classify / extract get                                       |
 |-----------------------|--------------------------------------------------------------|
-| JPEG, PNG, WebP       | the original bytes (after a full decode check); #8 rotates, strips metadata, downscales |
 | GIF                   | PNG of frame 1                                               |
 | BMP, TIFF, JPEG 2000  | JPEG (PNG with alpha); every TIFF page                       |
 | HEIC, HEIF, AVIF      | JPEG (EXIF rotation applied)                                 |
 | JPEG XL               | `UnsupportedImageFormat` (no permissively licensed decoder)  |
-| PDF                   | extract: the PDF unchanged; classify: its text layer (capped) if every page has text, else page 1 as JPEG |
+| PDF                   | extract: the PDF unchanged; classify: see below              |
+
+PDF classify input: the text layer (capped) if every page has text, else page 1 as JPEG.
 
 Document text is never logged. Errors are `PermanentJobError`s without content.
 """
@@ -62,6 +66,11 @@ class Limits:
     max_pages: int
     classify_max_chars: int
     max_image_pixels: int
+
+
+DEFAULT_LIMITS = Limits(max_pages=20, classify_max_chars=20_000, max_image_pixels=50_000_000)
+"""The settings' defaults (PIPELINE_MAX_PAGES, PIPELINE_CLASSIFY_MAX_CHARS,
+LLM_MAX_IMAGE_PIXELS); the eval predictor uses them (it has no DATABASE_URL settings)."""
 
 
 def _open(data: bytes, limits: Limits, formats: tuple[str, ...]) -> Image.Image:

@@ -25,7 +25,7 @@ from opentelemetry import metrics, trace
 from pydantic import BaseModel
 
 from app.domain.enums import AttentionReason, DocType, ExtractionStep
-from app.llm import LLMCallRecord, LLMError, LLMOutputError, LLMRouter, Part
+from app.llm import LLMCallRecord, LLMError, LLMOutputError, LLMRouter, Part, get_router
 from app.pipeline.preprocess import Limits, Prepared, preprocess
 from app.pipeline.prompts import Prompt, PromptSet
 from app.pipeline.schemas import ClassifyOutput, GenericBillExtraction
@@ -100,6 +100,19 @@ class PipelineResult:
     @property
     def calls(self) -> tuple[LLMCallRecord, ...]:
         return self.classify.calls + (self.extract.calls if self.extract else ())
+
+
+def default_router() -> LLMRouter:
+    """The process-wide router (`app.llm.get_router()`), for callers outside `app/`."""
+    return get_router()
+
+
+def effective_models(router: LLMRouter, models: Mapping[str, str]) -> dict[str, str]:
+    """`provider:model` per task: the override, else the routed primary model."""
+    return {
+        task: models.get(task) or router.routing.route(task).model.key
+        for task in ("classify", "extract")
+    }
 
 
 OnStep = Callable[[StepOutcome], Awaitable[None]]
@@ -201,7 +214,12 @@ async def run_pipeline(
     with tracer.start_as_current_span("pipeline preprocess") as span:
         span.set_attribute("belegbot.pipeline.step", "preprocess")
         try:
-            prepared = await asyncio.to_thread(preprocess, inp.data, inp.mime_type, inp.limits)
+            if inp.mime_type == "application/pdf":
+                # ponytail: PDFium is not thread-safe and #8's preflight calls it on the event
+                # loop thread, so PDFs are decoded there too; a process pool if it ever blocks.
+                prepared = preprocess(inp.data, inp.mime_type, inp.limits)
+            else:
+                prepared = await asyncio.to_thread(preprocess, inp.data, inp.mime_type, inp.limits)
         except Exception as exc:
             span.set_attribute("error.type", type(exc).__name__)
             pipeline_metrics().step_duration.record(

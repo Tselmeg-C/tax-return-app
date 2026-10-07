@@ -34,7 +34,7 @@ def _construct_mapping(loader: yaml.SafeLoader, node: yaml.MappingNode) -> dict[
 
 _UniqueKeyLoader.add_constructor(
     yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-    _construct_mapping,  # type: ignore[arg-type]
+    _construct_mapping,
 )
 
 

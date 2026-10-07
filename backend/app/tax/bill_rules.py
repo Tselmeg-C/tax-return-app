@@ -276,9 +276,9 @@ def evaluate(
 
     anlage = zeile = None
     if year is not None:
-        line = map_category(primary, year, mapping)
-        anlage, zeile = line.anlage, line.zeile
-        if not line.supported:
+        form = map_category(primary, year, mapping)
+        anlage, zeile = form.anlage, form.zeile
+        if not form.supported:
             reasons.add(R.UNSUPPORTED_YEAR)
 
     if not is_relevant:

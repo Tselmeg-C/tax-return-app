@@ -151,6 +151,8 @@ Auth tables (#5, migration `5a1c9e3b7d42`; both store only `sha256(token)` as he
 - `magic_link_token(id, household_id, user_id → app_user CASCADE, token_hash char(64) UNIQUE, redirect_path? varchar(512), created_at, expires_at, used_at?)`, index `(user_id, created_at)`
 - `user_session(id, household_id, user_id → app_user CASCADE, token_hash char(64) UNIQUE, created_at, last_seen_at, expires_at (absolute), revoked_at?)`
 
+Pipeline (#9, migration `c3d9a7e1f2b4`): `document.attention_reason varchar(64)?` (`AttentionReason`, priority order; CHECK `status <> 'needs_attention' OR attention_reason IS NOT NULL`). `extraction` is the append-only LLM call log (one row per attempt, `raw_json` only on the successful one); one `tax_item` per document in v1 (#43 splits).
+
 Tables added later, each by the issue that first uses it, in its own migration and under the same rules:
 
 | Table(s) | Issue |
@@ -210,18 +212,15 @@ await get_router().structured(task=..., system=..., parts=[...], schema=..., pro
 
 ## 7. Pipeline
 
-1. **Preprocess**: HEIC→JPEG, EXIF rotate, downscale to ~2000px, PDF → text layer if present (`pypdf`/`pdfplumber`) else rasterise; split multi-receipt photos later (v2).
-2. **Classify** (cheap model) → `DocType` enum + `tax_relevant: bool` + `reason`. Cheap heuristic pre-filter first (e.g. supermarket receipts with only food → irrelevant).
-3. **Extract** (strong model) with doc-type-specific pydantic schema:
-   - generic bill: vendor, date, total gross, VAT, line items, payment method (cash ⇒ §35a not eligible!), invoice recipient
-   - §35a: labour/travel vs. material share
-   - Lohnsteuerbescheinigung: Zeilen 3, 4, 5, 6, 22–28 etc.
-   - Jahressteuerbescheinigung: Kapitalerträge, einbehaltene KapESt/Soli/KiSt, Verluste, Freistellungsauftrag used
-   - Nebenkostenabrechnung: §35a portions
-4. **Map** → rules-based (not LLM) mapping `category → anlage/zeile` per year from `params/{year}.yaml`; LLM only proposes category.
-5. **Assign** person (by name on invoice, else uploader) and year (by date; payment date for Abfluss-Prinzip §11).
-6. **Validate**: amounts sum, date in plausible range, duplicate check; on failure → mark `needs_attention` (only exception to "fully automatic") and notify.
-7. **Notify** via originating channel.
+Implemented in `backend/app/pipeline/` (#9); details in [`_docs/pipeline.md`](_docs/pipeline.md).
+
+1. **Preprocess**: decode every stored type (HEIC/HEIF/AVIF/TIFF/BMP/JP2 → JPEG, GIF frame 1, EXIF rotation, JPEG XL unsupported), PDF text layer for classify else page 1 rendered; page limit `PIPELINE_MAX_PAGES` (never truncated); undecodable → `failed`.
+2. **Classify** (cheap model) → `DocType`, `tax_relevant`, readable / several documents, printed total, date, vendor, `reason_de`. (The heuristic pre-filter moved to #46.)
+3. **Extract** (strong model, `GenericBillExtraction`) for relevant single bills: vendor, recipient, dates, payment method, total, VAT, line items with a category and §35a cost kind each. Official documents are only classified in v1 (`doc_type_not_supported`; #18–#20).
+4. **Rules** (`app/tax/bill_rules.py`, pure, golden-tested): primary category = largest line sum (one item per document, #43 splits), deductible, §35a labour share and cash rule, AfA above the GWG limit, plausibility checks, tax year (§11), `category → anlage/zeile` from `params/{year}.yaml`. The LLM only reads.
+5. **Assign** person (recipient name, else uploader; §35a household-level) and check fuzzy duplicates.
+6. **Persist**: replace the document's item unless the user overrode one; doubtful results → `needs_attention` with one stored `AttentionReason`.
+7. **Notify** via `DocumentProcessed` (#11 subscribes).
 
 **Category taxonomy (v1)**: Arbeitsmittel, Fortbildung, Fahrtkosten/Entfernungspauschale, Homeoffice, Arbeitszimmer, Bewerbung, Kontoführung, Gewerkschaft/Berufsverband, Doppelte Haushaltsführung · Vorsorge (KV/PV/RV/Riester/Rürup) · Spenden · Kirchensteuer · Kinderbetreuung · Schulgeld · Krankheitskosten · Pflege · Behinderung · §35a haushaltsnahe Dienstleistungen / Handwerker · Steuerberatung · Anlage V Werbungskosten (AfA, Zinsen, Erhaltung, Nebenkosten) · Kapital (Bescheinigung) · `irrelevant`.
 
@@ -308,7 +307,7 @@ Since there's no review queue, accuracy must be measured offline:
 - The repo is public, so the committed eval set is synthetic: `evals/datasets/bills_v0` (60 documents rendered from `evals/synth/specs/bills_v0.yaml`, fictional "Muster" people and vendors, PDF / scanned PDF / photo / PNG variants) with hand-labelled ground truth (relevant?, category, amounts, §35a share, dates, tax year).
 - Optional anonymised real samples stay local only (`evals/datasets_private/`, never committed, #39); user overrides are exported as new labelled examples, private as well (#23).
 - `python -m evals.run --dataset bills_v0 --predictor … [--provider openai --model … --prompt-version v3]` → relevance precision/recall, category accuracy, amount exact-match, € error, cost, latency; `report.json` keys are pushed to Grafana (#22); providers are compared via baselines.
-- Gate: `--gate` checks `evals/thresholds.yaml` and the `compare_to` baseline: don't switch default model/prompt unless eval ≥ current. Real runs are recorded once and replayed offline in CI.
+- Gate: `--gate` checks `evals/thresholds.yaml` (bills_v0: `status: confirmed` by the user, #9) and the `compare_to` baseline: don't switch default model/prompt unless eval ≥ current. Real runs are recorded once (`--record pipeline-<provider>-<prompt_version>`) and replayed offline in CI (`tests/evals/test_pipeline_recording.py`, which also checks the recording's `prompt_sha256` against `prompts/LOCK.yaml`); the accepted run becomes the baseline `compare_to`. The perfect-reader run (`--predictor pipeline --provider fake --gate`) proves the rules offline in CI.
 
 ---
 
@@ -342,7 +341,7 @@ Since there's no review queue, accuracy must be measured offline:
 
 ## 15. Risks & open questions
 
-- **Fully automatic misclassification** → silent missed deductions or wrong claims. Mitigation: evals, override-rate metric, `needs_attention` on validation failures, "low-confidence" badge in UI (no blocking queue).
+- **Fully automatic misclassification** → silent missed deductions or wrong claims. Mitigation: evals, override-rate metric, `needs_attention` on validation failures, "low-confidence" badge in UI (no blocking queue). Pipeline rules, attention reasons and the eval gate: [`_docs/pipeline.md`](_docs/pipeline.md).
 - **Tax law drift** (yearly changes, e.g. 2026 Entfernungspauschale) → params per year + golden tests; review params each January.
 - **Near-exact calc complexity** — Vorsorgeaufwand and Progressionsvorbehalt are the hardest parts; consider validating against ERiC's calculation later.
 - **Railway volume single-mount** → v1 merges api+worker; plan migration to object storage.

@@ -26,7 +26,7 @@ from app.documents.service import ingest_document
 from app.domain.enums import Channel, DocumentStatus, JobKind, JobStatus
 from app.queue import runner
 from app.queue.enqueue import enqueue
-from app.queue.handlers import JobContext, process_document
+from app.queue.handlers import JobContext, check_stored_file
 from app.storage import LocalVolume
 from app.worker.loop import Worker
 from tests.documents import files
@@ -69,7 +69,8 @@ def make_worker(
     worker_id: str | None = None,
     **overrides: Any,
 ) -> Worker:
-    handlers = {JobKind.PROCESS_DOCUMENT: handler} if handler is not None else None
+    # #6's tests use the stored-file check (#9's pipeline has its own tests in tests/pipeline).
+    handlers = {JobKind.PROCESS_DOCUMENT: handler or check_stored_file}
     return Worker(
         sessionmaker=committed,
         storage=volume,
@@ -327,7 +328,7 @@ async def test_two_workers_twenty_jobs(
         async def handler(ctx: JobContext) -> None:
             ran.append((name, ctx.job.id))
             await asyncio.sleep(0.02)
-            await process_document(ctx)
+            await check_stored_file(ctx)
 
         return handler
 
