@@ -327,6 +327,8 @@ def test_stored_reason_is_the_highest_priority() -> None:
 def test_needs_extract() -> None:
     assert needs_extract(classify())
     assert not needs_extract(classify(tax_relevant=False))
-    assert not needs_extract(classify(doc_type=DocType.OTHER.value))
+    assert needs_extract(classify(doc_type=DocType.OTHER.value))  # v2: relevant `other` too
+    assert not needs_extract(classify(doc_type=DocType.OTHER.value, tax_relevant=False))
+    assert not needs_extract(classify(doc_type=DocType.KINDERGELD_BESCHEID.value))
     assert not needs_extract(classify(readable=False))
     assert not needs_extract(classify(multiple_documents=True))

@@ -190,7 +190,7 @@ uv run python -m evals.run --dataset bills_v0 --predictor replay --recording fix
 uv run python -m evals.synth --dataset bills_v0 [--check]       # regenerate / verify the dataset
 uv run python -m evals.run --dataset bills_v0 --predictor pipeline --provider fake --gate   # perfect reader, offline
 uv run python -m evals.run --dataset bills_v0 --predictor pipeline --provider openai \
-    --prompt-version v1 --record pipeline-openai-v1 --compare-to heuristic --gate  # paid, key exported; user only
+    --prompt-version v2 --record pipeline-openai-v2 --compare-to heuristic --gate  # paid, key exported; user only
 LLM_CLASSIFY_MODEL=fake:test LLM_EXTRACT_MODEL=fake:test PORT=8000 uv run honcho start -f Procfile  # dev, no key
 ```
 

@@ -1,3 +1,4 @@
 # prompt_sha256 per prompt set (rendered prompts + strict JSON schemas). Never edit an
 # existing entry: a changed hash means a new version directory (and an eval run).
 v1: 26a93aa5e5b376cb2508bb91ddaea9ba93913294aa9db67607915c504033ccdc
+v2: e22210dc1a314274a1048e9f463b926553a1913d41276f3a573666f95f260645

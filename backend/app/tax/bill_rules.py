@@ -96,14 +96,14 @@ class RulesResult:
         return self.reasons[0] if self.reasons else None
 
 
+EXTRACTABLE = frozenset({DocType.GENERIC_BILL, DocType.OTHER})
+
+
 def needs_extract(c: ClassifyOutput) -> bool:
-    """Extract runs only for a readable, single, relevant `generic_bill`."""
-    return (
-        c.doc_type is DocType.GENERIC_BILL
-        and c.tax_relevant
-        and c.readable
-        and not c.multiple_documents
-    )
+    """Extract runs for a readable, single, relevant bill. `other` marked relevant is
+    extracted too (v2): a classify slip must not silently drop a deduction; the extract
+    lines decide (all `irrelevant` → an irrelevant item)."""
+    return c.doc_type in EXTRACTABLE and c.tax_relevant and c.readable and not c.multiple_documents
 
 
 def ordered(reasons: set[AttentionReason]) -> list[AttentionReason]:

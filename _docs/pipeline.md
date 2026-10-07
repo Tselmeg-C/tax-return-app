@@ -64,7 +64,8 @@ uploader's e-mail, household or person names, ids or the storage key (sentinel t
 
 1. Not readable → no item, `unreadable`; several documents → `multiple_documents`; official
    type → `doc_type_not_supported` (no extract; #18–#20 add their extraction).
-2. Classify says not relevant (or `other`) → one `irrelevant` item (gross = printed total or
+2. Classify says not relevant → one `irrelevant` item (a relevant `other` document is
+   extracted like a bill since v2, so a classify slip does not drop a deduction) (gross = printed total or
    0.00, date = `document_date`, payment method `unknown`).
 3. With an extraction: lines with a category ≠ `irrelevant` count. None → irrelevant item.
    Otherwise the primary category has the largest absolute line sum; more than one relevant
@@ -152,6 +153,16 @@ LLM_CLASSIFY_MODEL=fake:test LLM_EXTRACT_MODEL=fake:test PORT=8000 uv run honcho
 Every upload gets the canned "Testmodus" item (`dev_fake.py`: 12.34 € `wk_arbeitsmittel`,
 paid 2025-06-01) and ends `done`. Refused with `APP_ENV=production`.
 
+## Prompt versions
+
+- `v1`: first real run (`recordings/bills_v0/pipeline-openai-v1`) failed the gate: classify
+  (gpt-4.1-mini) called insurance / Kita / donation / school / rent statements `other` +
+  irrelevant or an official type, so they never reached extract (all under-claims).
+- `v2` (default): classify prompt with a doc-type decision procedure, the official types
+  restricted to their issuers, a list of statements that are always relevant bills, and
+  "if in doubt, relevant"; extract prompt clarifies bank-statement dates and payment methods.
+  Schemas unchanged.
+
 ## Evals
 
 ```bash
@@ -159,10 +170,10 @@ paid 2025-06-01) and ends `done`. Refused with `APP_ENV=production`.
 uv run python -m evals.run --dataset bills_v0 --predictor pipeline --provider fake --gate
 # real run (paid; needs OPENAI_API_KEY exported in the shell), recorded once
 uv run python -m evals.run --dataset bills_v0 --predictor pipeline --provider openai \
-    --prompt-version v1 --record pipeline-openai-v1 --compare-to heuristic --gate
+    --prompt-version v2 --record pipeline-openai-v2 --compare-to heuristic --gate
 # accept it as the baseline (offline, from the recording), then set compare_to in thresholds.yaml
-uv run python -m evals.run --dataset bills_v0 --predictor replay --recording pipeline-openai-v1 \
-    --save-baseline pipeline-openai-v1
+uv run python -m evals.run --dataset bills_v0 --predictor replay --recording pipeline-openai-v2 \
+    --save-baseline pipeline-openai-v2
 ```
 
 Perfect-reader exception by design: `b044-jahressteuerbescheinigung` has no category / gross

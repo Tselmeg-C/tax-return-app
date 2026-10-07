@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 
 import structlog
 
+from app.domain.enums import PaymentMethod
 from app.pipeline.core import (
     PipelineInput,
     PipelineResult,
@@ -81,6 +82,8 @@ def to_prediction(result: PipelineResult) -> Prediction:
             tax_relevant=classify.tax_relevant,
             deductible_amount=Decimal("0.00"),
             tax_year=classify.certificate_year,
+            invoice_date=classify.document_date,
+            payment_method=PaymentMethod.UNKNOWN,
             calls=calls,
         )
     return Prediction(

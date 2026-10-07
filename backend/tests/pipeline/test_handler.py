@@ -27,6 +27,7 @@ from app.llm.fake import FakeReply
 from app.pipeline import core, events
 from app.pipeline.core import PipelineMetrics
 from app.pipeline.handler import check_pipeline_settings
+from app.pipeline.prompts import available_versions
 from app.pipeline.schemas import GenericBillExtraction
 from app.queue.handlers import JobContext
 from app.queue.runner import claim
@@ -43,6 +44,7 @@ from tests.pipeline.helpers import (
 )
 
 Sessions = async_sessionmaker[AsyncSession]
+LATEST = available_versions()[-1]
 HANDWERK = [
     ("180.00", "handwerkerleistung", "labour"),
     ("132.40", "handwerkerleistung", "material"),
@@ -80,7 +82,7 @@ async def test_relevant_bill(world: World) -> None:
     rows = await world.rows(Extraction, doc.id)
     assert [r.step for r in rows] == [ExtractionStep.CLASSIFY, ExtractionStep.EXTRACT]
     for r in rows:
-        assert r.prompt_version == "v1" and r.error_kind is None
+        assert r.prompt_version == LATEST and r.error_kind is None
         assert r.input_tokens == 100 and r.output_tokens == 20 and r.latency_ms == 5
         assert r.cost_eur > 0 and r.confidence == Decimal("0.900")
     assert rows[1].raw_json == extract.model_dump(mode="json")

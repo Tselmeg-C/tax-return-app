@@ -43,7 +43,7 @@ def test_perfect_reader_passes_the_gate(
             "invoice_date",
         }
         assert wrong == BY_DESIGN.get(case["id"], set()), case["id"]
-    assert report["predictor"]["prompt_version"] == "v1"
+    assert report["predictor"]["prompt_version"] == "v2"
     assert len(report["predictor"]["prompt_sha256"]) == 64
 
 
