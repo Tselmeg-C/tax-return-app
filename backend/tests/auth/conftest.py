@@ -78,6 +78,7 @@ class Api:
         path: str,
         *,
         json: Any = None,
+        content: Any = None,
         cookie: str | None = None,
         ip: str | None = None,
         csrf: bool = True,
@@ -90,7 +91,7 @@ class Api:
             sent["Cookie"] = f"{self.cookie_name}={cookie}"
         transport = httpx.ASGITransport(app=self.app, client=(ip or self.ip, 50000))
         async with httpx.AsyncClient(transport=transport, base_url=self.base_url) as client:
-            return await client.request(method, path, json=json, headers=sent)
+            return await client.request(method, path, json=json, content=content, headers=sent)
 
     async def get(self, path: str, **kw: Any) -> httpx.Response:
         return await self.request("GET", path, **kw)
@@ -179,10 +180,13 @@ async def running_app(
     clock: FakeClock | None = None,
     backend: MailBackend | None = None,
     conn: AsyncConnection | None = None,
+    meter_provider: Any = None,
 ) -> AsyncIterator[Api]:
     the_clock = clock or FakeClock()
     the_backend = backend if backend is not None else MemoryBackend()
-    app = create_app(settings, clock=the_clock, mail_backend=the_backend)
+    app = create_app(
+        settings, clock=the_clock, mail_backend=the_backend, meter_provider=meter_provider
+    )
     if conn is not None:
         app.dependency_overrides[get_db] = connection_sessions(conn)
     async with app.router.lifespan_context(app):

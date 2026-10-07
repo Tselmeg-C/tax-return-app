@@ -1,1 +1,1 @@
-"""Background worker (placeholder until the queue arrives in #6)."""
+"""Background worker: the Postgres job queue loop (#6)."""

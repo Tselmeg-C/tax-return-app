@@ -21,7 +21,11 @@ from app.domain.enums import Channel, DocType, DocumentStatus
 
 
 class Document(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
-    """An uploaded file. `storage_key` is opaque (never the original file name)."""
+    """An uploaded file. `storage_key` is opaque (never the original file name).
+
+    `original_filename` (#6) is display metadata only: sanitised, plain text, PII. Never use it
+    in a path, a `Storage` call, a log line, a span or a metric.
+    """
 
     __tablename__ = "document"
     __table_args__ = (
@@ -30,6 +34,10 @@ class Document(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
         CheckConstraint("sha256 ~ '^[0-9a-f]{64}$'", name="sha256_hex"),
         CheckConstraint("size_bytes > 0", name="size_bytes_positive"),
         CheckConstraint("page_count IS NULL OR page_count >= 1", name="page_count_positive"),
+        CheckConstraint(
+            "original_filename IS NULL OR octet_length(original_filename) BETWEEN 1 AND 255",
+            name="original_filename_length",
+        ),
         Index("ix_document_household_id_created_at", "household_id", "created_at"),
         Index(None, "uploaded_by_user_id"),
     )
@@ -52,3 +60,4 @@ class Document(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
     doc_type: Mapped[DocType | None] = mapped_column(enum_type(DocType, "doc_type"), nullable=True)
     # Exception class name only, never a message (messages can carry document content).
     error_kind: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    original_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)

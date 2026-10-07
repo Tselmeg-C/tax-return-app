@@ -6,6 +6,8 @@ export interface Call {
   headers: Headers;
   credentials: RequestCredentials | undefined;
   body: unknown;
+  /** The body as passed to `fetch` (e.g. a `File`). */
+  rawBody: unknown;
 }
 
 type Responder = (call: Call) => Response | Promise<Response>;
@@ -22,6 +24,7 @@ export function mockFetch(respond: Responder) {
       headers: new Headers(init.headers),
       credentials: init.credentials,
       body: typeof raw === "string" ? JSON.parse(raw) : undefined,
+      rawBody: raw,
     };
     calls.push(call);
     return respond(call);

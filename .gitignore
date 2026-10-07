@@ -20,3 +20,6 @@ node_modules/
 
 # Dev mail outbox (MAIL_BACKEND=file): contains login links
 backend/.dev-mail/
+
+# Uploaded originals in local dev (STORAGE_PATH default ./data/storage)
+backend/data/

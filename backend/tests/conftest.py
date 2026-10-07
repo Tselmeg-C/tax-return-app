@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import os
+import tempfile
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -36,6 +37,10 @@ for _name in (
     "RAILWAY_ENVIRONMENT_NAME",
 ):
     os.environ.pop(_name, None)
+
+# Uploaded files never land in backend/data/ during tests: one throwaway root per run
+# (absolute, so production-mode tests pass the STORAGE_PATH rule too).
+os.environ["STORAGE_PATH"] = tempfile.mkdtemp(prefix="belegbot-test-storage-")
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_TEST_DB_NAME = "belegbot_test"
