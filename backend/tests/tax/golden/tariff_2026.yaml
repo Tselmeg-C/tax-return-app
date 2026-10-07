@@ -1,0 +1,117 @@
+# Golden values for the tariff core (#14): expected values read from the BMF
+# Einkommensteuerrechner, never computed by the engine. Fill / refresh with
+#   uv run python -m tests.tax.golden.collect --year 2026
+# (see README.md). `expected` holds est (full euros) and soli (cents) as shown by the
+# calculator; it does not compute Kirchensteuer, so `kist` is covered by unit tests.
+year: 2026
+source:
+  calculator: "BMF Einkommensteuerrechner"
+  url: "https://www.bmf-steuerrechner.de/ekst/eingabeformekst.xhtml"
+  fetched_at: "2026-10-07"
+  method: script
+  calculator_version: null # the page shows no version or "Stand"
+cases:
+  - id: single_zero
+    note: "zero"
+    input: {zve: "0", filing: single, church_state: null}
+    expected: {est: "0", soli: "0.00"}
+  - id: single_gfb
+    note: "at Grundfreibetrag (§ 32a Abs. 1 Nr. 1)"
+    input: {zve: "12348", filing: single, church_state: null}
+    expected: {est: "0", soli: "0.00"}
+  - id: single_gfb_plus1
+    note: "first euro of zone 2"
+    input: {zve: "12349", filing: single, church_state: null}
+    expected: {est: "0", soli: "0.00"}
+  - id: single_first_tax
+    note: "smallest zvE with ESt >= 1 EUR (engine); rounding in zone 2"
+    input: {zve: "12356", filing: single, church_state: null}
+    expected: {est: "1", soli: "0.00"}
+  - id: single_zone2_end
+    note: "last euro of zone 2 (zone 2 -> 3)"
+    input: {zve: "17799", filing: single, church_state: null}
+    expected: {est: "1034", soli: "0.00"}
+  - id: single_zone3_start
+    note: "first euro of zone 3"
+    input: {zve: "17800", filing: single, church_state: null}
+    expected: {est: "1035", soli: "0.00"}
+  - id: single_zone3_end
+    note: "last euro of zone 3 (zone 3 -> 4)"
+    input: {zve: "69878", filing: single, church_state: null}
+    expected: {est: "18213", soli: "0.00"}
+  - id: single_zone4_start
+    note: "first euro of zone 4"
+    input: {zve: "69879", filing: single, church_state: null}
+    expected: {est: "18213", soli: "0.00"}
+  - id: single_zone4_end
+    note: "last euro of zone 4 (zone 4 -> 5)"
+    input: {zve: "277825", filing: single, church_state: null}
+    expected: {est: "105550", soli: "5805.25"}
+  - id: single_top_rate
+    note: "first euro of zone 5 (top rate)"
+    input: {zve: "277826", filing: single, church_state: null}
+    expected: {est: "105551", soli: "5805.30"}
+  - id: single_huge
+    note: "large value in zone 5"
+    input: {zve: "10000000", filing: single, church_state: null}
+    expected: {est: "4480529", soli: "246429.09"}
+  - id: single_soli_last_free
+    note: "largest zvE with ESt <= Soli Freigrenze -> Soli 0"
+    input: {zve: "74968", filing: single, church_state: null}
+    expected: {est: "20350", soli: "0.00"}
+  - id: single_soli_first
+    note: "first Soli cent"
+    input: {zve: "74969", filing: single, church_state: null}
+    expected: {est: "20351", soli: "0.11"}
+  - id: single_soli_milderung
+    note: "inside the Soli Milderungszone"
+    input: {zve: "90000", filing: single, church_state: null}
+    expected: {est: "26664", soli: "751.36"}
+  - id: single_soli_full
+    note: "first zvE at the full 5.5 % Soli"
+    input: {zve: "116607", filing: single, church_state: null}
+    expected: {est: "37839", soli: "2081.14"}
+  - id: joint_2gfb
+    note: "Splitting at 2 x Grundfreibetrag"
+    input: {zve: "24696", filing: joint, church_state: null}
+    expected: {est: "0", soli: "0.00"}
+  - id: joint_odd
+    note: "odd joint zvE (halving + rounding)"
+    input: {zve: "100001", filing: joint, church_state: null}
+    expected: {est: "21096", soli: "0.00"}
+  - id: joint_100k
+    note: "Splitting mid-range"
+    input: {zve: "100000", filing: joint, church_state: null}
+    expected: {est: "21096", soli: "0.00"}
+  - id: joint_soli_last_free
+    note: "joint Soli Freigrenze edge -> Soli 0"
+    input: {zve: "149937", filing: joint, church_state: null}
+    expected: {est: "40700", soli: "0.00"}
+  - id: joint_soli_first
+    note: "first joint Soli cent"
+    input: {zve: "149938", filing: joint, church_state: null}
+    expected: {est: "40702", soli: "0.23"}
+  - id: joint_top_rate
+    note: "top rate under Splitting"
+    input: {zve: "555652", filing: joint, church_state: null}
+    expected: {est: "211102", soli: "11610.61"}
+  - id: single_church_8
+    note: "Kirchensteuer 8 %"
+    input: {zve: "100000", filing: single, church_state: BY}
+    expected: {est: "30864", soli: "1251.16"}
+  - id: single_church_9
+    note: "Kirchensteuer 9 %"
+    input: {zve: "100000", filing: single, church_state: NW}
+    expected: {est: "30864", soli: "1251.16"}
+  - id: single_church_no_soli
+    note: "KiSt > 0 while Soli = 0"
+    input: {zve: "50000", filing: single, church_state: BW}
+    expected: {est: "10548", soli: "0.00"}
+  - id: joint_church_8
+    note: "KiSt under Splitting"
+    input: {zve: "100000", filing: joint, church_state: BY}
+    expected: {est: "21096", soli: "0.00"}
+  - id: joint_church_9
+    note: "KiSt + Soli under Splitting"
+    input: {zve: "150000", filing: joint, church_state: HE}
+    expected: {est: "40728", soli: "3.33"}
