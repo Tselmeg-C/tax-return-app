@@ -121,6 +121,13 @@ class AttentionReason(StrEnum):
     LOW_CONFIDENCE = "low_confidence"
 
 
+class FilingStatus(StrEnum):
+    """Tariff for the tax core (#14): Grundtarif or Splitting (§ 32a Abs. 5 EStG)."""
+
+    SINGLE = "single"
+    JOINT = "joint"
+
+
 class AuditAction(StrEnum):
     CREATE = "create"
     UPDATE = "update"
@@ -319,6 +326,10 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         AttentionReason.YEAR_BOUNDARY_RECURRING: "Zahlung um den Jahreswechsel (10-Tage-Regel)",
         AttentionReason.LOW_CONFIDENCE: "Unsichere Erkennung",
     },
+    FilingStatus: {
+        FilingStatus.SINGLE: "Grundtarif",
+        FilingStatus.JOINT: "Splittingtarif (Zusammenveranlagung)",
+    },
     PaymentMethod: {
         PaymentMethod.CASH: "Bar",
         PaymentMethod.BANK_TRANSFER: "Überweisung",
@@ -342,6 +353,7 @@ ALL_ENUMS: tuple[type[StrEnum], ...] = (
     ExtractionStep,
     Anlage,
     PaymentMethod,
+    FilingStatus,
     AuditAction,
     ActorType,
     CategoryGroup,
