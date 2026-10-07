@@ -13,10 +13,11 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.responses import HTMLResponse, JSONResponse
+from opentelemetry.metrics import MeterProvider
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.api import auth
+from app.api import auth, documents
 from app.api.deps import require_session
 from app.api.security import CsrfMiddleware, NoStoreMiddleware
 from app.auth.clock import Clock, SystemClock
@@ -27,6 +28,8 @@ from app.db.session import create_engine, create_sessionmaker
 from app.observability import API_SERVICE_NAME, setup_observability
 from app.observability.http import instrument_app, instrument_engine
 from app.observability.logs import set_level
+from app.queue.metrics import UploadMetrics
+from app.storage import storage_from_settings
 
 logger = logging.getLogger("app.api")
 
@@ -42,12 +45,13 @@ def create_app(
     *,
     clock: Clock | None = None,
     mail_backend: MailBackend | None = None,
+    meter_provider: MeterProvider | None = None,
 ) -> FastAPI:
     """Build the app. Settings are resolved at startup (not import); no DB connection is opened.
 
     Observability (JSON logging, OTel) is set up here, at import time of `app.api.main`, so
     uvicorn's own startup lines are already JSON. It never connects anywhere by itself.
-    `clock` and `mail_backend` are injectable for tests.
+    `clock`, `mail_backend` and `meter_provider` are injectable for tests.
     """
     observability = setup_observability(API_SERVICE_NAME)
     the_clock: Clock = clock or SystemClock()
@@ -57,12 +61,17 @@ def create_app(
         resolved = settings if settings is not None else get_settings()
         check_api_settings(resolved)  # production rules; names variables, never values
         set_level(resolved.log_level)
+        storage = storage_from_settings(resolved)
+        # Fails startup naming STORAGE_PATH (class name only, never the OS message).
+        await asyncio.to_thread(storage.probe)
         engine = create_engine(resolved)
         instrument_engine(engine, observability)
         app.state.settings = resolved
         app.state.engine = engine
         app.state.sessionmaker = create_sessionmaker(engine)
         app.state.clock = the_clock
+        app.state.storage = storage
+        app.state.upload_metrics = UploadMetrics(meter_provider)
         app.state.mailer = MailDispatcher(mail_backend or backend_from_settings(resolved))
         app.state.magic_link_limiter = RateLimiter(
             MAGIC_LINK_REQUESTS_PER_IP, RATE_WINDOW, the_clock
@@ -139,6 +148,7 @@ def create_app(
         return get_redoc_html(openapi_url="openapi.json", title="belegbot api")
 
     app.include_router(auth.router)
+    app.include_router(documents.router)
     return app
 
 

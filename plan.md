@@ -72,12 +72,12 @@
 |---|---|---|---|
 | `api` | `honcho start --no-prefix -f Procfile` (`backend/Procfile`: uvicorn `app.api.main:app` + `python -m app.worker`) | `/health` (DB) | no public domain; pre-deploy `alembic upgrade head`; Telegram webhook route decided in #11 |
 | `web` | `node .output/server/index.mjs` (TanStack Start built with the Nitro node-server preset) | `/healthz` (no upstream) | React/TanStack app from `frontend/`; serves the UI and a **same-origin `/api` proxy to `api`** over the Railway private network (no CORS, cookies stay first-party) |
-| `worker` | process inside `api` in v1 (`python -m app.worker` via honcho) | – | queue consumer (#6); shares the `api` container, so the volume (#6) mounts on `api` |
+| `worker` | process inside `api` in v1 (`python -m app.worker` via honcho) | – | queue consumer (#6); a process in the `api` container, owns no volume of its own: the volume mounts on `api` and both processes see it |
 | `postgres` | Railway plugin | – | daily backups enabled |
 
 Config as code: `backend/railway.toml`, `frontend/railway.toml`; runbook in `_docs/deploy.md`.
 
-**Queue**: Postgres-based (`procrastinate` or `SELECT … FOR UPDATE SKIP LOCKED`) — no Redis needed at family scale.
+**Queue** (#6): our own `job` table claimed with `SELECT … FOR UPDATE SKIP LOCKED` (leases, heartbeat, fencing, retries with backoff), not `procrastinate`. The document and its job are inserted in the same SQLAlchemy transaction, and the table follows #4's schema rules (no native enums, no tables outside Alembic) — no Redis needed at family scale.
 
 **Volume caveat**: a Railway volume mounts to **one** service. → `worker` owns the volume and serves file bytes to `api` via an internal endpoint, *or* merge `api`+`worker` into one service in v1. Recommendation: **v1 = api+worker in one service** (FastAPI + background worker process via `honcho`), split later. Because of `Storage` interface, moving to R2/S3 later is trivial.
 
@@ -138,6 +138,12 @@ Core tables (#4, migration `727a2e042810`):
 - `tax_item(id, household_id, document_id? → document CASCADE, extraction_id? → extraction SET NULL, person_id? → person RESTRICT (NULL = household-level), year, category, anlage?, zeile?, gross_amount, deductible_amount, labour_share_35a?, vendor?, invoice_date?, payment_date?, payment_method, is_relevant (irrelevant ⇒ deductible 0), reason?, confidence?, overridden_by_user, created_at, updated_at)`
 - `audit_log(id, household_id, entity, entity_id (no FK), action[create|update|delete], before? jsonb, after? jsonb, actor_type[user|system], actor_user_id? (no FK), created_at)` — written via `app/db/audit.py`, encrypted values stored as `"[redacted]"`
 
+Queue and uploads (#6, migration `b7e4d2a91c3f`):
+
+- `job(id, household_id, kind[process_document], document_id? → document CASCADE, status[queued|running|succeeded|failed], attempts, max_attempts, run_after, locked_by?, locked_until?, last_error_kind? (class name), trace_context? (W3C traceparent), started_at?, finished_at?, created_at, updated_at)`; one active (`queued`/`running`) job per document (partial unique index). Ids only — never file contents, names or paths.
+- `document.original_filename varchar(255)?` (sanitised display name, plain text, never used as a path). `document.uploaded_by_user_id` stays `RESTRICT`: members are only disabled, and removing a member never deletes documents.
+- Storage key layout: `households/<household_id>/documents/<document_id>/original` under `STORAGE_PATH` (no file name, no extension); temp files in `<STORAGE_PATH>/tmp/`.
+
 🔒 = encrypted. `Category` (30 codes in 9 groups, §7) and `DocType` / `PaymentMethod` are the vocabulary of the LLM schemas; `Category → Anlage/Zeile` lives per year in `params/{year}.yaml` (#9).
 
 Auth tables (#5, migration `5a1c9e3b7d42`; both store only `sha256(token)` as hex, no IP or user agent):
@@ -149,7 +155,7 @@ Tables added later, each by the issue that first uses it, in its own migration a
 
 | Table(s) | Issue |
 |---|---|
-| queue tables, extra `document` columns (e.g. encrypted original filename) | #6 |
+| ~~queue tables, extra `document` columns~~ → `job`, `document.original_filename` (above) | #6 |
 | `channel_link(user_id, channel, external_id)`, one-time link codes | #11 |
 | `passkey` | #12 |
 | `tax_profile(household_id, year, assessment, bundesland, church_tax_rate)`, `employment(person_id, year, employer, steuerklasse, commute_km, office_days, homeoffice_days)`, `child_year(person_id, year, kindergeld_months, lives_with, betreuung_costs…)`, `property` (+ `tax_item.property_id`), extra `person` columns | #13 |
@@ -279,6 +285,7 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
 - Telegram linking: web shows one-time code → `/link 123456` → `channel_link` row; unknown chat IDs are ignored.
 - Webhook secret path + `X-Telegram-Bot-Api-Secret-Token` check.
 - Steuer-ID & documents are sensitive: encrypt sensitive columns (app-level Fernet key in Railway env), volume on Railway (note: Railway region choice — pick **EU West (Amsterdam)**).
+- Uploaded files and their original file names (#6): the name is stored in plain text as display metadata and never logged, traced, put in metrics, job rows or error bodies, or used as a path. Files (mode 0600) and file names are **not encrypted** at this stage (user decision 2026-10-05); encryption at rest (#33) is deferred and revisited with #24's hardening.
 - LLM data processing: use providers' zero/limited-retention options; document which provider sees what. Prefer EU endpoints where available (Vertex europe-west3, OpenAI EU data residency if on eligible plan). What OpenAI receives, `store: false`, retention / ZDR and EU residency: [`_docs/llm.md`](_docs/llm.md#data-handling-openai).
 - Backups: Railway Postgres backups + nightly `pg_dump` + volume tarball to an offsite bucket (v1.1).
 - Disclaimer in UI: estimate, not Steuerberatung.

@@ -54,6 +54,19 @@ class DocType(StrEnum):
     OTHER = "other"
 
 
+class JobKind(StrEnum):
+    """Background job kinds (`job.kind`, #6)."""
+
+    PROCESS_DOCUMENT = "process_document"
+
+
+class JobStatus(StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
+
 class ExtractionStep(StrEnum):
     CLASSIFY = "classify"
     EXTRACT = "extract"
@@ -285,4 +298,6 @@ ALL_ENUMS: tuple[type[StrEnum], ...] = (
     ActorType,
     CategoryGroup,
     Category,
+    JobKind,
+    JobStatus,
 )

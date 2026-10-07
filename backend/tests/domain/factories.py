@@ -20,6 +20,7 @@ from app.db.models import (
     Document,
     Extraction,
     Household,
+    Job,
     MagicLinkToken,
     Person,
     TaxItem,
@@ -30,6 +31,7 @@ from app.domain.enums import (
     Category,
     Channel,
     ExtractionStep,
+    JobKind,
     PersonKind,
     UserRole,
 )
@@ -170,6 +172,7 @@ class World:
     audit: AuditLog
     link_token: MagicLinkToken
     user_session: UserSession
+    job: Job
 
     def by_model(self) -> dict[type[Any], Any]:
         return {
@@ -182,6 +185,7 @@ class World:
             AuditLog: self.audit,
             MagicLinkToken: self.link_token,
             UserSession: self.user_session,
+            Job: self.job,
         }
 
 
@@ -208,4 +212,7 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
     assert audit is not None
     link_token = await make_link_token(session, hh, user)
     user_session = await make_user_session(session, hh, user)
-    return World(hh, person, user, doc, ext, item, audit, link_token, user_session)
+    job = Job(household_id=hh.id, kind=JobKind.PROCESS_DOCUMENT, document_id=doc.id, max_attempts=5)
+    session.add(job)
+    await session.flush()
+    return World(hh, person, user, doc, ext, item, audit, link_token, user_session, job)

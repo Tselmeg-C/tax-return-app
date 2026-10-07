@@ -18,6 +18,7 @@ _PSYCOPG_SCHEME = "postgresql+psycopg://"
 _PLAIN_SCHEMES = ("postgres://", "postgresql://")
 # `backend/.dev-mail/` (git-ignored): the `file` mail backend's outbox.
 DEFAULT_DEV_MAIL_DIR = Path(__file__).resolve().parent.parent / ".dev-mail"
+DEFAULT_STORAGE_PATH = Path("data") / "storage"
 
 
 def normalise_database_url(url: str) -> str:
@@ -82,6 +83,69 @@ class Settings(BaseSettings):
         default=30, gt=0, validation_alias=AliasChoices("SESSION_MAX_DAYS", "session_max_days")
     )
 
+    # --- storage, upload, queue and worker (#6) ------------------------------------------
+    # Root directory for uploaded originals. Unset: `./data/storage` relative to the working
+    # directory (backend/ locally). Must be set and absolute with APP_ENV=production.
+    storage_path: Path | None = Field(
+        default=None, validation_alias=AliasChoices("STORAGE_PATH", "storage_path")
+    )
+    max_upload_mb: int = Field(
+        default=25, gt=0, validation_alias=AliasChoices("MAX_UPLOAD_MB", "max_upload_mb")
+    )
+    worker_poll_interval_seconds: float = Field(
+        default=2.0,
+        gt=0,
+        validation_alias=AliasChoices(
+            "WORKER_POLL_INTERVAL_SECONDS", "worker_poll_interval_seconds"
+        ),
+    )
+    worker_concurrency: int = Field(
+        default=1,
+        ge=1,
+        validation_alias=AliasChoices("WORKER_CONCURRENCY", "worker_concurrency"),
+    )
+    # Must stay below honcho's KILL_WAIT (5 s): honcho SIGKILLs everything after that.
+    worker_shutdown_grace_seconds: float = Field(
+        default=3.0,
+        ge=0,
+        validation_alias=AliasChoices(
+            "WORKER_SHUTDOWN_GRACE_SECONDS", "worker_shutdown_grace_seconds"
+        ),
+    )
+    job_lease_seconds: float = Field(
+        default=60.0, gt=0, validation_alias=AliasChoices("JOB_LEASE_SECONDS", "job_lease_seconds")
+    )
+    job_timeout_seconds: float = Field(
+        default=600.0,
+        gt=0,
+        validation_alias=AliasChoices("JOB_TIMEOUT_SECONDS", "job_timeout_seconds"),
+    )
+    job_max_attempts: int = Field(
+        default=5,
+        ge=1,
+        le=100,
+        validation_alias=AliasChoices("JOB_MAX_ATTEMPTS", "job_max_attempts"),
+    )
+    job_backoff_base_seconds: float = Field(
+        default=30.0,
+        ge=0,
+        validation_alias=AliasChoices("JOB_BACKOFF_BASE_SECONDS", "job_backoff_base_seconds"),
+    )
+    job_backoff_max_seconds: float = Field(
+        default=1800.0,
+        ge=0,
+        validation_alias=AliasChoices("JOB_BACKOFF_MAX_SECONDS", "job_backoff_max_seconds"),
+    )
+
+    @property
+    def resolved_storage_path(self) -> Path:
+        """`STORAGE_PATH` as an absolute path (default `./data/storage` in the working dir)."""
+        return (self.storage_path or DEFAULT_STORAGE_PATH).absolute()
+
+    @property
+    def max_upload_bytes(self) -> int:
+        return self.max_upload_mb * 1024 * 1024
+
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
@@ -110,6 +174,13 @@ class Settings(BaseSettings):
         if isinstance(value, str) and not value.strip():
             return None
         return value
+
+    @field_validator("storage_path", mode="before")
+    @classmethod
+    def _empty_storage_path_is_unset(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value.strip() if isinstance(value, str) else value
 
     @field_validator("resend_from_email", "mail_backend", mode="before")
     @classmethod
@@ -185,11 +256,22 @@ def load_settings() -> Settings:
         raise SettingsError("invalid settings: " + "; ".join(problems)) from None
 
 
+def storage_problems(settings: Settings) -> list[str]:
+    """Production rules for `STORAGE_PATH` (api and worker); the path is not secret."""
+    if not settings.is_production:
+        return []
+    if settings.storage_path is None:
+        return ["STORAGE_PATH: must be set in production"]
+    if not settings.storage_path.is_absolute():
+        return ["STORAGE_PATH: must be an absolute path in production"]
+    return []
+
+
 def production_problems(settings: Settings) -> list[str]:
     """What breaks the production rules, as `VARIABLE: reason` (never a value)."""
     if not settings.is_production:
         return []
-    problems: list[str] = []
+    problems: list[str] = storage_problems(settings)
     if settings.resolved_mail_backend != "resend":
         problems.append("MAIL_BACKEND: must be resend in production")
     else:
@@ -205,6 +287,13 @@ def production_problems(settings: Settings) -> list[str]:
 def check_api_settings(settings: Settings) -> None:
     """Fail api startup when production rules are broken (the CLI does not call this)."""
     problems = production_problems(settings)
+    if problems:
+        raise SettingsError("invalid settings: " + "; ".join(problems))
+
+
+def check_worker_settings(settings: Settings) -> None:
+    """Fail worker startup when the storage rules are broken."""
+    problems = storage_problems(settings)
     if problems:
         raise SettingsError("invalid settings: " + "; ".join(problems))
 

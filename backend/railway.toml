@@ -15,3 +15,7 @@ healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
+# Seconds Railway waits after SIGTERM before SIGKILL: covers honcho's own shutdown (worker
+# grace 3 s, honcho KILL_WAIT 5 s). With a volume the old deployment stops before the new one
+# starts, so uploads during a deploy can fail with a 5xx (the UI offers "Erneut hochladen").
+drainingSeconds = 15

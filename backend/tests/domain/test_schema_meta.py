@@ -24,6 +24,7 @@ CORE_TABLES = {
     "document",
     "extraction",
     "household",
+    "job",  # #6
     "magic_link_token",  # #5
     "person",
     "tax_item",
@@ -116,7 +117,8 @@ async def test_db_enum_check_matches_python_enum(
     )
     definition = result.scalar_one()
     assert f"({column.name})::text" in definition
-    db_values = re.findall(r"'([^']*)'::character varying", definition)
+    # Postgres renders a one-value IN list as `= '...'::text`.
+    db_values = re.findall(r"'([^']*)'::(?:character varying|text)", definition)
     assert enum_type.enum_class is not None
     py_values = [member.value for member in enum_type.enum_class]
     assert sorted(db_values) == sorted(py_values)

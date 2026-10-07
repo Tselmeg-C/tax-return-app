@@ -26,6 +26,8 @@ export class ApiError extends Error {
 export interface ApiInit extends Omit<RequestInit, "body" | "credentials"> {
   /** JSON body (sets `Content-Type: application/json`). */
   json?: unknown;
+  /** Raw body (e.g. a `File`), sent as is; set the `Content-Type` header yourself. */
+  body?: BodyInit;
   /** Default true: a 401 calls the unauthorized handler (login redirect). */
   redirectOn401?: boolean;
 }
@@ -66,13 +68,15 @@ async function readDetail(response: Response): Promise<string | undefined> {
 }
 
 export async function apiFetch<T = unknown>(path: string, init: ApiInit = {}): Promise<T> {
-  const { json, redirectOn401 = true, headers: initHeaders, ...rest } = init;
+  const { json, body, redirectOn401 = true, headers: initHeaders, ...rest } = init;
   const headers = new Headers(initHeaders);
   headers.set(CSRF_HEADER, CSRF_VALUE);
   const request: RequestInit = { ...rest, headers, credentials: "same-origin" };
   if (json !== undefined) {
     headers.set("Content-Type", "application/json");
     request.body = JSON.stringify(json);
+  } else if (body !== undefined) {
+    request.body = body;
   }
 
   const response = await fetch(`/api${path}`, request);
