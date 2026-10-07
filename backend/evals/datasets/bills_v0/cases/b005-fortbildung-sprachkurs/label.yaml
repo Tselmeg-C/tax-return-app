@@ -1,0 +1,19 @@
+schema_version: 1
+id: b005-fortbildung-sprachkurs
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: wk_fortbildung
+  gross_amount: '360.00'
+  deductible_amount: '360.00'
+  labour_share_35a: null
+  invoice_date: 2025-01-28
+  payment_date: 2025-02-10
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Sprachschule Muster
+  person_hint: Sam Muster

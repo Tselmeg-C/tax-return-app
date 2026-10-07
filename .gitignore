@@ -23,3 +23,6 @@ backend/.dev-mail/
 
 # Uploaded originals in local dev (STORAGE_PATH default ./data/storage)
 backend/data/
+# Eval run outputs and local-only private datasets (#7, #39; repo is public)
+backend/evals/reports/
+backend/evals/datasets_private/

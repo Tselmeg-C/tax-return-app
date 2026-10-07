@@ -1,0 +1,21 @@
+schema_version: 1
+id: b041-erhaltung-bad-mehrseitig
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags:
+- multi_page
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: v_erhaltung
+  gross_amount: '5635.00'
+  deductible_amount: '5635.00'
+  labour_share_35a: null
+  invoice_date: 2025-10-15
+  payment_date: 2025-10-28
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Bauunternehmen Beispiel GmbH
+  person_hint: Alex Muster
+notes: Drei Seiten, Gesamtbetrag nur auf der letzten Seite.

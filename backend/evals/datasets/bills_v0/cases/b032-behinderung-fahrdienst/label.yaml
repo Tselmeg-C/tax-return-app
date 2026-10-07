@@ -1,0 +1,21 @@
+schema_version: 1
+id: b032-behinderung-fahrdienst
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: false
+  category: behinderung
+  gross_amount: '192.00'
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2025-04-25
+  payment_date: 2025-04-30
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Fahrdienst Beispiel
+  person_hint: Alex Muster
+notes: Behinderungsbedingte Fahrtkosten gelten seit 2021 nur über die Pauschale nach § 33 Abs. 2a EStG
+  (Merkzeichen aG), nicht mit den tatsächlichen Kosten; der Beleg zählt nicht.

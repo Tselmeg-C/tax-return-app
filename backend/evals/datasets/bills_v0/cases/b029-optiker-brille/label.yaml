@@ -1,0 +1,19 @@
+schema_version: 1
+id: b029-optiker-brille
+source: synthetic
+file: document.pdf
+variant: pdf_scanned
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: krankheitskosten
+  gross_amount: '600.00'
+  deductible_amount: '600.00'
+  labour_share_35a: null
+  invoice_date: 2025-03-28
+  payment_date: 2025-03-28
+  tax_year: 2025
+  payment_method: card
+  vendor: Optik Beispiel
+  person_hint: Alex Muster

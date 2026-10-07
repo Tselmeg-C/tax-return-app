@@ -1,0 +1,33 @@
+# LLM list prices, used to estimate `cost_eur` per call (see _docs/llm.md).
+# Prices are quoted decimal strings (floats are rejected), per 1 000 tokens, Standard tier.
+# Bump `version` (date of the change) on every edit; it goes on spans and into
+# LLMResult.pricing_version. Regional processing (EU data residency) endpoints add a 10%
+# uplift for models released on or after 2026-03-05; none of the models below is affected.
+version: "2026-10-06"
+fx:
+  usd_eur: "0.8925"                      # EUR per 1 USD = 1 / 1.1204 (USD per EUR)
+  source: "ECB euro reference rate, 2026-10-05"
+models:
+  "openai:gpt-4.1-mini":
+    currency: USD
+    input_per_1k: "0.0004"               # $0.40 / 1M
+    cached_input_per_1k: "0.0001"        # $0.10 / 1M
+    output_per_1k: "0.0016"              # $1.60 / 1M
+    source: "https://developers.openai.com/api/docs/pricing (checked 2026-10-06)"
+  "openai:gpt-4.1":
+    currency: USD
+    input_per_1k: "0.002"                # $2.00 / 1M
+    cached_input_per_1k: "0.0005"        # $0.50 / 1M
+    output_per_1k: "0.008"               # $8.00 / 1M
+    source: "https://developers.openai.com/api/docs/pricing (checked 2026-10-06)"
+  "openai:gpt-5-mini":
+    currency: USD
+    input_per_1k: "0.00025"              # $0.25 / 1M
+    cached_input_per_1k: "0.000025"      # $0.025 / 1M
+    output_per_1k: "0.002"               # $2.00 / 1M (reasoning tokens are billed as output)
+    source: "https://developers.openai.com/api/docs/pricing (checked 2026-10-06)"
+  "fake:test":
+    currency: EUR
+    input_per_1k: "0.001"
+    output_per_1k: "0.002"
+    source: "test only"

@@ -20,6 +20,10 @@ dependencies = [
     "opentelemetry-instrumentation-sqlalchemy>=0.66b0",
     "httpx>=0.28.1",
     "email-validator>=2.3.0",
+    "openai>=3.24.0",
+    "pillow>=12.3.0",
+    "pypdfium2>=5.14.0",
+    "pyyaml>=6.0.3",
 ]
 
 [dependency-groups]
@@ -29,6 +33,11 @@ dev = [
     "ruff",
     "mypy",
     "httpx",
+    "respx>=0.23.1",
+    "pypdf>=6.19.0",
+    "types-pyyaml>=6.0.12.20260906",
+    "reportlab>=5.0.1",
+    "types-reportlab>=5.0.0.20260911",
 ]
 
 [build-system]
@@ -50,6 +59,10 @@ strict = true
 python_version = "3.12"
 plugins = ["pydantic.mypy"]
 
+[[tool.mypy.overrides]]
+module = ["pypdfium2", "pypdfium2.*"]
+ignore_missing_imports = true
+
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true
@@ -60,3 +73,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]
+addopts = "-m 'not live'"
+markers = [
+    "live: calls a real paid LLM API; needs OPENAI_API_KEY (run with `uv run pytest -m live`)",
+]

@@ -1,0 +1,15 @@
+{
+  "status": 429,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "req_test_error_429_credit_balance_exhausted"
+  },
+  "body": {
+    "error": {
+      "message": "You have no credits remaining.",
+      "type": "insufficient_quota",
+      "param": null,
+      "code": "credit_balance_exhausted"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+schema_version: 1
+id: b027-zahnarzt-offen
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags:
+- no_payment_date
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: krankheitskosten
+  gross_amount: '218.70'
+  deductible_amount: '218.70'
+  labour_share_35a: null
+  invoice_date: 2025-10-14
+  payment_date: null
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Zahnarztpraxis Dr. Beispiel
+  person_hint: Sam Muster
+notes: Keine Zahlung sichtbar; tax_year nach Rechnungsdatum.

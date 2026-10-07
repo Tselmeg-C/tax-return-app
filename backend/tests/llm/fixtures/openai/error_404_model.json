@@ -1,0 +1,15 @@
+{
+  "status": 404,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "req_test_error_404_model"
+  },
+  "body": {
+    "error": {
+      "message": "The model does not exist or you do not have access to it.",
+      "type": "invalid_request_error",
+      "param": "model",
+      "code": "model_not_found"
+    }
+  }
+}

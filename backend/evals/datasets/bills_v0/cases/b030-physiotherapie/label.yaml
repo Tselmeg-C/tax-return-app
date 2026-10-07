@@ -1,0 +1,19 @@
+schema_version: 1
+id: b030-physiotherapie
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: krankheitskosten
+  gross_amount: '171.00'
+  deductible_amount: '171.00'
+  labour_share_35a: null
+  invoice_date: 2025-06-20
+  payment_date: 2025-06-30
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Physiotherapie Muster
+  person_hint: Sam Muster

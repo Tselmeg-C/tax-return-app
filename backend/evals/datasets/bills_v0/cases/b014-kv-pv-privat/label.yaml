@@ -1,0 +1,19 @@
+schema_version: 1
+id: b014-kv-pv-privat
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: vorsorge_kv_pv
+  gross_amount: '4020.00'
+  deductible_amount: '4020.00'
+  labour_share_35a: null
+  invoice_date: 2026-01-08
+  payment_date: 2025-12-01
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Private Krankenversicherung Beispiel AG
+  person_hint: Alex Muster

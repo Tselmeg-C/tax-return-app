@@ -1,0 +1,21 @@
+schema_version: 1
+id: b038-heizung-jahreswechsel
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags:
+- abfluss_year_boundary
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: handwerkerleistung
+  gross_amount: '234.20'
+  deductible_amount: '188.00'
+  labour_share_35a: '188.00'
+  invoice_date: 2025-12-18
+  payment_date: 2026-01-08
+  tax_year: 2026
+  payment_method: bank_transfer
+  vendor: Heizungsbau Beispiel GmbH
+  person_hint: Sam Muster
+notes: Abfluss-Prinzip, bezahlt 2026.

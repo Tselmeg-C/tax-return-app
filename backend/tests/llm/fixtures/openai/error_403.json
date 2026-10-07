@@ -1,0 +1,15 @@
+{
+  "status": 403,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "req_test_error_403"
+  },
+  "body": {
+    "error": {
+      "message": "Project does not have access to this model.",
+      "type": "invalid_request_error",
+      "param": null,
+      "code": "model_not_found"
+    }
+  }
+}

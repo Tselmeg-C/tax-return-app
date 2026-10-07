@@ -1,0 +1,16 @@
+{
+  "dataset": "bills_v0",
+  "dataset_hash": "5945bebd0cc8309c5a102c0f29b0e563815a70c2f4644a32924e953b1df6b94c",
+  "git_sha": "fixture",
+  "label_schema_version": 1,
+  "n_cases": 60,
+  "note": "Hand-made fixture with deliberate mistakes; metrics asserted in tests/evals.",
+  "predictor": {
+    "model": "gpt-fixture-mini",
+    "name": "fixture",
+    "prompt_version": "fixture",
+    "provider": "openai"
+  },
+  "recorded_at": "2026-10-05T00:00:00+00:00",
+  "subset": false
+}

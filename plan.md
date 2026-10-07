@@ -163,24 +163,42 @@ Dedupe: `sha256` for identical files + fuzzy key `(vendor, date, amount)` for re
 
 ## 6. LLM abstraction
 
+Implemented in `backend/app/llm/` (#8); details, error table, telemetry and data handling in
+[`_docs/llm.md`](_docs/llm.md).
+
 ```python
 class LLMProvider(Protocol):
-    name: str
-    async def structured(self, *, system: str, content: list[Part],
-                         schema: type[BaseModel], model: str | None = None) -> LLMResult[T]: ...
+    name: str                                   # "openai", "fake"; "anthropic", "gemini" with #23
+    async def structured(self, request: LLMRequest[T]) -> LLMResult[T]: ...   # exactly one HTTP call
+    async def aclose(self) -> None: ...
 
-@dataclass
+@dataclass(frozen=True)
 class LLMResult(Generic[T]):
-    data: T; raw: dict; input_tokens: int; output_tokens: int
-    cost_eur: float; latency_ms: int; model: str; provider: str
+    data: T; raw_text: str                      # raw_text = exact model output (stored encrypted)
+    provider: str; model: str; input_tokens: int; output_tokens: int
+    cost_eur: Decimal; latency_ms: int          # of the successful call; Decimal, 6 places
+    request_id: str | None; pricing_version: str; fallback_used: bool
+    calls: tuple[LLMCallRecord, ...]            # one per HTTP attempt incl. failed ones
+
+await get_router().structured(task=..., system=..., parts=[...], schema=..., prompt_version=...)
 ```
 
-- Implementations: `OpenAIProvider` (Responses API, JSON schema / structured outputs, vision), `AnthropicProvider` (tool-use for structured output), `VertexGeminiProvider` (`response_schema`, region `europe-west3`).
-- `Part` = text | image(bytes, mime) | pdf(bytes) — providers that lack native PDF get rasterised pages (`pypdfium2`).
-- **Router** via config: `classify: openai:gpt-…-mini`, `extract: openai:gpt-…`, `fallback: anthropic:…` → retries on schema-validation failure, then falls back.
+- Implementations: `OpenAIProvider` (Responses API, strict JSON-schema structured output,
+  vision, native PDF, `store: false`, SDK retries off), `FakeProvider` (scripted, tests and
+  local dev); `AnthropicProvider` / `VertexGeminiProvider` follow in #23. No LiteLLM.
+- `Part` = `TextPart` | `ImagePart(bytes, mime)` | `PdfPart(bytes)`; preflight downscales
+  images and strips metadata, rejects oversized PDFs (never drops pages); providers without
+  native PDF get rasterised pages (`pypdfium2`).
+- **Router** (`config/routing.yaml` + `LLM_*_MODEL` env overrides): per-task model,
+  temperature, limits and fallback list → retries transient errors with backoff, re-asks on
+  schema-invalid / truncated output, then falls back; overall deadline below the job timeout.
+- **Errors:** transient (`LLMTimeout`, `LLMRateLimited`, `LLMUnavailable` → job retry), output
+  (`LLMSchemaValidationError`, `LLMTruncated`, `LLMRefusal`, `LLMContentFiltered` →
+  `needs_attention`), permanent (auth, quota, bad request, input too large / invalid, not
+  configured, schema unsupported → `PermanentJobError`); `is_permanent(exc)`.
 - Prompts versioned in `app/pipeline/prompts/*.md` with `prompt_version` stored per extraction.
-- Pricing table in config → `cost_eur` computed per call → Grafana.
-- Optional: use LiteLLM underneath instead of hand-written adapters; keep own `LLMProvider` interface on top either way so pydantic schemas & metrics stay uniform.
+- Pricing table `config/pricing.yaml` (decimal strings, dated ECB USD→EUR rate) → `cost_eur`
+  per call → `belegbot.llm.*` metrics → Grafana.
 
 ---
 
@@ -261,7 +279,7 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
 - Telegram linking: web shows one-time code → `/link 123456` → `channel_link` row; unknown chat IDs are ignored.
 - Webhook secret path + `X-Telegram-Bot-Api-Secret-Token` check.
 - Steuer-ID & documents are sensitive: encrypt sensitive columns (app-level Fernet key in Railway env), volume on Railway (note: Railway region choice — pick **EU West (Amsterdam)**).
-- LLM data processing: use providers' zero/limited-retention options; document which provider sees what. Prefer EU endpoints where available (Vertex europe-west3, OpenAI EU data residency if on eligible plan).
+- LLM data processing: use providers' zero/limited-retention options; document which provider sees what. Prefer EU endpoints where available (Vertex europe-west3, OpenAI EU data residency if on eligible plan). What OpenAI receives, `store: false`, retention / ZDR and EU residency: [`_docs/llm.md`](_docs/llm.md#data-handling-openai).
 - Backups: Railway Postgres backups + nightly `pg_dump` + volume tarball to an offsite bucket (v1.1).
 - Disclaimer in UI: estimate, not Steuerberatung.
 
@@ -280,10 +298,10 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
 ## 12. Quality: evals for "fully automatic"
 
 Since there's no review queue, accuracy must be measured offline:
-- `evals/dataset/`: 100+ own anonymised Belege with hand-labelled ground truth (relevant?, category, amount, §35a share).
-- `evals/run.py --provider openai --model … --prompt-version v3` → precision/recall for relevance, category accuracy, amount exact-match, € error. Results pushed as metrics → Grafana; compare providers.
-- Every user override in the UI becomes a new labelled example (export script).
-- Gate: don't switch default model/prompt unless eval ≥ current.
+- The repo is public, so the committed eval set is synthetic: `evals/datasets/bills_v0` (60 documents rendered from `evals/synth/specs/bills_v0.yaml`, fictional "Muster" people and vendors, PDF / scanned PDF / photo / PNG variants) with hand-labelled ground truth (relevant?, category, amounts, §35a share, dates, tax year).
+- Optional anonymised real samples stay local only (`evals/datasets_private/`, never committed, #39); user overrides are exported as new labelled examples, private as well (#23).
+- `python -m evals.run --dataset bills_v0 --predictor … [--provider openai --model … --prompt-version v3]` → relevance precision/recall, category accuracy, amount exact-match, € error, cost, latency; `report.json` keys are pushed to Grafana (#22); providers are compared via baselines.
+- Gate: `--gate` checks `evals/thresholds.yaml` and the `compare_to` baseline: don't switch default model/prompt unless eval ≥ current. Real runs are recorded once and replayed offline in CI.
 
 ---
 

@@ -1,0 +1,20 @@
+schema_version: 1
+id: b023-kita-jahresbescheinigung
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: kinderbetreuung
+  gross_amount: '3180.00'
+  deductible_amount: '2520.00'
+  labour_share_35a: null
+  invoice_date: 2026-01-10
+  payment_date: 2025-12-01
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Kita Sonnenschein Muster
+  person_hint: Sam Muster
+notes: Nur Betreuung, nicht Verpflegung.

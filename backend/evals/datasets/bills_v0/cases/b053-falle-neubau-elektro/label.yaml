@@ -1,0 +1,20 @@
+schema_version: 1
+id: b053-falle-neubau-elektro
+source: synthetic
+file: document.pdf
+variant: pdf_text
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: false
+  category: irrelevant
+  gross_amount: '3800.00'
+  deductible_amount: '0.00'
+  labour_share_35a: null
+  invoice_date: 2025-09-15
+  payment_date: 2025-09-30
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Elektro Beispiel GmbH
+  person_hint: Alex Muster
+notes: Falle. Neubau ist keine Handwerkerleistung im bestehenden Haushalt (kein §35a).

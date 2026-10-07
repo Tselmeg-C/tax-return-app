@@ -1,0 +1,20 @@
+schema_version: 1
+id: b011-doppelte-haushaltsfuehrung
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: wk_doppelte_haushaltsfuehrung
+  gross_amount: '5400.00'
+  deductible_amount: '5400.00'
+  labour_share_35a: null
+  invoice_date: 2025-12-15
+  payment_date: 2025-12-01
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Hausverwaltung Beispiel GmbH
+  person_hint: Alex Muster
+notes: Kappung (1 000 EUR / Monat) macht die Engine, nicht das Label.

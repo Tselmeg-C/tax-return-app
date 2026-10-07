@@ -1,0 +1,19 @@
+schema_version: 1
+id: b034-gartenpflege
+source: synthetic
+file: document.jpg
+variant: photo_jpeg
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: haushaltsnahe_dienstleistung
+  gross_amount: '247.00'
+  deductible_amount: '217.00'
+  labour_share_35a: '217.00'
+  invoice_date: 2025-09-03
+  payment_date: 2025-09-12
+  tax_year: 2025
+  payment_method: bank_transfer
+  vendor: Gartenservice Beispiel
+  person_hint: Alex Muster

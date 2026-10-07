@@ -1,0 +1,19 @@
+schema_version: 1
+id: b042-grundsteuer-vermietung
+source: synthetic
+file: document.pdf
+variant: pdf_scanned
+tags: []
+expected:
+  doc_type: generic_bill
+  tax_relevant: true
+  category: v_nebenkosten
+  gross_amount: '393.00'
+  deductible_amount: '393.00'
+  labour_share_35a: null
+  invoice_date: 2025-01-20
+  payment_date: 2025-11-15
+  tax_year: 2025
+  payment_method: direct_debit
+  vendor: Stadtkasse Musterstadt
+  person_hint: Alex Muster

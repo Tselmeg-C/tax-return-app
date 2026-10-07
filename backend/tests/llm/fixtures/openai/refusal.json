@@ -1,0 +1,42 @@
+{
+  "status": 200,
+  "headers": {
+    "content-type": "application/json",
+    "x-request-id": "req_test_refusal"
+  },
+  "body": {
+    "id": "resp_test_refusal",
+    "object": "response",
+    "created_at": 1767225600,
+    "status": "completed",
+    "model": "gpt-test-2026-01-01",
+    "output": [
+      {
+        "id": "msg_test_refusal",
+        "type": "message",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "refusal",
+            "refusal": "I can not help with this synthetic request."
+          }
+        ]
+      }
+    ],
+    "incomplete_details": null,
+    "error": null,
+    "store": false,
+    "usage": {
+      "input_tokens": 900,
+      "input_tokens_details": {
+        "cached_tokens": 0
+      },
+      "output_tokens": 12,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 912
+    }
+  }
+}
