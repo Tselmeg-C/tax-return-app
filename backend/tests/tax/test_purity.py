@@ -49,9 +49,17 @@ MODULES = sorted(TAX_DIR.rglob("*.py"))
 
 def test_tax_package_has_modules() -> None:
     assert {p.name for p in MODULES} >= {"__init__.py", "models.py", "bill_rules.py", "mapping.py"}
+    names = {p.relative_to(TAX_DIR).as_posix() for p in MODULES}
+    assert names >= {  # #15
+        "deductions/__init__.py",
+        "deductions/models.py",
+        "deductions/select.py",
+        "deductions/werbungskosten.py",
+        "deductions/sonderausgaben.py",
+    }
 
 
-@pytest.mark.parametrize("path", MODULES, ids=lambda p: p.name)
+@pytest.mark.parametrize("path", MODULES, ids=lambda p: p.relative_to(TAX_DIR).as_posix())
 def test_module_is_pure(path: Path) -> None:
     assert violations(path.read_text(encoding="utf-8")) == []
 

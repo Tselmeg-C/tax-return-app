@@ -1,0 +1,684 @@
+# Hand-computed reference cases for werbungskosten, VZ 2025 (#15). Every case cites its paragraph and shows
+# its arithmetic; a case may only change together with its `arithmetic` (README.md).
+- id: entf_15km_100d
+  rule: W1
+  source: § 9 Abs. 1 Satz 3 Nr. 4 EStG
+  input:
+    employments:
+    - km: 15
+      days: 100
+  arithmetic: 15 × 0,30 = 4,50 per day × 100
+  expected: '450.00'
+- id: entf_20km_220d
+  rule: W1
+  source: § 9 Abs. 1 Satz 3 Nr. 4 EStG
+  input:
+    employments:
+    - km: 20
+      days: 220
+  arithmetic: 20 × 0,30 = 6,00 × 220
+  expected: '1320.00'
+- id: entf_21km_220d
+  rule: W1
+  source: § 9 Abs. 1 Satz 3 Nr. 4 EStG
+  input:
+    employments:
+    - km: 21
+      days: 220
+  arithmetic: 6,00 + 1 × 0,38 = 6,38 × 220
+  expected: '1403.60'
+- id: entf_30km_200d
+  rule: W1
+  source: § 9 Abs. 1 Satz 3 Nr. 4 EStG
+  input:
+    employments:
+    - km: 30
+      days: 200
+  arithmetic: 6,00 + 10 × 0,38 = 9,80 × 200
+  expected: '1960.00'
+- id: entf_100km_230d
+  rule: W1
+  source: § 9 Abs. 1 Satz 3 Nr. 4 EStG
+  input:
+    employments:
+    - km: 100
+      days: 230
+  arithmetic: 6,00 + 80 × 0,38 = 36,40 × 230
+  expected: '8372.00'
+- id: entf_two_employers
+  rule: W1
+  source: § 9 Abs. 1 Satz 3 Nr. 4 EStG
+  input:
+    employments:
+    - km: 10
+      days: 100
+    - km: 25
+      days: 50
+  arithmetic: '10 km: 3,00 × 100 = 300,00; 25 km: (6,00 + 5 × 0,38 = 7,90) × 50 = 395,00; sum'
+  expected: '695.00'
+- id: entf_zero_km_none
+  rule: W1
+  source: § 9 Abs. 1 Satz 3 Nr. 4 EStG
+  input:
+    employments:
+    - km: null
+      days: 100
+  arithmetic: no km, no amount
+  expected: '0.00'
+- id: entf_zero_km_0
+  rule: W1
+  source: § 9 Abs. 1 Satz 3 Nr. 4 EStG
+  input:
+    employments:
+    - km: 0
+      days: 100
+  arithmetic: 0 km × days = 0
+  expected: '0.00'
+- id: entf_zero_days_0
+  rule: W1
+  source: § 9 Abs. 1 Satz 3 Nr. 4 EStG
+  input:
+    employments:
+    - km: 15
+      days: 0
+  arithmetic: 15 km × 0 days = 0
+  expected: '0.00'
+- id: ho_100d
+  rule: W2
+  source: § 4 Abs. 5 Satz 1 Nr. 6c, § 9 Abs. 5 Satz 1 EStG
+  input:
+    homeoffice_days:
+    - 100
+  arithmetic: 100 × 6 = 600
+  expected: '600.00'
+- id: ho_210d
+  rule: W2
+  source: § 4 Abs. 5 Satz 1 Nr. 6c, § 9 Abs. 5 Satz 1 EStG
+  input:
+    homeoffice_days:
+    - 210
+  arithmetic: 210 × 6 = 1260 = cap
+  expected: '1260.00'
+- id: ho_211d
+  rule: W2
+  source: § 4 Abs. 5 Satz 1 Nr. 6c, § 9 Abs. 5 Satz 1 EStG
+  input:
+    homeoffice_days:
+    - 211
+  arithmetic: 211 × 6 = 1266 > 1260 → cap
+  expected: '1260.00'
+- id: ho_two_employers
+  rule: W2
+  source: § 4 Abs. 5 Satz 1 Nr. 6c, § 9 Abs. 5 Satz 1 EStG
+  input:
+    homeoffice_days:
+    - 120
+    - 120
+  arithmetic: (120 + 120) × 6 = 1440 → cap 1260 (once per person)
+  expected: '1260.00'
+- id: wk_pausch_empty
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items: []
+  arithmetic: max(0; 1230)
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+        actual: '0.00'
+        used_pauschbetrag: true
+    total_applied: '1230.00'
+- id: wk_pausch_below
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '1229.99'
+      payment: bank_transfer
+  arithmetic: max(1229,99; 1230) = 1230
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+        actual: '1229.99'
+        used_pauschbetrag: true
+- id: wk_pausch_tie
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '1230.00'
+      payment: bank_transfer
+  arithmetic: 1230,00 = 1230 → same amount, Pauschbetrag used
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+        actual: '1230.00'
+        used_pauschbetrag: true
+- id: wk_pausch_above
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '1230.01'
+      payment: bank_transfer
+  arithmetic: max(1230,01; 1230) = 1230,01 actual used
+  expected:
+    persons:
+      A:
+        applied: '1230.01'
+        actual: '1230.01'
+        used_pauschbetrag: false
+- id: wk_credit_note
+  rule: W4/I6
+  source: § 9 Abs. 1 Satz 1 EStG; I6
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '300.00'
+      payment: bank_transfer
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '-350.00'
+      payment: bank_transfer
+  arithmetic: Arbeitsmittel 300,00 − 350,00 = −50 → 0; max(0; 1230) = 1230
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+        actual: '0.00'
+        used_pauschbetrag: true
+    notes:
+    - net_negative_clipped
+- id: wk_credit_note_smaller
+  rule: W4/I6
+  source: § 9 Abs. 1 Satz 1 EStG; I6
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '2000.00'
+      payment: bank_transfer
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '-350.00'
+      payment: bank_transfer
+  arithmetic: 2000,00 − 350,00 = 1650,00 (exactly reduced by the credit note); 1650 > 1230
+  expected:
+    persons:
+      A:
+        applied: '1650.00'
+        actual: '1650.00'
+        used_pauschbetrag: false
+- id: wk_arbeitszimmer
+  rule: W3
+  source: § 4 Abs. 5 Satz 1 Nr. 6b, 6c EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 100
+    items:
+    - person: A
+      category: wk_arbeitszimmer
+      amount: '1500.00'
+      payment: bank_transfer
+  arithmetic: Arbeitszimmer 1500,00 replaces Homeoffice 100 × 6 = 600 (W2 = 0); max(1500; 1230)
+  expected:
+    persons:
+      A:
+        applied: '1500.00'
+        actual: '1500.00'
+        homeoffice_pauschale: '0.00'
+        arbeitszimmer: '1500.00'
+    notes:
+    - arbeitszimmer_replaces_homeoffice
+- id: wk_arbeitszimmer_small
+  rule: W3
+  source: § 4 Abs. 5 Satz 1 Nr. 6b, 6c EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 100
+    items:
+    - person: A
+      category: wk_arbeitszimmer
+      amount: '900.00'
+      payment: bank_transfer
+  arithmetic: Arbeitszimmer 900,00 (W2 = 0); max(900; 1230) = 1230
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+        actual: '900.00'
+        used_pauschbetrag: true
+    notes:
+    - arbeitszimmer_replaces_homeoffice
+- id: wk_homeoffice_item_covered
+  rule: W3
+  source: § 4 Abs. 5 Satz 1 Nr. 6c EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 100
+    items:
+    - person: A
+      category: wk_homeoffice
+      amount: '300.00'
+      payment: bank_transfer
+  arithmetic: 'wk_homeoffice item is not added: 100 × 6 = 600 only; max(600; 1230)'
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+        actual: '600.00'
+    notes:
+    - covered_by_pauschale
+- id: wk_joint_two_persons
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: joint
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    - person: B
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '2000.00'
+      payment: bank_transfer
+  arithmetic: 'A: Arbeitsmittel 2000,00 → 2000,00; B: max(0; 1230) = 1230; sum 3230,00'
+  expected:
+    persons:
+      A:
+        applied: '2000.00'
+      B:
+        applied: '1230.00'
+    total_applied: '3230.00'
+- id: wk_joint_person_unassigned
+  rule: W5
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: joint
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    - person: B
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: null
+      category: wk_arbeitsmittel
+      amount: '2000.00'
+      payment: bank_transfer
+  arithmetic: 'item without person excluded in a joint return: A max(0; 1230), B max(0; 1230)'
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+      B:
+        applied: '1230.00'
+    total_applied: '2460.00'
+    notes:
+    - person_unassigned
+- id: wk_single_person_unassigned
+  rule: W5
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: null
+      category: wk_arbeitsmittel
+      amount: '2000.00'
+      payment: bank_transfer
+  arithmetic: 'single return: item without person belongs to the taxpayer: max(2000; 1230)'
+  expected:
+    persons:
+      A:
+        applied: '2000.00'
+        actual: '2000.00'
+- id: wk_no_employment
+  rule: W5
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: joint
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: B
+      category: wk_arbeitsmittel
+      amount: '2000.00'
+      payment: bank_transfer
+  arithmetic: 'B has no employment: his item is excluded; B absent from the result; A max(0; 1230)'
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+    total_applied: '1230.00'
+    notes:
+    - no_employment
+- id: wk_two_employments_once
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 120
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 120
+    items: []
+  arithmetic: 'two employments, Pauschbetrag once: homeoffice (120 + 120) × 6 = 1440 → 1260; max(1260; 1230)'
+  expected:
+    persons:
+      A:
+        applied: '1260.00'
+        actual: '1260.00'
+        homeoffice_pauschale: '1260.00'
+- id: wk_two_employments_small
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 10
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 10
+    items: []
+  arithmetic: 'two employments with 10 + 10 homeoffice days: 120,00 → Pauschbetrag once, 1230 (not 2460)'
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+        actual: '120.00'
+    total_applied: '1230.00'
+- id: wk_fahrtkosten_with_entf
+  rule: W4
+  source: § 9 Abs. 1 Satz 1, § 9 Abs. 1 Satz 3 Nr. 4 EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: 20
+      office_days: 100
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_fahrtkosten
+      amount: '100.00'
+      payment: bank_transfer
+  arithmetic: Entfernungspauschale 20 km × 100 d + Fahrtkosten 100,00
+  expected:
+    persons:
+      A:
+        actual: '700.00'
+    notes:
+    - commute_assumes_car
+    - fahrtkosten_with_entfernungspauschale
+- id: wk_dhf_unchecked
+  rule: W4
+  source: § 9 Abs. 1 Satz 3 Nr. 5 EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_doppelte_haushaltsfuehrung
+      amount: '20000.00'
+      payment: bank_transfer
+  arithmetic: 'summed as entered: 20000,00'
+  expected:
+    persons:
+      A:
+        applied: '20000.00'
+        actual: '20000.00'
+    notes:
+    - dhf_unchecked
+- id: wk_all_item_categories
+  rule: W4
+  source: § 9 Abs. 1 EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '10.00'
+      payment: bank_transfer
+    - person: A
+      category: wk_fortbildung
+      amount: '20.00'
+      payment: bank_transfer
+    - person: A
+      category: wk_fahrtkosten
+      amount: '30.00'
+      payment: bank_transfer
+    - person: A
+      category: wk_bewerbung
+      amount: '40.00'
+      payment: bank_transfer
+    - person: A
+      category: wk_kontofuehrung
+      amount: '50.00'
+      payment: bank_transfer
+    - person: A
+      category: steuerberatung
+      amount: '60.00'
+      payment: bank_transfer
+    - person: A
+      category: wk_berufsverband
+      amount: '70.00'
+      payment: bank_transfer
+  arithmetic: 10 + 20 + 30 + 40 + 50 + 60 + 70 = 280 → below Pauschbetrag
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+        actual: '280.00'
+- id: wk_mixed
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: 15
+      office_days: 100
+      homeoffice_days: 150
+    items:
+    - person: A
+      category: wk_berufsverband
+      amount: '100.00'
+      payment: bank_transfer
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '80.50'
+      payment: bank_transfer
+  arithmetic: 450,00 + 900,00 + 100,00 + 80,50 = 1530,50 > 1230
+  expected:
+    persons:
+      A:
+        applied: '1530.50'
+        actual: '1530.50'
+        used_pauschbetrag: false
+        entfernungspauschale: '450.00'
+        homeoffice_pauschale: '900.00'
+    notes:
+    - commute_assumes_car
+- id: wk_union_only
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_berufsverband
+      amount: '100.00'
+      payment: bank_transfer
+  arithmetic: 'Gewerkschaft 100,00 inside the comparison: max(100; 1230) = 1230'
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+        actual: '100.00'
+        used_pauschbetrag: true
+- id: wk_union_above
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_berufsverband
+      amount: '1230.01'
+      payment: bank_transfer
+  arithmetic: 'Gewerkschaft 1230,01: max(1230,01; 1230) = 1230,01'
+  expected:
+    persons:
+      A:
+        applied: '1230.01'
+        actual: '1230.01'
+        used_pauschbetrag: false
+- id: wk_union_plus_items
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: null
+      office_days: 0
+      homeoffice_days: 0
+    items:
+    - person: A
+      category: wk_berufsverband
+      amount: '500.00'
+      payment: bank_transfer
+    - person: A
+      category: wk_arbeitsmittel
+      amount: '800.00'
+      payment: bank_transfer
+  arithmetic: Gewerkschaft 500,00 + Arbeitsmittel 800,00 = 1300,00 > 1230
+  expected:
+    persons:
+      A:
+        applied: '1300.00'
+        actual: '1300.00'
+        used_pauschbetrag: false
+- id: wk_part_year
+  rule: W6
+  source: § 9a Satz 1 Nr. 1 Buchst. a EStG
+  input:
+    filing: single
+    employments:
+    - person: A
+      km: 20
+      office_days: 30
+      homeoffice_days: 0
+    items: []
+  arithmetic: '20 km × 0,30 = 6,00 × 30 = 180,00 < 1230: full Pauschbetrag, no proration'
+  expected:
+    persons:
+      A:
+        applied: '1230.00'
+        actual: '180.00'
+        used_pauschbetrag: true
+    notes:
+    - commute_assumes_car
