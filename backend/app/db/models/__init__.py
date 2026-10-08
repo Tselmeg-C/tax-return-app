@@ -8,17 +8,21 @@ from app.db.models.extraction import Extraction
 from app.db.models.household import Household
 from app.db.models.job import Job
 from app.db.models.person import Person
+from app.db.models.profile import ChildYear, Employment, TaxProfile
 from app.db.models.tax_item import TaxItem
 
 __all__ = [
     "AppUser",
     "AuditLog",
+    "ChildYear",
     "Document",
+    "Employment",
     "Extraction",
     "Household",
     "Job",
     "MagicLinkToken",
     "Person",
     "TaxItem",
+    "TaxProfile",
     "UserSession",
 ]

@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FileArchive, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
+import { belegeSearch } from "@/lib/taxItems";
+import { useYear } from "@/lib/year";
 import { anlageLabel, eur, items, type Anlage } from "@/lib/mock";
 
 export const Route = createFileRoute("/_authed/export")({
@@ -22,10 +24,12 @@ export const Route = createFileRoute("/_authed/export")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: belegeSearch,
   component: Export,
 });
 
 function Export() {
+  const { jahr, select } = useYear();
   const rel = items.filter((i) => i.relevant);
   const groups = Object.entries(
     rel.reduce<Record<string, typeof rel>>((a, i) => ((a[i.anlage] ??= []).push(i), a), {}),
@@ -39,7 +43,7 @@ function Export() {
     const blob = new Blob([rows.map((r) => r.join(";")).join("\n")], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "steuer-2025.csv";
+    a.download = `steuer-${jahr}.csv`;
     a.click();
   };
 
@@ -60,8 +64,8 @@ function Export() {
   ];
 
   return (
-    <AppShell>
-      <h1 className="text-4xl">Export 2025</h1>
+    <AppShell {...(select ? { year: select } : {})}>
+      <h1 className="text-4xl">Export · Steuerjahr {jahr}</h1>
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         {formats.map(({ icon: Icon, title, desc, action }) => (
           <button

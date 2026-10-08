@@ -46,7 +46,8 @@ def _fill(model: type[Any]) -> tuple[Any, list[str]]:
 @pytest.mark.parametrize("model", MODELS, ids=lambda m: m.__name__)
 def test_repr_shows_only_class_and_id(model: type[Any]) -> None:
     obj, sentinels = _fill(model)
-    assert sentinels
+    # #13: these hold only numbers, booleans, ids and enums
+    assert sentinels or model.__name__ in {"ChildYear", "TaxProfile"}
     assert isinstance(obj.id, uuid.UUID)  # assigned at construction
     expected = f"<{model.__name__} id={obj.id}>"
     assert repr(obj) == expected

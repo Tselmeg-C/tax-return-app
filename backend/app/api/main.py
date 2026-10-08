@@ -17,7 +17,7 @@ from opentelemetry.metrics import MeterProvider
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.api import auth, documents, meta, tax_items
+from app.api import auth, documents, household, meta, tax_items
 from app.api.deps import require_session
 from app.api.security import CsrfMiddleware, NoStoreMiddleware
 from app.auth.clock import Clock, SystemClock
@@ -153,6 +153,7 @@ def create_app(
     app.include_router(documents.router)
     app.include_router(tax_items.router)
     app.include_router(meta.router)
+    app.include_router(household.router)
     return app
 
 
