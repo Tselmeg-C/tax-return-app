@@ -127,6 +127,7 @@ def test_stale_baseline_skips_regression_but_keeps_thresholds(
 def test_proposed_status_prints_note_without_changing_exit_code(
     eval_paths: EvalPaths, capsys: pytest.CaptureFixture[str]
 ) -> None:
+    _set_thresholds(eval_paths, status="proposed")
     code, out, _ = invoke(eval_paths, capsys, "--predictor", "oracle", "--gate")
     assert code == 0
     assert sum("not yet confirmed by the user" in ln for ln in out.splitlines()) == 1

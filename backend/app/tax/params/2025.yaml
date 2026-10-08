@@ -38,3 +38,35 @@ church_tax:
     ST: "0.09"
     SH: "0.09"
     TH: "0.09"
+
+mapping: # #9: Category -> (Anlage, Zeile); every Category except irrelevant exactly once
+  # Zeilen checked 2026-10-07 against the published 2025 forms (sample review: user, #9).
+  wk_arbeitsmittel: {anlage: n, zeile: "54", source: "Anlage N 2025, Aufwendungen für Arbeitsmittel (Zeilen 54-56)"}
+  wk_fortbildung: {anlage: n, zeile: "60", source: "Anlage N 2025, Fortbildungskosten"}
+  wk_fahrtkosten: {anlage: n, zeile: "66", source: "Anlage N 2025, Reisekosten bei beruflich veranlassten Auswärtstätigkeiten, Fahrtkosten"}
+  wk_homeoffice: {anlage: n, zeile: "58", source: "Anlage N 2025, Tagespauschale (Homeoffice), Zeilen 58-59 (Anzahl Tage)"}
+  wk_arbeitszimmer: {anlage: n, zeile: "57", source: "Anlage N 2025, Häusliches Arbeitszimmer (Mittelpunkt der Tätigkeit)"}
+  wk_bewerbung: {anlage: n, zeile: "62", source: "Anlage N 2025, Weitere Werbungskosten, Sonstiges (z. B. Bewerbungskosten)"}
+  wk_kontofuehrung: {anlage: n, zeile: "62", source: "Anlage N 2025, Weitere Werbungskosten, Sonstiges (z. B. Kontoführungsgebühren)"}
+  wk_berufsverband: {anlage: n, zeile: "53", source: "Anlage N 2025, Beiträge zu Berufsverbänden"}
+  wk_doppelte_haushaltsfuehrung: {anlage: n, zeile: null, source: "Anlage N-Doppelte Haushaltsführung 2025 (eigene Anlage; Zeile not mapped in v1)"}
+  steuerberatung: {anlage: n, zeile: "62", source: "Anlage N 2025, Weitere Werbungskosten, Sonstiges (beruflicher Anteil der Steuerberatung)"}
+  vorsorge_kv_pv: {anlage: vorsorgeaufwand, zeile: "16", source: "Anlage Vorsorgeaufwand 2025, Beiträge zu Krankenversicherungen (Zeilen 16-18; privat: Zeilen 23-24)"}
+  vorsorge_rv: {anlage: vorsorgeaufwand, zeile: "6", source: "Anlage Vorsorgeaufwand 2025, Beiträge zu gesetzlichen Rentenversicherungen"}
+  vorsorge_riester: {anlage: av, zeile: null, source: "Anlage AV 2025 (Altersvorsorgebeiträge; Zeile not mapped in v1)"}
+  vorsorge_ruerup: {anlage: vorsorgeaufwand, zeile: "8", source: "Anlage Vorsorgeaufwand 2025, Beiträge zu zertifizierten Basisrentenverträgen"}
+  vorsorge_sonstige: {anlage: vorsorgeaufwand, zeile: "46", source: "Anlage Vorsorgeaufwand 2025, Weitere sonstige Vorsorgeaufwendungen (Unfall-, Haftpflicht-, Risikoversicherungen)"}
+  spenden: {anlage: sonderausgaben, zeile: "5", source: "Anlage Sonderausgaben 2025, Zuwendungen an Empfänger im Inland"}
+  kirchensteuer: {anlage: sonderausgaben, zeile: "4", source: "Anlage Sonderausgaben 2025, Kirchensteuer"}
+  kinderbetreuung: {anlage: kind, zeile: "67", source: "Anlage Kind 2025, Kinderbetreuungskosten"}
+  schulgeld: {anlage: kind, zeile: "56", source: "Anlage Kind 2025, Schulgeld"}
+  krankheitskosten: {anlage: agb, zeile: "24", source: "Anlage Außergewöhnliche Belastungen 2025, Krankheitskosten (Summe der Aufwendungen)"}
+  pflege: {anlage: agb, zeile: "27", source: "Anlage Außergewöhnliche Belastungen 2025, Pflegekosten (Summe der Aufwendungen)"}
+  behinderung: {anlage: agb, zeile: "30", source: "Anlage Außergewöhnliche Belastungen 2025, Behinderungsbedingte Aufwendungen (Summe der Aufwendungen)"}
+  haushaltsnahe_dienstleistung: {anlage: haushaltsnahe_aufwendungen, zeile: "5", source: "Anlage Haushaltsnahe Aufwendungen 2025, Haushaltsnahe Beschäftigungsverhältnisse / Dienstleistungen"}
+  handwerkerleistung: {anlage: haushaltsnahe_aufwendungen, zeile: "6", source: "Anlage Haushaltsnahe Aufwendungen 2025, Handwerkerleistungen"}
+  v_afa: {anlage: v, zeile: "33", source: "Anlage V 2025, Absetzung für Abnutzung für Gebäude (computed from property data, #13 / #20)"}
+  v_schuldzinsen: {anlage: v, zeile: "46", source: "Anlage V 2025, Schuldzinsen"}
+  v_erhaltung: {anlage: v, zeile: "55", source: "Anlage V 2025, 2025 voll abzuziehende Erhaltungsaufwendungen"}
+  v_nebenkosten: {anlage: v, zeile: "73", source: "Anlage V 2025, umgelegte / sonstige Kosten (Grundsteuer, Hausversicherungen, ...)"}
+  kapital_bescheinigung: {anlage: kap, zeile: null, source: "Anlage KAP 2025 (from the Jahressteuerbescheinigung, #19; Zeile not mapped in v1)"}

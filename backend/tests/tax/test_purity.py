@@ -20,6 +20,8 @@ ALLOWED = {
     "datetime",
     "pydantic",
     "app.domain.enums",
+    # #9: bill_rules reads the LLM output models (pydantic + enums only, no I/O).
+    "app.pipeline.schemas",
 }
 
 
@@ -46,7 +48,7 @@ MODULES = sorted(TAX_DIR.rglob("*.py"))
 
 
 def test_tax_package_has_modules() -> None:
-    assert {p.name for p in MODULES} >= {"__init__.py", "models.py", "tariff.py"}
+    assert {p.name for p in MODULES} >= {"__init__.py", "models.py", "bill_rules.py", "mapping.py"}
 
 
 @pytest.mark.parametrize("path", MODULES, ids=lambda p: p.name)

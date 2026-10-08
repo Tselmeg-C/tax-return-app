@@ -370,7 +370,7 @@ def test_reports_contain_no_vendor_or_person_hint(
     ("args", "needle"),
     [
         (["--dataset", "nope_v9", "--predictor", "oracle"], "unknown dataset"),
-        (["--dataset", DATASET, "--predictor", "nope"], "registered: heuristic, oracle, replay"),
+        (["--dataset", DATASET, "--predictor", "nope"], "heuristic, oracle, pipeline, replay"),
         (["--dataset", DATASET, "--predictor", "replay"], "--recording"),
         (["--dataset", DATASET, "--predictor", "oracle", "--gate", "--tags", "cash_35a"], "full"),
         (

@@ -30,6 +30,7 @@ trap cleanup EXIT
 
 fail() {
   echo "FAIL: $*"
+  echo "::error title=deploy-smoke::$*"
   FAILURES=$((FAILURES + 1))
 }
 
@@ -92,9 +93,12 @@ echo "alembic_version rows: $ROWS"
 echo "== start api (honcho, no OTel env) and web"
 # A fresh named volume is root-owned, like a Railway volume (#6 Decision 13).
 docker volume create "$VOLUME" >/dev/null
+# Throwaway CI-only key for encrypted columns (raw LLM output); never printed.
+FIELD_KEY=$(docker run --rm --entrypoint python "$API_IMAGE" -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')
 docker run -d --name "$API" --network "$NET" -p 8000:8000 \
   -v "$VOLUME":/data -e STORAGE_PATH=/data/storage \
   -e DATABASE_URL="$DB_URL" -e APP_ENV=ci -e GIT_SHA="${GITHUB_SHA:-unknown}" \
+  -e LLM_CLASSIFY_MODEL=fake:test -e LLM_EXTRACT_MODEL=fake:test -e FIELD_ENCRYPTION_KEY="$FIELD_KEY" \
   "$API_IMAGE" >/dev/null
 docker run -d --name "$WEB" --network "$NET" -p 3000:3000 \
   -e API_INTERNAL_URL="http://${API}:8000" \
@@ -124,7 +128,12 @@ for line in sys.stdin:
     n += 1
 print(f"{n} JSON log lines ok")
 ' || fail "api log lines are not all JSON"
-docker logs "$API" 2>&1 | grep -q '"worker started"' || fail "worker did not start"
+WORKER_UP=no
+for _ in $(seq 1 30); do
+  docker logs "$API" 2>&1 | grep -q '"worker started"' && { WORKER_UP=yes; break; }
+  sleep 1
+done
+[ "$WORKER_UP" = yes ] || fail "worker did not start"
 
 echo "== upload through the web proxy lands on the volume and the job reaches done"
 # Test helper: a household, a user and a session in the throwaway DB. The cookie value is
@@ -157,7 +166,8 @@ asyncio.run(main())
 ' | tail -n1)
 HH_ID=${SESSION_LINE%% *}
 SESSION=${SESSION_LINE#* }
-{ printf '\377\330\377\340'; head -c 2000 /dev/urandom; } >/tmp/smoke.jpg
+# A real, decodable JPEG (the pipeline decodes it); Pillow ships in the api image.
+docker run --rm --entrypoint python "$API_IMAGE" -c 'import io, sys; from PIL import Image; b = io.BytesIO(); Image.new("RGB", (400, 300), (250, 250, 245)).save(b, "JPEG"); sys.stdout.buffer.write(b.getvalue())' >/tmp/smoke.jpg
 UP_STATUS=$(curl -s -m 30 -o /tmp/smoke-upload.json -w '%{http_code}' \
   -b "belegbot_session=${SESSION}" -H 'X-Requested-With: belegbot' \
   -H 'Content-Type: application/octet-stream' -H "X-Filename: UTF-8''smoke.jpg" \
@@ -175,7 +185,7 @@ else
     sleep 1
   done
   echo "document $DOC_ID status: $STATUS"
-  [ "$STATUS" = done ] || fail "job did not reach done"
+  [ "$STATUS" = done ] || fail "job did not reach done (status: $STATUS; worker log: $(docker logs "$API" 2>&1 | grep -oE '"event": *"(job|pipeline)[^"]*"|"error_kind": *"[^"]*"|"attention_reason": *"[^"]*"' | tail -6 | tr '\n' ' '))"
   KEY="/data/storage/households/${HH_ID}/documents/${DOC_ID}/original"
   docker exec "$API" cat "$KEY" >/tmp/smoke-back.jpg || fail "file not on the volume"
   cmp -s /tmp/smoke.jpg /tmp/smoke-back.jpg || fail "stored bytes differ"

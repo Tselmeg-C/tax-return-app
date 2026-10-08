@@ -11,6 +11,8 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, model_validator
 
+from app.domain.enums import Anlage, Category
+
 # ISO 3166-2:DE codes without "DE-".
 STATES: frozenset[str] = frozenset("BW BY BE BB HB HH HE MV NI NW RP SL SN ST SH TH".split())
 
@@ -121,11 +123,33 @@ class ChurchTaxParams(_Section):
         return self
 
 
+class MappingEntry(_Frozen):
+    """Where a category goes on the forms (#9). `zeile` null = not mapped / computed elsewhere."""
+
+    anlage: Anlage
+    zeile: str | None
+    source: str
+    provisional: bool = False
+
+
+MAPPED_CATEGORIES: frozenset[Category] = frozenset(Category) - {Category.IRRELEVANT}
+
+
 class TaxParams(_Frozen):
     year: int
     tariff: TariffParams
     soli: SoliParams
     church_tax: ChurchTaxParams
+    mapping: dict[Category, MappingEntry]
+
+    @model_validator(mode="after")
+    def _check_mapping(self) -> Self:
+        given = set(self.mapping)
+        if Category.IRRELEVANT in given:
+            raise ValueError("mapping: irrelevant must not be mapped")
+        if missing := sorted(c.value for c in MAPPED_CATEGORIES - given):
+            raise ValueError(f"mapping: missing {', '.join(missing)}")
+        return self
 
     @property
     def provisional_sections(self) -> tuple[str, ...]:

@@ -115,8 +115,9 @@ class Settings(BaseSettings):
     job_lease_seconds: float = Field(
         default=60.0, gt=0, validation_alias=AliasChoices("JOB_LEASE_SECONDS", "job_lease_seconds")
     )
+    # #9: two LLM router calls per job (2 × LLM_DEADLINE_SECONDS + 120 must fit).
     job_timeout_seconds: float = Field(
-        default=600.0,
+        default=900.0,
         gt=0,
         validation_alias=AliasChoices("JOB_TIMEOUT_SECONDS", "job_timeout_seconds"),
     )
@@ -135,6 +136,25 @@ class Settings(BaseSettings):
         default=1800.0,
         ge=0,
         validation_alias=AliasChoices("JOB_BACKOFF_MAX_SECONDS", "job_backoff_max_seconds"),
+    )
+
+    # --- pipeline (#9) -------------------------------------------------------------------
+    # Prompt set in app/pipeline/prompts/<version>/; empty = the highest version.
+    pipeline_prompt_version: str = Field(
+        default="",
+        validation_alias=AliasChoices("PIPELINE_PROMPT_VERSION", "pipeline_prompt_version"),
+    )
+    # PDF pages / TIFF frames per document (never truncated); must be <= LLM_MAX_PDF_PAGES.
+    pipeline_max_pages: int = Field(
+        default=20,
+        ge=1,
+        validation_alias=AliasChoices("PIPELINE_MAX_PAGES", "pipeline_max_pages"),
+    )
+    # Characters of a PDF text layer sent to classify (extract always gets the whole PDF).
+    pipeline_classify_max_chars: int = Field(
+        default=20_000,
+        ge=1,
+        validation_alias=AliasChoices("PIPELINE_CLASSIFY_MAX_CHARS", "pipeline_classify_max_chars"),
     )
 
     @property

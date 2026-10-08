@@ -95,6 +95,8 @@ jobs:
         run: uv run python -m evals.validate --dataset bills_v0
       - name: evals oracle gate (bills_v0, offline, no secret)
         run: uv run python -m evals.run --dataset bills_v0 --predictor oracle --gate
+      - name: evals perfect-reader pipeline gate (bills_v0, offline, no secret)
+        run: uv run python -m evals.run --dataset bills_v0 --predictor pipeline --provider fake --gate
 
   frontend:
     name: frontend

@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import and_, func, or_, select, update
+from sqlalchemy import and_, case, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
@@ -257,11 +257,17 @@ async def _finish(
 
 
 async def succeed(factory: SessionFactory, job: ClaimedJob) -> bool:
+    """`done`, unless the handler already finished the document as `needs_attention` (#9)."""
+    keep = Document.status == DocumentStatus.NEEDS_ATTENTION
     return await _finish(
         factory,
         job,
         {"status": JobStatus.SUCCEEDED, "finished_at": func.now()},
-        {"status": DocumentStatus.DONE, "error_kind": None},
+        {
+            "status": case((keep, Document.status), else_=DocumentStatus.DONE.value),
+            "attention_reason": case((keep, Document.attention_reason), else_=None),
+            "error_kind": None,
+        },
     )
 
 
@@ -285,7 +291,7 @@ async def fail(factory: SessionFactory, job: ClaimedJob, *, error_kind: str) -> 
         factory,
         job,
         {"status": JobStatus.FAILED, "finished_at": func.now(), "last_error_kind": error_kind},
-        {"status": DocumentStatus.FAILED, "error_kind": error_kind},
+        {"status": DocumentStatus.FAILED, "error_kind": error_kind, "attention_reason": None},
     )
 
 

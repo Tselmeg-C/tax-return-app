@@ -88,7 +88,9 @@ class Worker:
 
     async def _run_handler(self, job: ClaimedJob) -> None:
         handler = self.handlers[job.kind]
-        ctx = JobContext(job=job, sessionmaker=self.sessionmaker, storage=self.storage)
+        ctx = JobContext(
+            job=job, sessionmaker=self.sessionmaker, storage=self.storage, settings=self.settings
+        )
         cm = asyncio.timeout(self.settings.job_timeout_seconds)
         try:
             async with cm:

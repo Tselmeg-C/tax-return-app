@@ -402,3 +402,36 @@ async def test_defaults(db_session: AsyncSession) -> None:
     assert item.overridden_by_user is False
     assert person.created_at is not None and person.updated_at is not None
     assert isinstance(user, AppUser) and isinstance(doc, Document)
+
+
+# --- document.attention_reason (#9) -----------------------------------------------------
+
+
+async def test_needs_attention_requires_reason(db_session: AsyncSession, world: World) -> None:
+    await expect_violation(
+        db_session,
+        "UPDATE document SET status = 'needs_attention', attention_reason = NULL WHERE id = :id",
+        {"id": world.document.id},
+        pg.CheckViolation,
+        "ck_document_needs_attention_has_reason",
+    )
+
+
+async def test_attention_reason_must_be_known(db_session: AsyncSession, world: World) -> None:
+    await expect_violation(
+        db_session,
+        "UPDATE document SET attention_reason = 'foo' WHERE id = :id",
+        {"id": world.document.id},
+        pg.CheckViolation,
+        "ck_document_attention_reason",
+    )
+
+
+async def test_needs_attention_with_reason_accepted(db_session: AsyncSession, world: World) -> None:
+    await db_session.execute(
+        text(
+            "UPDATE document SET status = 'needs_attention', attention_reason = 'sum_mismatch' "
+            "WHERE id = :id"
+        ),
+        {"id": world.document.id},
+    )

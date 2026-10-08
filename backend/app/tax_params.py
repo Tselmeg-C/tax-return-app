@@ -6,14 +6,36 @@ Callers do `load_params(year)` and pass the `TaxParams` into the pure functions.
 from __future__ import annotations
 
 import functools
+from collections.abc import Mapping
 from pathlib import Path
 
 import yaml
 from pydantic import ValidationError
 
-from app.tax.models import TaxParams
+from app.domain.enums import Category
+from app.tax.models import MappingEntry, TaxParams
 
 PARAMS_DIR = Path(__file__).resolve().parent / "tax" / "params"
+
+
+class _UniqueKeyLoader(yaml.SafeLoader):
+    """SafeLoader that rejects a key given twice in one mapping (e.g. a category, #9)."""
+
+
+def _construct_mapping(loader: yaml.SafeLoader, node: yaml.MappingNode) -> dict[object, object]:
+    seen: set[object] = set()
+    for key_node, _ in node.value:
+        key = loader.construct_object(key_node)
+        if key in seen:
+            raise TaxParamsError(f"duplicate key {key!r}")
+        seen.add(key)
+    return loader.construct_mapping(node)
+
+
+_UniqueKeyLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_mapping,
+)
 
 
 class TaxParamsError(ValueError):
@@ -39,7 +61,10 @@ def load_params(year: int) -> TaxParams:
 
 def parse_params_file(path: Path) -> TaxParams:
     """Parse and validate one params file (uncached; `load_params` is the cached entry)."""
-    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    try:
+        raw = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueKeyLoader)  # noqa: S506
+    except TaxParamsError as exc:
+        raise TaxParamsError(f"{path.name}: {exc}") from None
     if not isinstance(raw, dict):
         raise TaxParamsError(f"{path.name}: top level must be a mapping")
     if raw.get("year") != int(path.stem):
@@ -51,3 +76,8 @@ def parse_params_file(path: Path) -> TaxParams:
         key = ".".join(str(part) for part in err["loc"])
         kind = {"missing": "missing", "extra_forbidden": "unknown key"}.get(err["type"])
         raise TaxParamsError(f"{path.name}: {key}: {kind or err['msg']}") from None
+
+
+def mapping_table() -> dict[int, Mapping[Category, MappingEntry]]:
+    """`{year: mapping}` for every supported year (#9's `MappingTable`)."""
+    return {year: load_params(year).mapping for year in supported_years()}
