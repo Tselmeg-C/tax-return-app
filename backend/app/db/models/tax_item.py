@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -10,11 +11,13 @@ from sqlalchemy import (
     Date,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     SmallInteger,
     String,
     Text,
     false,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -32,6 +35,7 @@ class TaxItem(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
     """A (potentially) deductible amount. Amounts may be negative (credit notes, refunds).
 
     `document_id` NULL = manual entry; `person_id` NULL = household-level (e.g. §35a).
+    `version` (#10) is bumped on every update (optimistic locking for user edits).
     """
 
     __tablename__ = "tax_item"
@@ -83,3 +87,6 @@ class TaxItem(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
     overridden_by_user: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=false()
     )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
+
+    __mapper_args__: dict[str, Any] = {"version_id_col": version, "eager_defaults": True}

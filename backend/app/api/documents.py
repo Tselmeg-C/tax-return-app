@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 from app.api.deps import Scope, SignedIn
 from app.config import Settings
-from app.db.models import Document
+from app.db.models import Document, TaxItem
 from app.documents.filenames import content_disposition, download_name, sanitize_filename
 from app.documents.service import (
     DocumentBusy,
@@ -27,7 +27,7 @@ from app.documents.service import (
     delete_document,
     ingest_document,
 )
-from app.domain.enums import Channel, DocType, DocumentStatus
+from app.domain.enums import AttentionReason, Channel, DocType, DocumentStatus
 from app.queue.enqueue import current_traceparent
 from app.queue.metrics import UploadMetrics
 from app.storage import ObjectNotFound, ObjectTooLarge, Storage, StorageFull
@@ -48,6 +48,7 @@ class DocumentOut(BaseModel):
     channel: Channel
     doc_type: DocType | None
     error_kind: str | None
+    attention_reason: AttentionReason | None
     created_at: datetime
     updated_at: datetime
 
@@ -62,6 +63,7 @@ class DocumentOut(BaseModel):
             channel=doc.channel,
             doc_type=doc.doc_type,
             error_kind=doc.error_kind,
+            attention_reason=doc.attention_reason,
             created_at=doc.created_at,
             updated_at=doc.updated_at,
         )
@@ -151,11 +153,15 @@ async def list_documents(
     scope: Scope,
     status: Annotated[str | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    without_tax_item: Annotated[bool, Query()] = False,
 ) -> dict[str, list[DocumentOut]]:
     stmt = scope.select(Document)
     statuses = _parse_statuses(status)
     if statuses:
         stmt = stmt.where(Document.status.in_(statuses))
+    if without_tax_item:  # #10: in flight, failed and needs-attention documents without item
+        has_item = scope.select(TaxItem).where(TaxItem.document_id == Document.id).exists()
+        stmt = stmt.where(~has_item)
     stmt = stmt.order_by(Document.created_at.desc(), Document.id.desc()).limit(limit)
     docs = (await scope.session.execute(stmt)).scalars().all()
     return {"documents": [DocumentOut.of(doc) for doc in docs]}
