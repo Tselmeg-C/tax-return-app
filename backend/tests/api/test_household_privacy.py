@@ -34,11 +34,18 @@ async def test_no_sentinel_leaks(
     tag = secrets.token_hex(6)
     first, last, employer = f"First{tag}", f"Last{tag}", f"Employer{tag}"
     sid, other_sid = generate_steuer_id(), generate_steuer_id()
+    dob = f"19{secrets.randbelow(40) + 50}-0{secrets.randbelow(9) + 1}-2{secrets.randbelow(9)}"
+    kid_dob = f"{2000 + secrets.randbelow(20)}-0{secrets.randbelow(9) + 1}-1{secrets.randbelow(9)}"
+    kid_name = f"Kid{tag}"
     a = await t.home()
     errors: list[str] = []
 
     r = await call(
-        t, a, "POST", "/persons", {"kind": "adult", "first_name": first, "steuer_id": sid}
+        t,
+        a,
+        "POST",
+        "/persons",
+        {"kind": "adult", "first_name": first, "dob": dob, "steuer_id": sid},
     )
     assert r.status_code == 201
     me = r.json()["id"]
@@ -46,6 +53,13 @@ async def test_no_sentinel_leaks(
     r = await call(t, a, "PATCH", f"/persons/{me}", {"last_name": last, "steuer_id": other_sid})
     assert r.status_code == 200
     bodies.append(r.text)
+    r = await call(t, a, "PATCH", f"/persons/{me}", {"first_name": f"New{tag}", "dob": dob})
+    assert r.status_code == 200
+    first = f"New{tag}"
+    kid = await call(
+        t, a, "POST", "/persons", {"kind": "child", "first_name": kid_name, "dob": kid_dob}
+    )
+    assert kid.status_code == 201
     bad = await call(
         t, a, "POST", "/persons", {"kind": "adult", "first_name": first, "steuer_id": spaced(sid)}
     )
@@ -92,14 +106,22 @@ async def test_no_sentinel_leaks(
         for p in points
         for v in (p.attributes or {}).values()
     ]
-    audit = json.dumps(
-        [[r.before, r.after] for r in (await t.session.execute(select(AuditLog))).scalars()]
-    )
+    rows = list((await t.session.execute(select(AuditLog))).scalars())
+    audit = json.dumps([[r.before, r.after] for r in rows])
+    for pii in (tag, dob, kid_dob, kid_name, employer, last):
+        assert pii not in audit, pii
+    # the rows still say WHICH field changed
+    person_updates = [
+        r for r in rows if r.entity == "person" and r.after and "first_name" in r.after
+    ]
+    assert person_updates and all(r.after["first_name"] == "[redacted]" for r in person_updates)
+    jobs = [r for r in rows if r.entity == "employment" and r.after]
+    assert jobs and all(r.after["employer_name"] == "[redacted]" for r in jobs)
     for value in (sid, other_sid, spaced(sid), wrong):
         assert value not in audit and value not in logs
         for body in bodies:
             assert value not in body
-    for sentinel in (sid, other_sid, wrong, first, last, employer, tag):
+    for sentinel in (sid, other_sid, wrong, first, last, employer, tag, dob, kid_dob, kid_name):
         assert sentinel not in logs, sentinel
         assert not [v for v in span_values if sentinel in v], sentinel
         assert not [v for v in metric_values if sentinel in v], sentinel

@@ -231,7 +231,8 @@ function StepNav(props: { onBack: () => void; onNext: () => void; next: string }
 
 const returnPersons = (data: HouseholdOut) => {
   const ids = [data.profile?.taxpayer_person_id, data.profile?.spouse_person_id];
-  return data.persons.filter((p) => ids.includes(p.id));
+  // taxpayer first, then the spouse (persons come sorted by first name)
+  return ids.flatMap((id) => data.persons.filter((p) => p.id === id));
 };
 
 // --- shared blocks -------------------------------------------------------------------------

@@ -158,6 +158,9 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   spans, metrics, error bodies, audit rows (`[redacted]`), URLs, the frontend query cache or an
   LLM call (a static test checks `app/pipeline/`, `app/llm/`, `evals/`). Tests use IDs from the
   runtime generator (`tests/household/steuer_ids.py`), never a fixed literal.
+- Audit rows never hold names, dob or employer: `REDACTED_COLUMNS` in `app/db/audit.py` stores
+  `"[redacted]"` for them (the key still shows which field changed); add a column there when a
+  table gets new plain-text personal data.
 - `Bundesland` codes are lowercase; `bundesland.value.upper()` is the key of
   `params/{year}.yaml` → `church_tax.rate_by_state`. Church tax is derived from
   `person.religion` + params at calculation time, never stored.

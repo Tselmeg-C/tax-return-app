@@ -10,7 +10,8 @@ Usage (update)::
 
 - `create` stores only `after`, `delete` only `before`; `update` stores only changed keys and
   writes nothing (returns `None`) when nothing changed.
-- Encrypted columns are compared on the plaintext but always stored as `"[redacted]"`.
+- Encrypted columns and the plain-text PII columns in `REDACTED_COLUMNS` are compared on the
+  real value (so the row still says WHICH field changed) but always stored as `"[redacted]"`.
 - `record` never commits: a rolled-back transaction leaves no audit row.
 - Audit rows are append-only by convention; there is no update or delete helper.
 """
@@ -33,6 +34,12 @@ from app.db.types import EncryptedType
 from app.domain.enums import ActorType, AuditAction
 
 REDACTED = "[redacted]"
+
+# Plain-text personal data per table (names, birth date, employer): never stored in an audit row.
+REDACTED_COLUMNS: dict[str, frozenset[str]] = {
+    "person": frozenset({"first_name", "last_name", "dob"}),
+    "employment": frozenset({"employer_name"}),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,7 +87,8 @@ def snapshot(obj: Base) -> dict[str, Any]:
 
 def _encrypted_columns(entity: str) -> set[str]:
     table = Base.metadata.tables[entity]
-    return {c.name for c in table.columns if isinstance(c.type, EncryptedType)}
+    plain = REDACTED_COLUMNS.get(entity, frozenset())
+    return {c.name for c in table.columns if isinstance(c.type, EncryptedType)} | plain
 
 
 def _redact(values: dict[str, Any] | None, encrypted: set[str]) -> dict[str, Any] | None:
