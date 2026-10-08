@@ -14,12 +14,15 @@ export const CSRF_VALUE = "belegbot";
 export class ApiError extends Error {
   readonly status: number;
   readonly detail: string | undefined;
+  /** The parsed JSON error body (e.g. `field`, or the current item of a 409). */
+  readonly body: unknown;
 
-  constructor(status: number, detail?: string) {
+  constructor(status: number, detail?: string, body?: unknown) {
     super(`api error ${status}${detail ? ` (${detail})` : ""}`);
     this.name = "ApiError";
     this.status = status;
     this.detail = detail;
+    this.body = body;
   }
 }
 
@@ -54,17 +57,17 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
   onUnauthorized = handler ?? defaultUnauthorized;
 }
 
-async function readDetail(response: Response): Promise<string | undefined> {
+async function readError(response: Response): Promise<{ detail?: string; body?: unknown }> {
   try {
     const body: unknown = await response.json();
     if (body && typeof body === "object" && "detail" in body) {
       const detail = (body as { detail: unknown }).detail;
-      return typeof detail === "string" ? detail : undefined;
+      return { detail: typeof detail === "string" ? detail : undefined, body };
     }
+    return { body };
   } catch {
-    // not JSON
+    return {}; // not JSON
   }
-  return undefined;
 }
 
 export async function apiFetch<T = unknown>(path: string, init: ApiInit = {}): Promise<T> {
@@ -81,9 +84,9 @@ export async function apiFetch<T = unknown>(path: string, init: ApiInit = {}): P
 
   const response = await fetch(`/api${path}`, request);
   if (!response.ok) {
-    const detail = await readDetail(response);
+    const { detail, body: errorBody } = await readError(response);
     if (response.status === 401 && redirectOn401) onUnauthorized(currentPath());
-    throw new ApiError(response.status, detail);
+    throw new ApiError(response.status, detail, errorBody);
   }
   if (response.status === 204) return undefined as T;
   const text = await response.text();
