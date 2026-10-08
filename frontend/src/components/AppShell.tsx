@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { FileText, LayoutDashboard, Users, Download, Send } from "lucide-react";
 
@@ -11,7 +11,7 @@ const nav = [
   { to: "/export", label: "Export", icon: Download },
 ] as const;
 
-/** The "Steuerjahr" select: controlled by a page that reads the year (Belege, #10). */
+/** The "Steuerjahr" select: controlled by the page via `useYear()` (#13). */
 export interface YearSelect {
   value: number;
   options: number[];
@@ -19,6 +19,8 @@ export interface YearSelect {
 }
 
 export function AppShell({ children, year }: { children: ReactNode; year?: YearSelect }) {
+  const search: { jahr?: number } = useSearch({ strict: false });
+  const keep = search.jahr === undefined ? {} : { jahr: search.jahr }; // nav keeps `?jahr=`
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
@@ -32,6 +34,7 @@ export function AppShell({ children, year }: { children: ReactNode; year?: YearS
               <Link
                 key={to}
                 to={to}
+                search={keep}
                 activeOptions={{ exact: to === "/" }}
                 className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm sm:px-3 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 activeProps={{ className: "bg-ink text-paper hover:bg-ink hover:text-paper" }}

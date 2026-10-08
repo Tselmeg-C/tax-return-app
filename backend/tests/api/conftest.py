@@ -34,6 +34,7 @@ from tests.documents.conftest import (  # noqa: F401 (fixtures)
     meter_provider,
     metric_reader,
 )
+from tests.domain.conftest import keys  # noqa: F401 (autouse: throwaway Fernet key, #13)
 from tests.domain.factories import make_document, make_household, make_tax_item, make_user
 
 

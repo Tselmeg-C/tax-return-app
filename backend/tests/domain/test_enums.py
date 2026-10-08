@@ -27,3 +27,11 @@ def test_labels_cover_every_member(enum_cls: type) -> None:
     assert set(labels) == set(enum_cls)
     assert all(type(member) is enum_cls for member in labels)
     assert all(label.strip() for label in labels.values())
+
+
+@pytest.mark.parametrize("year", [2025, 2026])
+def test_bundesland_codes_match_church_tax_params(year: int) -> None:
+    from app.domain.enums import Bundesland
+    from app.tax_params import load_params
+
+    assert {b.value.upper() for b in Bundesland} == set(load_params(year).church_tax.rate_by_state)

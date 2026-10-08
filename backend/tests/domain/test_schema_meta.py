@@ -21,13 +21,16 @@ CORE_TABLES = {
     "alembic_version",
     "app_user",
     "audit_log",
+    "child_year",  # #13
     "document",
+    "employment",  # #13
     "extraction",
     "household",
     "job",  # #6
     "magic_link_token",  # #5
     "person",
     "tax_item",
+    "tax_profile",  # #13
     "user_session",  # #5
 }
 
