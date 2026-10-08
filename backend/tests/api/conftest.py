@@ -113,6 +113,3 @@ async def t(
         settings, clock=clock, conn=db_connection, meter_provider=meter_provider
     ) as api:
         yield T(api=api, session=db_session, clock=clock)
-
-
-__all__ = ["Home", "T", "TaxItem"]

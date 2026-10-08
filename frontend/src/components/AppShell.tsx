@@ -11,7 +11,14 @@ const nav = [
   { to: "/export", label: "Export", icon: Download },
 ] as const;
 
-export function AppShell({ children }: { children: ReactNode }) {
+/** The "Steuerjahr" select: controlled by a page that reads the year (Belege, #10). */
+export interface YearSelect {
+  value: number;
+  options: number[];
+  onChange: (year: number) => void;
+}
+
+export function AppShell({ children, year }: { children: ReactNode; year?: YearSelect }) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b bg-background/90 backdrop-blur">
@@ -34,14 +41,29 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <select
-            className="num rounded-md border bg-card px-2 py-1 text-sm"
-            defaultValue="2025"
-            aria-label="Steuerjahr"
-          >
-            <option>2025</option>
-            <option>2026</option>
-          </select>
+          {year ? (
+            <select
+              className="num rounded-md border bg-card px-2 py-1 text-sm"
+              value={year.value}
+              onChange={(e) => year.onChange(Number(e.target.value))}
+              aria-label="Steuerjahr"
+            >
+              {year.options.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <select
+              className="num rounded-md border bg-card px-2 py-1 text-sm"
+              defaultValue="2025"
+              aria-label="Steuerjahr"
+            >
+              <option>2025</option>
+              <option>2026</option>
+            </select>
+          )}
           <span className="hidden items-center gap-1 text-xs text-muted-foreground md:flex">
             <Send className="h-3.5 w-3.5 text-primary" /> Telegram verbunden
           </span>

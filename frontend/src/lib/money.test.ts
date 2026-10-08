@@ -18,12 +18,20 @@ describe("parseEuroInput", () => {
     expect(parseEuroInput(input)).toBe(expected);
   });
 
-  it.each(["", "  ", "abc", "12,505", "1,2,3", "1.23.4", "1234567890", "1.234.567.890", "12,", "-"])(
-    "rejects %j",
-    (input) => {
-      expect(parseEuroInput(input)).toBeNull();
-    },
-  );
+  it.each([
+    "",
+    "  ",
+    "abc",
+    "12,505",
+    "1,2,3",
+    "1.23.4",
+    "1234567890",
+    "1.234.567.890",
+    "12,",
+    "-",
+  ])("rejects %j", (input) => {
+    expect(parseEuroInput(input)).toBeNull();
+  });
 });
 
 describe("display", () => {

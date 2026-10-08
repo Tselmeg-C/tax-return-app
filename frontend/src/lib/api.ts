@@ -57,7 +57,9 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
   onUnauthorized = handler ?? defaultUnauthorized;
 }
 
-async function readError(response: Response): Promise<{ detail?: string; body?: unknown }> {
+async function readError(
+  response: Response,
+): Promise<{ detail?: string | undefined; body?: unknown }> {
   try {
     const body: unknown = await response.json();
     if (body && typeof body === "object" && "detail" in body) {
