@@ -46,6 +46,8 @@ export function HouseholdPage() {
     enabled: Boolean(labels.data) && isSupported,
   });
   const [doneFor, setDoneFor] = useState<number | null>(null);
+  // Once a year shows the wizard it stays until "Fertig" / copy (saving step 3 adds rows).
+  const [wizardFor, setWizardFor] = useState<number | null>(null);
   const refresh = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: householdKey(jahr) }),
@@ -75,7 +77,9 @@ export function HouseholdPage() {
     body = <p className="mt-10 text-sm text-muted-foreground">{TEXT.loading}</p>;
   } else {
     const anyRows = data.employments.length > 0 || data.children.some((c) => c.child_year);
-    const wizard = !data.profile || (!anyRows && doneFor !== jahr);
+    const needsWizard = !data.profile || (!anyRows && doneFor !== jahr);
+    if (needsWizard && wizardFor !== jahr) setWizardFor(jahr);
+    const wizard = needsWizard || (wizardFor === jahr && doneFor !== jahr);
     const props = { data, jahr, labels: allLabels, refresh };
     body = wizard ? (
       <Wizard key={jahr} {...props} onDone={() => setDoneFor(jahr)} />
@@ -183,6 +187,7 @@ function Wizard(props: ViewProps & { onDone: () => void }) {
             jahr={jahr}
             labels={labels}
             submitLabel="Weiter"
+            cancelLabel="Zurück"
             onCancel={() => setStep(1)}
             onSaved={() => {
               setStep(3);
@@ -231,15 +236,15 @@ const returnPersons = (data: HouseholdOut) => {
 
 // --- shared blocks -------------------------------------------------------------------------
 
-function Employments(props: ViewProps & { person: PersonOut }) {
-  const { person, data, jahr, labels, refresh } = props;
+function Employments(props: ViewProps & { person: PersonOut; showName?: boolean }) {
+  const { person, data, jahr, labels, refresh, showName = true } = props;
   const jobs = data.employments.filter((e) => e.person_id === person.id);
   const [editing, setEditing] = useState<string | null>(null); // employment id or "new"
   const [none, setNone] = useState(false);
   const steuerklasse = (e: EmploymentOut) => label(labels.steuerklassen, e.steuerklasse);
   return (
     <div className="space-y-3">
-      <p className="font-display text-lg">{fullName(person)}</p>
+      {showName ? <p className="font-display text-lg">{fullName(person)}</p> : null}
       <ul className="space-y-2">
         {jobs.map((e) =>
           editing === e.id ? (
@@ -275,7 +280,11 @@ function Employments(props: ViewProps & { person: PersonOut }) {
                   <button
                     type="button"
                     className={buttonClass}
-                    onClick={() => void deleteEmployment(e.id).then(refresh)}
+                    onClick={() =>
+                      void deleteEmployment(e.id)
+                        .then(refresh)
+                        .catch(() => toast.error(TEXT.saveFailed))
+                    }
                   >
                     Löschen
                   </button>
@@ -483,7 +492,7 @@ function PageView(props: ViewProps) {
         />
       ) : null}
       {active || data.employments.some((e) => e.person_id === p.id) ? (
-        <Employments person={p} {...props} />
+        <Employments person={p} showName={false} {...props} />
       ) : null}
     </div>
   );

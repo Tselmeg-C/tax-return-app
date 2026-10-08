@@ -86,7 +86,7 @@ const draftOf = (p: PersonOut | undefined): PersonDraft => ({
 
 /** The person inputs (state is owned by the caller, so the partner form can live inside the
  * profile form). */
-export function usePersonDraft(person?: PersonOut) {
+function usePersonDraft(person?: PersonOut) {
   const [draft, setDraft] = useState(() => draftOf(person));
   const set = (patch: Partial<PersonDraft>) => setDraft((d) => ({ ...d, ...patch }));
   /** The fields to send, or the client-side error (Steuer-ID not 11 digits). */
@@ -110,7 +110,7 @@ export function usePersonDraft(person?: PersonOut) {
   return { draft, set, fields, saved };
 }
 
-export type PersonDraftApi = ReturnType<typeof usePersonDraft>;
+type PersonDraftApi = ReturnType<typeof usePersonDraft>;
 
 export function PersonInputs(props: {
   api: PersonDraftApi;
@@ -220,7 +220,7 @@ export function PersonInputs(props: {
 }
 
 /** Save a person draft: POST (new) or PATCH. Returns the person or the error to show. */
-export async function savePerson(
+async function savePerson(
   api: PersonDraftApi,
   opts: { person?: PersonOut; kind: "adult" | "child"; linkToMe?: boolean; jahr: number },
 ): Promise<PersonOut | SaveError> {
@@ -524,6 +524,7 @@ export function ProfileForm(props: {
   jahr: number;
   labels: HouseholdLabels;
   submitLabel: string;
+  cancelLabel?: string;
   onSaved: (profile: ProfileOut) => void;
   onCancel?: () => void;
 }) {
@@ -652,7 +653,7 @@ export function ProfileForm(props: {
       <div className="flex flex-col gap-2 sm:flex-row">
         {props.onCancel ? (
           <button type="button" className={buttonClass} onClick={props.onCancel}>
-            {props.data.profile ? "Abbrechen" : "Zurück"}
+            {props.cancelLabel ?? "Abbrechen"}
           </button>
         ) : null}
         <button type="submit" className={primaryClass} disabled={busy}>

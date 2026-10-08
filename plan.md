@@ -155,6 +155,13 @@ Pipeline (#9, migration `c3d9a7e1f2b4`): `document.attention_reason varchar(64)?
 
 User edits (#10, migration `e5f1b8c2d6a9`): `tax_item.version integer NOT NULL DEFAULT 1` (SQLAlchemy `version_id_col`). Every user PATCH sets `overridden_by_user` (the pipeline never touches such an item) and writes one `audit_log` row with the changed columns; the pipeline's original value of a field is the `before` of the first user row that changed it.
 
+Household and profile (#13, migration `f2a6c4d8e1b3`; one return per household and year, persons household-wide, the rest per year):
+
+- `tax_profile(id, household_id, year (2000–2100), filing_status[single|joint], bundesland[16 lowercase ISO 3166-2:DE codes], taxpayer_person_id → person RESTRICT, spouse_person_id? → person RESTRICT, created_at, updated_at)`; `UNIQUE (household_id, year)`, CHECK `(filing_status = 'joint') = (spouse_person_id IS NOT NULL)`, spouse ≠ taxpayer. No church tax rate: derived from `person.religion` + `params/{year}.yaml` → `church_tax.rate_by_state[bundesland.upper()]`
+- `employment(id, household_id, person_id → person CASCADE, year, employer_name varchar(200), steuerklasse[1–6], has_factor (only with IV), commute_km? (0–999), office_days, homeoffice_days, created_at, updated_at)`, 0..n per person and year, index `(person_id, year)`; office + homeoffice days over all of a person's employments ≤ days in the year (API). Employments of a spouse no longer in the return stay (`in_return: false`)
+- `child_year(id, household_id, person_id → person CASCADE, year, months (0–12, ≤ `max_months` from birth month / 25th birthday, no limit with a disability grade), allowance_share[full|half], in_household, created_at, updated_at)`, `UNIQUE (person_id, year)`. Kinderbetreuung costs stay tax items
+- `person.steuer_id` is validated (§ 139b AO check digit) and write-only (`steuer_id_masked` on read)
+
 Tables added later, each by the issue that first uses it, in its own migration and under the same rules:
 
 | Table(s) | Issue |
@@ -162,7 +169,7 @@ Tables added later, each by the issue that first uses it, in its own migration a
 | ~~queue tables, extra `document` columns~~ → `job`, `document.original_filename` (above) | #6 |
 | `channel_link(user_id, channel, external_id)`, one-time link codes | #11 |
 | `passkey` | #12 |
-| `tax_profile(household_id, year, assessment, bundesland, church_tax_rate)`, `employment(person_id, year, employer, steuerklasse, commute_km, office_days, homeoffice_days)`, `child_year(person_id, year, kindergeld_months, lives_with, betreuung_costs…)`, `property` (+ `tax_item.property_id`), extra `person` columns | #13 |
+| ~~`tax_profile`, `employment`, `child_year`~~ → above; `property` (+ `tax_item.property_id`, owners) | #20 |
 | `estimate(household_id, year, params_version, inputs_hash, result jsonb, created_at)` | #17 |
 | `official_record(person_id, year, kind, fields)`, kinds `lstb`, `elterngeld`, `alg`, `kindergeld` (`jstb` #19, Nebenkosten #20; encrypted where it holds a Steuer-ID) | #18 |
 | read-only Grafana role + PII-free views | #22 |
@@ -264,7 +271,7 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
 
 ## 9. Clients
 
-**Web (React + TanStack, `frontend/`)**: own Railway `web` service; the browser only talks to its own origin and `/api/*` is proxied to the `api` service (same-origin, so session cookies stay httpOnly/first-party and no CORS is needed). Dashboard per year (refund estimate, per-Anlage totals, missing-docs hints), document list (#10, `/belege?jahr=`): upload area, "Hochgeladene Belege" (documents without a tax item: in flight, failed, needs attention without item, with "Manuell erfassen" for unreadable / failed / multi-receipt files), then "Belege {jahr}" with filter chips (Alle, Relevant, Unsicher, Prüfen, Manuell) and inline edit of category, relevance, gross / deductible / §35a labour amounts, tax year and person (Anlage / Zeile follow the mapping, vendor / dates / payment method are read-only until #61); every save is an override (`version`-checked, audited, counted); thumbnails come with #35, profile/household wizard, export button. Mobile-friendly upload via `<input capture>`.
+**Web (React + TanStack, `frontend/`)**: own Railway `web` service; the browser only talks to its own origin and `/api/*` is proxied to the `api` service (same-origin, so session cookies stay httpOnly/first-party and no CORS is needed). Dashboard per year (refund estimate, per-Anlage totals, missing-docs hints), document list (#10, `/belege?jahr=`): upload area, "Hochgeladene Belege" (documents without a tax item: in flight, failed, needs attention without item, with "Manuell erfassen" for unreadable / failed / multi-receipt files), then "Belege {jahr}" with filter chips (Alle, Relevant, Unsicher, Prüfen, Manuell) and inline edit of category, relevance, gross / deductible / §35a labour amounts, tax year and person (Anlage / Zeile follow the mapping, vendor / dates / payment method are read-only until #61); every save is an override (`version`-checked, audited, counted); thumbnails come with #35; Haushalt (#13, `/haushalt?jahr=`): a wizard while the year has no profile ("Aus {Jahr} übernehmen" when another year has one, then Du → Veranlagung → Arbeit → Kinder, each step saved, resumed from the data), else a page view with the Veranlagung card, a card per adult (greyed when not in the return), children with months / Freibetrag and "Person hinzufügen"; every nav link keeps `?jahr=`; export button. Mobile-friendly upload via `<input capture>`.
 
 **Bot core** (`app/bot/core.py`) is channel-agnostic: `IncomingMessage(user, files, text)` → commands. Adapters:
 - **Telegram** (v1, `python-telegram-bot` or `aiogram`, webhook mode): send photo/PDF/album, `/summary 2025`, `/missing`, `/undo`, `/year 2025`, `/link <code>`
