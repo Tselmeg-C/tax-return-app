@@ -257,7 +257,7 @@ describe("Haushalt year handling", () => {
     expect(await screen.findByText(TEXT.loadError)).toBeInTheDocument();
     fail = false;
     fireEvent.click(screen.getByText(TEXT.retry));
-    expect(await screen.findByText("Schritt 1 von 4")).toBeInTheDocument();
+    expect(await screen.findByText("Schritt 1 von 2")).toBeInTheDocument();
     expect(householdGets(calls)).toHaveLength(2);
   });
 });
@@ -276,7 +276,7 @@ describe("Haushalt wizard", () => {
     const { queryClient, router } = renderPage("/haushalt?jahr=2025");
 
     // step 1: Du, a 422 keeps the step and the input
-    expect(await screen.findByText("Schritt 1 von 4")).toBeInTheDocument();
+    expect(await screen.findByText("Schritt 1 von 2")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Vorname"), { target: { value: "Alex" } });
     fireEvent.change(screen.getByLabelText("Geburtsdatum"), { target: { value: "1985-04-02" } });
     const steuerInput = screen.getByLabelText("Steuer-ID (optional)");
@@ -291,12 +291,12 @@ describe("Haushalt wizard", () => {
     fireEvent.change(steuerInput, { target: { value: typed } });
     fireEvent.click(screen.getByText("Weiter"));
     expect(await screen.findByText(TEXT.invalidSteuerId)).toBeInTheDocument();
-    expect(screen.getByText("Schritt 1 von 4")).toBeInTheDocument();
+    expect(screen.getByText("Schritt 1 von 2")).toBeInTheDocument();
     expect(screen.getByLabelText("Vorname")).toHaveValue("Alex");
 
     failSteuerId = false;
     fireEvent.click(screen.getByText("Weiter"));
-    expect(await screen.findByText("Schritt 2 von 4")).toBeInTheDocument();
+    expect(await screen.findByText("Schritt 2 von 2")).toBeInTheDocument();
     const post = writes(calls).at(-1)!;
     expect(post.url).toBe("/api/persons");
     expect(post.headers.get("X-Requested-With")).toBe("belegbot");
@@ -307,8 +307,10 @@ describe("Haushalt wizard", () => {
     fireEvent.change(screen.getByLabelText(/Bundesland/), { target: { value: "be" } });
     fireEvent.click(screen.getByLabelText("Zusammen"));
     fireEvent.change(screen.getByLabelText("Vorname"), { target: { value: "Robin" } });
-    fireEvent.click(screen.getByText("Weiter"));
-    expect(await screen.findByText("Schritt 3 von 4")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Fertig"));
+    // a saved profile counts as set up: the page view opens, the wizard is gone
+    expect(await screen.findByText("Veranlagung 2025")).toBeInTheDocument();
+    expect(screen.queryByText(/Schritt \d von 2/)).toBeNull();
     const [partner, profile] = writes(calls).slice(-2);
     expect(partner!.url).toBe("/api/persons");
     expect(partner!.body).toMatchObject({ kind: "adult", first_name: "Robin" });
@@ -317,7 +319,7 @@ describe("Haushalt wizard", () => {
     expect(profile!.url).toBe("/api/household/2025/profile");
     expect(profile!.body).toMatchObject({ filing_status: "joint", bundesland: "be" });
 
-    // step 3: one POST per employer; the wizard stays open after the first one
+    // page view: one POST per employer
     const addJob = async (employer: string, klasse: string) => {
       fireEvent.click(screen.getAllByText("Arbeitgeber hinzufügen")[0]!);
       fireEvent.change(screen.getByLabelText("Arbeitgeber"), { target: { value: employer } });
@@ -327,16 +329,13 @@ describe("Haushalt wizard", () => {
     };
     await addJob("Muster GmbH", "1");
     await addJob("Beispiel AG", "6");
-    expect(screen.getByText("Schritt 3 von 4")).toBeInTheDocument();
     const jobs = writes(calls).filter((c) => c.url === "/api/employments");
     expect(jobs.map((c) => c.body)).toMatchObject([
       { employer_name: "Muster GmbH", steuerklasse: "1", year: 2025 },
       { employer_name: "Beispiel AG", steuerklasse: "6", year: 2025 },
     ]);
-    fireEvent.click(screen.getByText("Weiter"));
 
-    // step 4: a child row defaults to max_months
-    expect(await screen.findByText("Schritt 4 von 4")).toBeInTheDocument();
+    // a child row defaults to max_months
     api.persons.push(kid);
     await queryClient.invalidateQueries();
     const card = (await screen.findByText(/Kim/)).closest(".sheet") as HTMLElement;
@@ -350,8 +349,6 @@ describe("Haushalt wizard", () => {
       allowance_share: "full",
       in_household: true,
     });
-    fireEvent.click(screen.getByText("Fertig"));
-    expect(await screen.findByText("Veranlagung 2025")).toBeInTheDocument();
 
     // the typed ID is in no URL and in no cached query data
     const cached = JSON.stringify(
@@ -368,7 +365,7 @@ describe("Haushalt wizard", () => {
     ).toBeInTheDocument();
   });
 
-  it("resumes at step 3 after a reload when the profile is saved", async () => {
+  it("a profile with no employers opens the page view, where an employer can be added", async () => {
     const api = new FakeApi();
     const me = person({ is_me: true });
     api.persons = [me];
@@ -381,8 +378,11 @@ describe("Haushalt wizard", () => {
     });
     api.serve();
     renderPage("/haushalt?jahr=2025");
-    expect(await screen.findByText("Schritt 3 von 4")).toBeInTheDocument();
+    expect(await screen.findByText("Veranlagung 2025")).toBeInTheDocument();
+    expect(screen.queryByText(/Schritt \d von 2/)).toBeNull();
     expect(screen.getByText("Keine Anstellung in 2025")).toBeInTheDocument();
+    expect(screen.getByText("Arbeitgeber hinzufügen")).toBeInTheDocument();
+    expect(screen.getByText("Kind hinzufügen")).toBeInTheDocument();
   });
 
   it("offers Aus {Jahr} übernehmen only with another year's profile", async () => {
@@ -429,7 +429,7 @@ describe("Haushalt wizard", () => {
   it("does not offer copy without another year", async () => {
     new FakeApi().serve();
     renderPage("/haushalt?jahr=2025");
-    expect(await screen.findByText("Schritt 1 von 4")).toBeInTheDocument();
+    expect(await screen.findByText("Schritt 1 von 2")).toBeInTheDocument();
     expect(screen.queryByText(/übernehmen/)).toBeNull();
   });
 });

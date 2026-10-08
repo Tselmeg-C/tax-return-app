@@ -167,7 +167,9 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
 - Deleting a person never deletes tax items, documents or logins: `409 person_has_tax_items`
   / `409 person_in_profile`, otherwise only that person's `employment` / `child_year` rows go
   (each with a `delete` audit row).
-- The Haushalt wizard keeps no state of its own: the step is derived from
+- The Haushalt wizard (Du, Veranlagung) is first-time setup only and keeps no state of its own:
+  it shows while the year has no `tax_profile`; a saved profile counts as set up and employers /
+  children are added on the page view. The step is derived from
   `GET /household/{jahr}`. Household writes in the frontend are plain `apiFetch` calls (no
   `useMutation`), so a typed Steuer-ID never lands in the query or mutation cache.
 

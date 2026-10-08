@@ -35,7 +35,7 @@ import {
 import { label, PERSONS_KEY } from "@/lib/taxItems";
 import { useYear } from "@/lib/year";
 
-/** Haushalt (#13): the wizard while the year has no profile (or nothing after step 2),
+/** Haushalt (#13): the first-time wizard (Du, Veranlagung) while the year has no profile,
  * else the page view. Everything is derived from `GET /household/{jahr}`. */
 export function HouseholdPage() {
   const { jahr, supported, labels, select, isSupported } = useYear();
@@ -45,9 +45,6 @@ export function HouseholdPage() {
     queryFn: () => fetchHousehold(jahr),
     enabled: Boolean(labels.data) && isSupported,
   });
-  const [doneFor, setDoneFor] = useState<number | null>(null);
-  // Once a year shows the wizard it stays until "Fertig" / copy (saving step 3 adds rows).
-  const [wizardFor, setWizardFor] = useState<number | null>(null);
   const refresh = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: householdKey(jahr) }),
@@ -76,16 +73,9 @@ export function HouseholdPage() {
   } else if (!allLabels || !data) {
     body = <p className="mt-10 text-sm text-muted-foreground">{TEXT.loading}</p>;
   } else {
-    const anyRows = data.employments.length > 0 || data.children.some((c) => c.child_year);
-    const needsWizard = !data.profile || (!anyRows && doneFor !== jahr);
-    if (needsWizard && wizardFor !== jahr) setWizardFor(jahr);
-    const wizard = needsWizard || (wizardFor === jahr && doneFor !== jahr);
+    // A saved profile counts as set up: employers and children are added on the page view.
     const props = { data, jahr, labels: allLabels, refresh };
-    body = wizard ? (
-      <Wizard key={jahr} {...props} onDone={() => setDoneFor(jahr)} />
-    ) : (
-      <PageView key={jahr} {...props} />
-    );
+    body = !data.profile ? <Wizard key={jahr} {...props} /> : <PageView key={jahr} {...props} />;
   }
 
   return (
@@ -106,14 +96,11 @@ interface ViewProps {
 // --- wizard --------------------------------------------------------------------------------
 
 function firstStep(data: HouseholdOut, offerCopy: boolean): number {
-  if (!data.profile) {
-    if (offerCopy) return 0;
-    return data.persons.some((p) => p.is_me) ? 2 : 1;
-  }
-  return data.employments.length ? 4 : 3;
+  if (offerCopy) return 0;
+  return data.persons.some((p) => p.is_me) ? 2 : 1;
 }
 
-function Wizard(props: ViewProps & { onDone: () => void }) {
+function Wizard(props: ViewProps) {
   const { data, jahr, labels, refresh } = props;
   const others = data.years_with_profile.filter((y) => y !== jahr);
   const from = others.length ? Math.max(...others) : null;
@@ -128,7 +115,6 @@ function Wizard(props: ViewProps & { onDone: () => void }) {
     try {
       await copyYear(jahr, from);
       toast.success(copied(from));
-      props.onDone();
       await refresh();
     } catch (caught) {
       setError(saveError(caught, { jahr }).message);
@@ -139,7 +125,7 @@ function Wizard(props: ViewProps & { onDone: () => void }) {
 
   return (
     <section className="sheet mt-6 space-y-6 p-4 sm:p-6">
-      {step > 0 ? <p className="stamp text-muted-foreground">Schritt {step} von 4</p> : null}
+      {step > 0 ? <p className="stamp text-muted-foreground">Schritt {step} von 2</p> : null}
       {step === 0 && from !== null ? (
         <div className="space-y-4">
           <p className="font-display text-xl">Steuerjahr {jahr} einrichten</p>
@@ -186,46 +172,14 @@ function Wizard(props: ViewProps & { onDone: () => void }) {
             data={data}
             jahr={jahr}
             labels={labels}
-            submitLabel="Weiter"
+            submitLabel="Fertig"
             cancelLabel="Zurück"
             onCancel={() => setStep(1)}
-            onSaved={() => {
-              setStep(3);
-              void refresh();
-            }}
+            onSaved={() => void refresh()}
           />
         </div>
       ) : null}
-      {step === 3 ? (
-        <div className="space-y-4">
-          <h2 className="text-2xl">Arbeit</h2>
-          {returnPersons(data).map((p) => (
-            <Employments key={p.id} person={p} {...props} />
-          ))}
-          <StepNav onBack={() => setStep(2)} onNext={() => setStep(4)} next="Weiter" />
-        </div>
-      ) : null}
-      {step === 4 ? (
-        <div className="space-y-4">
-          <h2 className="text-2xl">Kinder</h2>
-          <Children {...props} />
-          <StepNav onBack={() => setStep(3)} onNext={props.onDone} next="Fertig" />
-        </div>
-      ) : null}
     </section>
-  );
-}
-
-function StepNav(props: { onBack: () => void; onNext: () => void; next: string }) {
-  return (
-    <div className="flex flex-col gap-2 sm:flex-row">
-      <button type="button" className={buttonClass} onClick={props.onBack}>
-        Zurück
-      </button>
-      <button type="button" className={primaryClass} onClick={props.onNext}>
-        {props.next}
-      </button>
-    </div>
   );
 }
 
