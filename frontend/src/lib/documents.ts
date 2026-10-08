@@ -20,6 +20,7 @@ export interface DocumentOut {
   channel: "web" | "telegram";
   doc_type: string | null;
   error_kind: string | null;
+  attention_reason?: string | null; // #10
   created_at: string;
   updated_at: string;
 }
@@ -47,8 +48,9 @@ export function uploadDocument(file: File): Promise<UploadResult> {
   });
 }
 
+/** Documents without a tax item (#10): in flight, failed and needs attention without item. */
 export async function listDocuments(): Promise<DocumentOut[]> {
-  const body = await apiFetch<{ documents: DocumentOut[] }>("/documents");
+  const body = await apiFetch<{ documents: DocumentOut[] }>("/documents?without_tax_item=true");
   return body.documents;
 }
 

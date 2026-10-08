@@ -126,6 +126,22 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   calculator, never from the engine; collect / re-verify them with
   `uv run python -m tests.tax.golden.collect --year YYYY` (`tests/tax/golden/README.md`).
 
+## Tax items and overrides (rules from #10)
+
+- Every user write to `tax_item` goes through `app/tax_items.py` (`update_item` /
+  `create_manual_item`): it sets `overridden_by_user` (the pipeline never touches such an
+  item), checks `version` (`409 version_conflict`), locks the `document` row before the
+  `tax_item` row (`409 document_busy` while queued / processing), writes exactly one
+  `tax_item` audit row (+ one `document` row when it resolves "needs attention") and emits
+  `belegbot.tax_item.*` counters only after the commit.
+- `anlage` / `zeile` are never edited: they follow `load_params(year).mapping`.
+- Money is a dot-decimal string on the wire (`^-?\d{1,9}\.\d{2}$`); the frontend parses
+  German input with `parseEuroInput` (`frontend/src/lib/money.ts`). Error bodies are a code
+  plus the field name, never the sent value.
+- Never log, trace or meter override values (amounts, vendor, `reason`, names): log events
+  carry ids, field names and codes only.
+- The UI takes enum labels only from `GET /meta/labels` (no copy of `LABELS_DE` in the frontend).
+
 ## Stack
 
 - Backend (`backend/`): Python 3.12, `uv`, FastAPI, SQLAlchemy 2.0 + Alembic, Postgres 16, Postgres-based job queue

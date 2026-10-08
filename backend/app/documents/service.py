@@ -15,7 +15,7 @@ import structlog
 from sqlalchemy.exc import IntegrityError
 
 from app.db.audit import Actor, record, snapshot
-from app.db.models import Document, Job
+from app.db.models import Document, Job, TaxItem
 from app.db.scope import HouseholdScope
 from app.documents.sniff import detect_type
 from app.domain.enums import AuditAction, Channel, DocumentStatus, JobKind, JobStatus
@@ -205,7 +205,7 @@ async def ingest_document(
 async def delete_document(
     scope: HouseholdScope, document_id: uuid.UUID, user_id: uuid.UUID, storage: Storage
 ) -> bool:
-    """Delete a document (row, jobs and extractions via cascades) and then its files.
+    """Delete a document (row, jobs, extractions and tax items via cascades) and then its files.
 
     `False` if it does not exist in this household; `DocumentBusy` while its job runs.
     Locks the document row before any job row (same order as the worker's claim).
@@ -223,6 +223,19 @@ async def delete_document(
     if running.first() is not None:
         await session.rollback()
         raise DocumentBusy()
+    # #10 Decision 10: the items go with the document (CASCADE); the audit trail stays.
+    items = await session.execute(scope.select(TaxItem).where(TaxItem.document_id == doc.id))
+    for item in items.scalars():
+        await record(
+            session,
+            household_id=scope.household_id,
+            entity="tax_item",
+            entity_id=item.id,
+            action=AuditAction.DELETE,
+            before=snapshot(item),
+            after=None,
+            actor=Actor.user(user_id),
+        )
     before = snapshot(doc)
     storage_key = doc.storage_key
     await session.delete(doc)

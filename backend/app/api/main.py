@@ -17,7 +17,7 @@ from opentelemetry.metrics import MeterProvider
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.api import auth, documents
+from app.api import auth, documents, meta, tax_items
 from app.api.deps import require_session
 from app.api.security import CsrfMiddleware, NoStoreMiddleware
 from app.auth.clock import Clock, SystemClock
@@ -30,6 +30,7 @@ from app.observability.http import instrument_app, instrument_engine
 from app.observability.logs import set_level
 from app.queue.metrics import UploadMetrics
 from app.storage import storage_from_settings
+from app.tax_items import TaxItemMetrics
 
 logger = logging.getLogger("app.api")
 
@@ -72,6 +73,7 @@ def create_app(
         app.state.clock = the_clock
         app.state.storage = storage
         app.state.upload_metrics = UploadMetrics(meter_provider)
+        app.state.tax_item_metrics = TaxItemMetrics(meter_provider)
         app.state.mailer = MailDispatcher(mail_backend or backend_from_settings(resolved))
         app.state.magic_link_limiter = RateLimiter(
             MAGIC_LINK_REQUESTS_PER_IP, RATE_WINDOW, the_clock
@@ -149,6 +151,8 @@ def create_app(
 
     app.include_router(auth.router)
     app.include_router(documents.router)
+    app.include_router(tax_items.router)
+    app.include_router(meta.router)
     return app
 
 

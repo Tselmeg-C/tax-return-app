@@ -135,7 +135,7 @@ Core tables (#4, migration `727a2e042810`):
 - `person(id, household_id, kind[adult|child], first_name, last_name?, dob? (required for children), steuer_id? 🔒, religion[none|ev|rk|other], disability_grade? (20–100, step 10), created_at, updated_at)`
 - `document(id, household_id, uploaded_by_user_id → app_user RESTRICT, channel[web|telegram], sha256 (UNIQUE per household), mime_type, size_bytes, page_count?, storage_key (opaque, UNIQUE), status[queued|processing|done|needs_attention|failed], doc_type?, error_kind?, created_at, updated_at)`
 - `extraction(id, household_id, document_id → document CASCADE, step[classify|extract], doc_type?, provider, model, prompt_version, raw_json? 🔒, confidence?, input_tokens, output_tokens, cost_eur, latency_ms, error_kind?, created_at)` — one row per LLM call (§6)
-- `tax_item(id, household_id, document_id? → document CASCADE, extraction_id? → extraction SET NULL, person_id? → person RESTRICT (NULL = household-level), year, category, anlage?, zeile?, gross_amount, deductible_amount, labour_share_35a?, vendor?, invoice_date?, payment_date?, payment_method, is_relevant (irrelevant ⇒ deductible 0), reason?, confidence?, overridden_by_user, created_at, updated_at)`
+- `tax_item(id, household_id, document_id? → document CASCADE, extraction_id? → extraction SET NULL, person_id? → person RESTRICT (NULL = household-level), year, category, anlage?, zeile?, gross_amount, deductible_amount, labour_share_35a?, vendor?, invoice_date?, payment_date?, payment_method, is_relevant (irrelevant ⇒ deductible 0), reason?, confidence?, overridden_by_user, version (#10, optimistic locking, default 1), created_at, updated_at)`
 - `audit_log(id, household_id, entity, entity_id (no FK), action[create|update|delete], before? jsonb, after? jsonb, actor_type[user|system], actor_user_id? (no FK), created_at)` — written via `app/db/audit.py`, encrypted values stored as `"[redacted]"`
 
 Queue and uploads (#6, migration `b7e4d2a91c3f`):
@@ -152,6 +152,8 @@ Auth tables (#5, migration `5a1c9e3b7d42`; both store only `sha256(token)` as he
 - `user_session(id, household_id, user_id → app_user CASCADE, token_hash char(64) UNIQUE, created_at, last_seen_at, expires_at (absolute), revoked_at?)`
 
 Pipeline (#9, migration `c3d9a7e1f2b4`): `document.attention_reason varchar(64)?` (`AttentionReason`, priority order; CHECK `status <> 'needs_attention' OR attention_reason IS NOT NULL`). `extraction` is the append-only LLM call log (one row per attempt, `raw_json` only on the successful one); one `tax_item` per document in v1 (#43 splits).
+
+User edits (#10, migration `e5f1b8c2d6a9`): `tax_item.version integer NOT NULL DEFAULT 1` (SQLAlchemy `version_id_col`). Every user PATCH sets `overridden_by_user` (the pipeline never touches such an item) and writes one `audit_log` row with the changed columns; the pipeline's original value of a field is the `before` of the first user row that changed it.
 
 Tables added later, each by the issue that first uses it, in its own migration and under the same rules:
 
@@ -262,7 +264,7 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
 
 ## 9. Clients
 
-**Web (React + TanStack, `frontend/`)**: own Railway `web` service; the browser only talks to its own origin and `/api/*` is proxied to the `api` service (same-origin, so session cookies stay httpOnly/first-party and no CORS is needed). Dashboard per year (refund estimate, per-Anlage totals, missing-docs hints), document list with thumbnail + extracted fields (editable inline — overrides logged), profile/household wizard, export button. Mobile-friendly upload via `<input capture>`.
+**Web (React + TanStack, `frontend/`)**: own Railway `web` service; the browser only talks to its own origin and `/api/*` is proxied to the `api` service (same-origin, so session cookies stay httpOnly/first-party and no CORS is needed). Dashboard per year (refund estimate, per-Anlage totals, missing-docs hints), document list (#10, `/belege?jahr=`): upload area, "Hochgeladene Belege" (documents without a tax item: in flight, failed, needs attention without item, with "Manuell erfassen" for unreadable / failed / multi-receipt files), then "Belege {jahr}" with filter chips (Alle, Relevant, Unsicher, Prüfen, Manuell) and inline edit of category, relevance, gross / deductible / §35a labour amounts, tax year and person (Anlage / Zeile follow the mapping, vendor / dates / payment method are read-only until #61); every save is an override (`version`-checked, audited, counted); thumbnails come with #35, profile/household wizard, export button. Mobile-friendly upload via `<input capture>`.
 
 **Bot core** (`app/bot/core.py`) is channel-agnostic: `IncomingMessage(user, files, text)` → commands. Adapters:
 - **Telegram** (v1, `python-telegram-bot` or `aiogram`, webhook mode): send photo/PDF/album, `/summary 2025`, `/missing`, `/undo`, `/year 2025`, `/link <code>`

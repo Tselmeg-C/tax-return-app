@@ -57,9 +57,19 @@ The issue for such a task uses the **llm-feature** template and fills in its
 5. **Observe** — after deploy, watch the feature in Grafana: **user override
    rate** (proxy for error rate, since the flow is fully automatic), **cost**
    (€ per document / per call, tokens), latency, schema-validation failure and
-   fallback rate.
+   fallback rate. The override signal (#10, emitted after commit, attributes are
+   codes only): `belegbot.tax_item.overrides{field, category, origin}` (Prometheus
+   `belegbot_tax_item_overrides_total`; +1 per changed field the user sent, `category`
+   = the category before the edit, `origin` = `pipeline` for the first change of a
+   pipeline item, else `user`), `belegbot.tax_item.reviews{outcome, origin}` (+1 per
+   successful PATCH, `outcome` = `changed` / `confirmed`) and
+   `belegbot.tax_item.manual_items{attention_reason}`. **Override rate** =
+   `reviews{outcome="changed", origin="pipeline"}` / `belegbot.pipeline.items`
+   (derived changes such as Anlage / Zeile are not counted). Dashboards: #22.
 6. **Iterate** — every user override becomes a new labelled example; grow the
-   eval set, adjust spec / prompt / model, and go through the gate again.
+   eval set, adjust spec / prompt / model, and go through the gate again. The data
+   is `overridden_by_user` + the field-level `audit_log` rows (#10); the private export
+   into labelled eval cases is #60 (`evals/datasets_private/`, never committed).
 
 ## Worked example: #9 (bill pipeline v1)
 

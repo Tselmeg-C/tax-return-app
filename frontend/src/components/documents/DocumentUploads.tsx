@@ -1,7 +1,18 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, ExternalLink, Globe, RotateCcw, Send, Trash2, Upload } from "lucide-react";
-import { useRef, useState, type ReactNode } from "react";
+import {
+  Camera,
+  ExternalLink,
+  Globe,
+  PenLine,
+  RotateCcw,
+  Send,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 
+import { ItemForm } from "@/components/documents/ItemForm";
 import { ApiError } from "@/lib/api";
 import {
   createLimiter,
@@ -18,6 +29,25 @@ import {
   type DocumentOut,
   type UploadProblem,
 } from "@/lib/documents";
+import {
+  deleteConfirm,
+  HINTS,
+  label,
+  listTaxItems,
+  MANUAL_REASONS,
+  TAX_ITEMS_KEY,
+  TEXT,
+  type Labels,
+  type Person,
+} from "@/lib/taxItems";
+
+/** What the Belege page adds (#10): reason labels, manual items, the "verarbeitet" toast. */
+export interface BelegeContext {
+  jahr: number;
+  labels: Labels;
+  persons: Person[];
+  onShowYear: (year: number) => void;
+}
 
 interface PendingUpload {
   key: number;
@@ -28,8 +58,11 @@ interface PendingUpload {
 const when = (iso: string) =>
   new Date(iso).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" });
 
-/** Upload area (drop zone, file picker, camera) and the "Hochgeladene Belege" list. */
-export function DocumentUploads() {
+/**
+ * Upload area (drop zone, file picker, camera) and the "Hochgeladene Belege" list: documents
+ * without a tax item (in flight, failed, needs attention without item).
+ */
+export function DocumentUploads({ belege }: { belege?: BelegeContext }) {
   const queryClient = useQueryClient();
   const documents = useQuery({
     queryKey: DOCUMENTS_KEY,
@@ -44,6 +77,34 @@ export function DocumentUploads() {
   const held = useRef(new Map<string, File>()); // document id -> File, for "Erneut hochladen"
   const limit = useRef(createLimiter(MAX_PARALLEL_UPLOADS));
   const nextKey = useRef(0);
+  const [manual, setManual] = useState<string | null>(null); // document id with an open form
+  const running = useRef(new Set<string>());
+  const removed = useRef(new Set<string>());
+
+  // A row that was queued / processing left the list: it has an item now (#10).
+  useEffect(() => {
+    const data = documents.data;
+    if (!data) return;
+    const ids = new Set(data.map((d) => d.id));
+    const left = [...running.current].filter((id) => !ids.has(id) && !removed.current.has(id));
+    running.current = new Set(data.filter((d) => isRunning(d.status)).map((d) => d.id));
+    if (!belege) return;
+    for (const id of left) {
+      void listTaxItems({ year: belege.jahr, filter: "all", documentId: id }).then(
+        ({ items }) => {
+          const year = items[0]?.year;
+          if (year === undefined) return;
+          void queryClient.invalidateQueries({ queryKey: TAX_ITEMS_KEY });
+          if (year === belege.jahr) toast.success(TEXT.processed);
+          else
+            toast.success(`${TEXT.processed} – Steuerjahr ${year}`, {
+              action: { label: "Anzeigen", onClick: () => belege.onShowYear(year) },
+            });
+        },
+        () => undefined,
+      );
+    }
+  }, [documents.data, belege, queryClient]);
 
   const notice = (id: string, text: string | null) =>
     setNotices((n) => {
@@ -114,9 +175,10 @@ export function DocumentUploads() {
   };
 
   const remove = async (doc: DocumentOut) => {
-    if (!window.confirm("Diesen Beleg wirklich löschen?")) return;
+    if (!window.confirm(deleteConfirm(nameOf(doc), false))) return;
     try {
       await deleteDocument(doc.id);
+      removed.current.add(doc.id);
       queryClient.setQueryData<DocumentOut[]>(DOCUMENTS_KEY, (old = []) =>
         old.filter((d) => d.id !== doc.id),
       );
@@ -204,44 +266,89 @@ export function DocumentUploads() {
               actions={item.problem !== null && <RetryButton onClick={() => retryPending(item)} />}
             />
           ))}
-          {(documents.data ?? []).map((doc) => (
-            <Row
-              key={doc.id}
-              channel={doc.channel}
-              label={doc.original_filename ?? `Beleg vom ${when(doc.created_at)}`}
-              secondary={doc.original_filename ? when(doc.created_at) : null}
-              status={
-                <>
-                  <DocStatus doc={doc} />
-                  {notices[doc.id] && (
-                    <span className="ml-2 text-muted-foreground">{notices[doc.id]}</span>
-                  )}
-                </>
-              }
-              actions={
-                <>
-                  {doc.status === "failed" && (
-                    <RetryButton onClick={() => void retryDocument(doc)} />
-                  )}
-                  <a
-                    href={`/api/documents/${doc.id}/file`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 rounded px-2 py-1 hover:bg-secondary"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" /> Original öffnen
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => void remove(doc)}
-                    className="flex items-center gap-1 rounded px-2 py-1 hover:bg-secondary"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> Löschen
-                  </button>
-                </>
-              }
-            />
-          ))}
+          {(documents.data ?? []).map((doc) => {
+            const reason = doc.status === "needs_attention" ? doc.attention_reason : null;
+            const canManual = Boolean(belege && reason && MANUAL_REASONS.includes(reason));
+            return (
+              <Row
+                key={doc.id}
+                channel={doc.channel}
+                label={nameOf(doc)}
+                secondary={doc.original_filename ? when(doc.created_at) : null}
+                below={
+                  (reason && HINTS[reason]) || manual === doc.id ? (
+                    <>
+                      {reason && HINTS[reason] && (
+                        <p className="text-xs text-muted-foreground">{HINTS[reason]}</p>
+                      )}
+                      {belege && manual === doc.id && (
+                        <div className="mt-2">
+                          <ItemForm
+                            item={null}
+                            documentId={doc.id}
+                            year={belege.jahr}
+                            busy={false}
+                            labels={belege.labels}
+                            persons={belege.persons}
+                            onSaved={() => {
+                              setManual(null);
+                              toast.success(TEXT.created);
+                              void queryClient.invalidateQueries({ queryKey: DOCUMENTS_KEY });
+                              void queryClient.invalidateQueries({ queryKey: TAX_ITEMS_KEY });
+                            }}
+                            onGone={() => {
+                              setManual(null);
+                              void queryClient.invalidateQueries({ queryKey: DOCUMENTS_KEY });
+                            }}
+                            onCancel={() => setManual(null)}
+                          />
+                        </div>
+                      )}
+                    </>
+                  ) : null
+                }
+                status={
+                  <>
+                    <DocStatus doc={doc} labels={belege?.labels} />
+                    {notices[doc.id] && (
+                      <span className="ml-2 text-muted-foreground">{notices[doc.id]}</span>
+                    )}
+                  </>
+                }
+                actions={
+                  <>
+                    {doc.status === "failed" && (
+                      <RetryButton onClick={() => void retryDocument(doc)} />
+                    )}
+                    {canManual && (
+                      <button
+                        type="button"
+                        onClick={() => setManual(manual === doc.id ? null : doc.id)}
+                        className="flex items-center gap-1 rounded border px-2 py-1 hover:bg-secondary"
+                      >
+                        <PenLine className="h-3.5 w-3.5" /> Manuell erfassen
+                      </button>
+                    )}
+                    <a
+                      href={`/api/documents/${doc.id}/file`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 rounded px-2 py-1 hover:bg-secondary"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> Original öffnen
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => void remove(doc)}
+                      className="flex items-center gap-1 rounded px-2 py-1 hover:bg-secondary"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Löschen
+                    </button>
+                  </>
+                }
+              />
+            );
+          })}
           {pending.length === 0 && documents.data?.length === 0 && (
             <li className="p-3 text-muted-foreground">Noch keine Belege hochgeladen.</li>
           )}
@@ -251,12 +358,15 @@ export function DocumentUploads() {
   );
 }
 
+const nameOf = (doc: DocumentOut) => doc.original_filename ?? `Beleg vom ${when(doc.created_at)}`;
+
 function Row(props: {
   label: string;
   secondary: string | null;
   status: ReactNode;
   actions: ReactNode;
   channel?: "web" | "telegram";
+  below?: ReactNode;
 }) {
   return (
     <li className="flex flex-wrap items-center gap-3 p-3" data-testid="document-row">
@@ -271,7 +381,8 @@ function Row(props: {
         {props.secondary && <p className="num text-xs text-muted-foreground">{props.secondary}</p>}
       </div>
       <div className="text-sm">{props.status}</div>
-      <div className="flex items-center gap-1">{props.actions}</div>
+      <div className="flex flex-wrap items-center gap-1">{props.actions}</div>
+      {props.below && <div className="w-full">{props.below}</div>}
     </li>
   );
 }
@@ -280,12 +391,18 @@ function Running({ text }: { text: string }) {
   return <span className="stamp animate-pulse text-muted-foreground">{text}</span>;
 }
 
-function DocStatus({ doc }: { doc: DocumentOut }) {
+function DocStatus({ doc, labels }: { doc: DocumentOut; labels: Labels | undefined }) {
   if (isRunning(doc.status)) return <Running text="läuft…" />;
   if (doc.status === "done") return <span className="stamp text-success">verarbeitet</span>;
   if (doc.status === "failed")
     return <span className="text-destructive">{MESSAGES.processingFailed}</span>;
-  return <span className="stamp">Prüfung nötig</span>;
+  return (
+    <span className="stamp">
+      {labels && doc.attention_reason
+        ? label(labels.attention_reasons, doc.attention_reason)
+        : "Prüfung nötig"}
+    </span>
+  );
 }
 
 function RetryButton({ onClick }: { onClick: () => void }) {
