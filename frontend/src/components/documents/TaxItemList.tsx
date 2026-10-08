@@ -177,7 +177,7 @@ export function TaxItemList(props: { jahr: number; labels: Labels; persons: Pers
               <li
                 key={item.id}
                 data-testid="tax-item-row"
-                className={`grid gap-2 p-3 sm:items-center sm:gap-3 ${cols} ${item.is_relevant ? "" : "text-muted-foreground"}`}
+                className={`grid grid-cols-[minmax(0,1fr)] gap-2 p-3 sm:items-center sm:gap-3 ${cols} ${item.is_relevant ? "" : "text-muted-foreground"}`}
               >
                 <div className="flex min-w-0 items-center gap-2">
                   {doc?.channel === "telegram" ? (
@@ -263,7 +263,7 @@ export function TaxItemList(props: { jahr: number; labels: Labels; persons: Pers
                   )}
                 </div>
                 {editing === item.id && (
-                  <div className="sm:col-span-full">
+                  <div className="min-w-0 sm:col-span-full">
                     <ItemForm
                       item={item}
                       documentId={item.document_id ?? ""}

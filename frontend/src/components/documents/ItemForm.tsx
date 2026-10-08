@@ -141,16 +141,20 @@ export function ItemForm(props: {
     }
   };
 
-  const field = "flex flex-col gap-1 text-sm";
-  const input = "rounded border bg-background px-2 py-1";
+  const field = "flex min-w-0 flex-col gap-1 text-sm";
+  // w-full + min-w-0: a select never grows past its card with a long option (375 px).
+  const input = "w-full min-w-0 max-w-full truncate rounded border bg-background px-2 py-1";
   return (
     <form
       onSubmit={(e) => void submit(e)}
-      className="w-full rounded-md border bg-card p-3"
+      className="w-full min-w-0 max-w-full rounded-md border bg-card p-3"
       aria-label="Beleg bearbeiten"
     >
       {props.busy && <p className="mb-2 text-sm text-muted-foreground">{TEXT.processing}</p>}
-      <fieldset disabled={props.busy || saving} className="grid gap-3 sm:grid-cols-2">
+      <fieldset
+        disabled={props.busy || saving}
+        className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2"
+      >
         <label className={field}>
           Kategorie
           <select

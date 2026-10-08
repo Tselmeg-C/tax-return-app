@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
 import { useState } from "react";
 
 import { apiFetch } from "@/lib/api";
@@ -25,15 +25,19 @@ export function UserMenu() {
 
   if (!me) return null;
   return (
-    <div className="relative">
+    <div className="relative min-w-0 shrink">
       <button
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="max-w-[12rem] truncate rounded-md border bg-card px-2 py-1 text-sm"
+        title={me.email}
+        aria-label={me.email}
+        className="flex max-w-[12rem] items-center rounded-md border bg-card px-2 py-1 text-sm"
       >
-        {me.email}
+        {/* Phone width: an icon only, so the header never scrolls horizontally (375 px). */}
+        <UserRound className="h-4 w-4 sm:hidden" />
+        <span className="hidden truncate sm:inline">{me.email}</span>
       </button>
       {open && (
         <div
