@@ -29,12 +29,14 @@ from app.tax.deductions import (
     entfernungspauschale,
     homeoffice_pauschale,
     sonderausgaben,
+    vorsorge,
     werbungskosten,
 )
+from app.tax.deductions.models import VorsorgeInput
 from app.tax_params import load_params, supported_years
 
 HERE = Path(__file__).parent
-GROUPS = ("werbungskosten", "sonderausgaben")
+GROUPS = ("werbungskosten", "sonderausgaben", "vorsorge")
 REQUIRED = ("id", "rule", "source", "arithmetic", "input", "expected")
 
 
@@ -168,6 +170,31 @@ def _run_sonderausgaben(year: int, case: dict[str, Any]) -> None:
     _check_notes(case, result)
 
 
+def _run_vorsorge(year: int, case: dict[str, Any]) -> None:
+    inp, exp = case["input"], case["expected"]
+    persons = [
+        VorsorgeInput(
+            _pid(v["person"]) or "",
+            v["employed"],
+            Decimal(v["rv_employee"]),
+            None if v["rv_employer"] is None else Decimal(v["rv_employer"]),
+            Decimal(v["basisrente"]),
+            Decimal(v["kv"]),
+            Decimal(v["pv"]),
+            Decimal(v["sonstige"]),
+        )
+        for v in inp["persons"]
+    ]
+    result = vorsorge(_ctx(inp, year), persons, load_params(year).vorsorge)
+    if "altersvorsorge" in exp:
+        assert _eq(result.altersvorsorge.abzug, exp["altersvorsorge"]), case["id"]
+    if "kranken" in exp:
+        assert _eq(result.kranken.abzug, exp["kranken"]), case["id"]
+    if "total" in exp:
+        assert _eq(result.total, exp["total"]), case["id"]
+    _check_notes(case, result)
+
+
 @pytest.mark.parametrize(("year", "case"), _all_cases())
 def test_reference_case(year: int, case: dict[str, Any]) -> None:
     for key in REQUIRED:
@@ -187,6 +214,8 @@ def test_reference_case(year: int, case: dict[str, Any]) -> None:
     elif rule == "W2":
         days = sum(case["input"]["homeoffice_days"])
         assert homeoffice_pauschale(days, p.werbungskosten) == Decimal(case["expected"])
+    elif "persons" in case["input"]:
+        _run_vorsorge(year, case)
     elif rule.startswith("W"):
         _run_werbungskosten(year, case)
     else:

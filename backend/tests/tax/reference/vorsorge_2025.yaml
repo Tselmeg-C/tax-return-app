@@ -1,0 +1,460 @@
+# Hand-computed reference cases for vorsorge, VZ 2025 (#16). Every case cites its paragraph and shows
+# its arithmetic; a case may only change together with its `arithmetic` (README.md).
+- id: A1_assumed_share
+  rule: A1
+  source: § 10 Abs. 1 Nr. 2, Abs. 3 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '6000.00'
+      basisrente: '0.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: null
+  arithmetic: ag = 6000 (assumed); 6000 + 6000 = 12000 <= H; 12000 - 6000 = 6000
+  expected:
+    altersvorsorge: '6000.00'
+    notes:
+    - employer_share_assumed
+- id: A2_given_share
+  rule: A1
+  source: § 10 Abs. 1 Nr. 2, Abs. 3 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '8984.00'
+      basisrente: '0.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: '8984.00'
+  arithmetic: 8984 + 8984 = 17968 <= H; 17968 - 8984 = 8984
+  expected:
+    altersvorsorge: '8984.00'
+    notes: []
+- id: A3_midijob
+  rule: A1
+  source: § 10 Abs. 1 Nr. 2, Abs. 3 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '6000.00'
+      basisrente: '0.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: '5500.00'
+  arithmetic: 6000 + 5500 = 11500 <= H; 11500 - 5500 = 6000
+  expected:
+    altersvorsorge: '6000.00'
+    notes: []
+- id: A4_basisrente
+  rule: A1
+  source: § 10 Abs. 1 Nr. 2, Abs. 3 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '7000.00'
+      basisrente: '5000.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: '7000.00'
+  arithmetic: 7000 + 7000 + 5000 = 19000 <= H; 19000 - 7000 = 12000
+  expected:
+    altersvorsorge: '12000.00'
+- id: A5_at_cap
+  rule: A1
+  source: § 10 Abs. 1 Nr. 2, Abs. 3 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '8984.00'
+      basisrente: '11376.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: '8984.00'
+  arithmetic: 8984 + 8984 + 11376 = 29344; min(29344; 29344) = 29344; 29344 - 8984
+    = 20360
+  expected:
+    altersvorsorge: '20360.00'
+- id: A6_one_over
+  rule: A1
+  source: § 10 Abs. 1 Nr. 2, Abs. 3 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '8984.00'
+      basisrente: '11377.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: '8984.00'
+  arithmetic: 8984 + 8984 + 11377 = 29345; min(29345; 29344) = 29344; 29344 - 8984
+    = 20360
+  expected:
+    altersvorsorge: '20360.00'
+- id: A7_one_under
+  rule: A1
+  source: § 10 Abs. 1 Nr. 2, Abs. 3 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '8984.00'
+      basisrente: '11375.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: '8984.00'
+  arithmetic: 8984 + 8984 + 11375 = 29343; min(29343; 29344) = 29343; 29343 - 8984
+    = 20359
+  expected:
+    altersvorsorge: '20359.00'
+- id: A8_joint
+  rule: A1
+  source: '§ 10 Abs. 1 Nr. 2, Abs. 3 EStG (Abs. 3 Satz 2: Höchstbetrag doppelt)'
+  input:
+    filing: joint
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '8984.00'
+      basisrente: '30000.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: '8984.00'
+    - person: B
+      employed: true
+      rv_employee: '8984.00'
+      basisrente: '0.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: '8984.00'
+  arithmetic: 35936 + 30000 = 65936; 2 x 29344 = 58688; min = 58688; - 17968 = 40720
+  expected:
+    altersvorsorge: '40720.00'
+- id: A9_self_employed
+  rule: A1
+  source: § 10 Abs. 1 Nr. 2, Abs. 3 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: false
+      rv_employee: '0.00'
+      basisrente: '30000.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: null
+  arithmetic: min(30000; 29344) = 29344; no employer share
+  expected:
+    altersvorsorge: '29344.00'
+    notes: []
+- id: A12_zero
+  rule: A1
+  source: § 10 Abs. 1 Nr. 2, Abs. 3 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: null
+  arithmetic: '0'
+  expected:
+    altersvorsorge: '0.00'
+    kranken: '0.00'
+    total: '0.00'
+    notes: []
+- id: K1_above_cap
+  rule: K1
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '4000.00'
+      pv: '1000.00'
+      sonstige: '600.00'
+      rv_employer: null
+  arithmetic: 'kv 4000 x 0.96 = 3840; 3840 + 1000 = 4840 > 1900: Nr. 3 in full, Nr.
+    3a out (Abs. 4 Satz 4)'
+  expected:
+    kranken: '4840.00'
+- id: K2_fill_up
+  rule: K1
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '1000.00'
+      pv: '300.00'
+      sonstige: '500.00'
+      rv_employer: null
+  arithmetic: 960 + 300 = 1260; + 500 = 1760 <= 1900
+  expected:
+    kranken: '1760.00'
+- id: K3_capped
+  rule: K1
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '1000.00'
+      pv: '300.00'
+      sonstige: '1000.00'
+      rv_employer: null
+  arithmetic: 1260 + 1000 = 2260 -> cap 1900
+  expected:
+    kranken: '1900.00'
+- id: K4a_not_employed
+  rule: K1
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: false
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '1000.00'
+      pv: '300.00'
+      sonstige: '1000.00'
+      rv_employer: null
+  arithmetic: 1000 + 300 = 1300 (no cut); + 1000 = 2300 <= 2800
+  expected:
+    kranken: '2300.00'
+    notes: []
+- id: K4b_not_employed_capped
+  rule: K1
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: false
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '1000.00'
+      pv: '300.00'
+      sonstige: '2000.00'
+      rv_employer: null
+  arithmetic: 1300 + 2000 = 3300 -> cap 2800
+  expected:
+    kranken: '2800.00'
+- id: K5_exact_cap
+  rule: K1
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '1979.17'
+      pv: '0.00'
+      sonstige: '100.00'
+      rv_employer: null
+  arithmetic: 1979.17 x 0.96 = 1900.0032 -> 1900.00 = cap; Nr. 3 = cap, Nr. 3a out
+  expected:
+    kranken: '1900.00'
+- id: K6a_cap_edge_below
+  rule: K1
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: false
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '2799.99'
+      pv: '0.00'
+      sonstige: '0.01'
+      rv_employer: null
+  arithmetic: 2799.99 + 0.01 = 2800.00 = cap
+  expected:
+    kranken: '2800.00'
+- id: K6b_cap_edge_above_by_3a
+  rule: K1
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: false
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '2799.99'
+      pv: '0.00'
+      sonstige: '0.02'
+      rv_employer: null
+  arithmetic: 2799.99 + 0.02 = 2800.01 -> cap 2800.00
+  expected:
+    kranken: '2800.00'
+- id: K6c_nr3_above_cap
+  rule: K1
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: false
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '2800.01'
+      pv: '0.00'
+      sonstige: '500.00'
+      rv_employer: null
+  arithmetic: 'Nr. 3 = 2800.01 > cap: deducted in full, Nr. 3a out'
+  expected:
+    kranken: '2800.01'
+- id: K7_joint_different_kassen
+  rule: K2
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG (Abs. 4 Satz 3)
+  input:
+    filing: joint
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '3000.00'
+      pv: '800.00'
+      sonstige: '0.00'
+      rv_employer: null
+    - person: B
+      employed: false
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '2500.00'
+      pv: '400.00'
+      sonstige: '0.00'
+      rv_employer: null
+  arithmetic: 'A 2880 + 800; B 2500 + 400; Nr. 3 = 6580 > cap 1900 + 2800 = 4700:
+    in full'
+  expected:
+    kranken: '6580.00'
+- id: K8_pooled_cap
+  rule: K2
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG (Abs. 4 Satz 3, 4)
+  input:
+    filing: joint
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '1000.00'
+      pv: '0.00'
+      sonstige: '3000.00'
+      rv_employer: null
+    - person: B
+      employed: false
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '1000.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: null
+  arithmetic: Nr. 3 = 960 + 1000 = 1960; + 3000 = 4960; cap 4700 -> 4700
+  expected:
+    kranken: '4700.00'
+- id: K9_joint_worse_than_separate
+  rule: K2
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG (Abs. 4 Satz 3, 4)
+  input:
+    filing: joint
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '3125.00'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: null
+    - person: B
+      employed: false
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '0.00'
+      pv: '0.00'
+      sonstige: '3000.00'
+      rv_employer: null
+  arithmetic: 'Nr. 3 = 3000; Nr. 3a = 3000; max(3000; min(6000; 4700)) = 4700. Two
+    separate calculations: 3000 + 2800 = 5800 (joint can be lower, pooled reading
+    of Abs. 4 Satz 4)'
+  expected:
+    kranken: '4700.00'
+- id: K10_cut_rounding
+  rule: K1
+  source: § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '0.00'
+      basisrente: '0.00'
+      kv: '333.33'
+      pv: '0.00'
+      sonstige: '0.00'
+      rv_employer: null
+  arithmetic: 0.96 x 333.33 = 319.9968 -> down to 319.99
+  expected:
+    kranken: '319.99'
+- id: T1_total
+  rule: A3
+  source: § 10 Abs. 1 Nr. 2, Abs. 3 EStG; § 10 Abs. 1 Nr. 3, 3a, Abs. 4 EStG
+  input:
+    filing: single
+    persons:
+    - person: A
+      employed: true
+      rv_employee: '6000.00'
+      basisrente: '0.00'
+      kv: '4000.00'
+      pv: '1000.00'
+      sonstige: '0.00'
+      rv_employer: null
+  arithmetic: 6000 (assumed share) + 4840 = 10840
+  expected:
+    altersvorsorge: '6000.00'
+    kranken: '4840.00'
+    total: '10840.00'

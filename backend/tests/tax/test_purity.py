@@ -56,6 +56,7 @@ def test_tax_package_has_modules() -> None:
         "deductions/select.py",
         "deductions/werbungskosten.py",
         "deductions/sonderausgaben.py",
+        "deductions/vorsorge.py",  # #16
     }
 
 
