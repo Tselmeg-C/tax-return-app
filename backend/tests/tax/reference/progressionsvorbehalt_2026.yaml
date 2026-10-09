@@ -1,0 +1,78 @@
+# Hand-computed reference cases for the Progressionsvorbehalt, VZ 2026 (#86); see README.md.
+# Tariff values ESt(b) are those of #14 (BMF-proven values at the building blocks, blocks_2026.yaml).
+- id: P2_single
+  rule: P
+  source: § 32b Abs. 2 Nr. 1 EStG
+  input: {filing: single, zve: '40000', lohnersatz: '15000'}
+  arithmetic: 'b = 55000; ESt(55000) = 12347; 40000 x 12347 / 55000 = 8979,27'
+  expected: '8979'
+  plain: '7209'
+- id: P4_joint
+  rule: P
+  source: § 32b Abs. 2 Nr. 1 EStG
+  input: {filing: joint, zve: '100000', lohnersatz: '20000'}
+  arithmetic: 'b = 120000; joint ESt(120000) = 28466; 100000 x 28466 / 120000 = 23721,67'
+  expected: '23721'
+  plain: '21096'
+- id: P15_divisor_floored_b
+  rule: P
+  source: § 32b Abs. 2 Nr. 1 EStG, § 32a Abs. 1 Satz 1 EStG
+  input: {filing: single, zve: '30000', lohnersatz: '5000.60'}
+  arithmetic: 'b = floor(35000,60) = 35000; ESt(35000) = 5670; 30000 x 5670 = 170100000; / 35000 = 4860.00 -> 4860 (unfloored divisor: 4859)'
+  expected: '4860'
+  plain: '4217'
+- id: P16_negative_zve_above_gfb
+  rule: P
+  source: § 32b Abs. 2 Nr. 1 EStG, § 32a Abs. 1 Satz 1 EStG
+  input: {filing: single, zve: '-500', lohnersatz: '20000'}
+  arithmetic: 'x = 0 -> 0; without the clamp: -500 x ESt(20000) = 1570 / 20000 -> -40'
+  expected: '0'
+- id: U1_no_wages
+  rule: U
+  source: § 32b Abs. 2 Nr. 1 EStG
+  input: {filing: single, benefits: [{person: A, amount: '10000', deducted: '0'}]}
+  arithmetic: 'unused 1230; 10000 - 1230'
+  expected: '8770'
+- id: U2_small_wages
+  rule: U
+  source: § 32b Abs. 2 Nr. 1 EStG
+  input: {filing: single, benefits: [{person: A, amount: '5000', deducted: '800'}]}
+  arithmetic: 'unused 1230 - 800 = 430; 5000 - 430'
+  expected: '4570'
+- id: U3_full_wages
+  rule: U
+  source: § 32b Abs. 2 Nr. 1 EStG
+  input: {filing: single, benefits: [{person: A, amount: '5000', deducted: '1230'}]}
+  arithmetic: 'unused 0'
+  expected: '5000'
+- id: U4_below_pauschbetrag
+  rule: U
+  source: § 32b Abs. 2 Nr. 1 EStG
+  input: {filing: single, benefits: [{person: A, amount: '1000', deducted: '0'}]}
+  arithmetic: 'max(0; 1000 - 1230)'
+  expected: '0'
+- id: U5_joint
+  rule: U
+  source: § 32b Abs. 2 Nr. 1 EStG
+  input: {filing: joint, benefits: [{person: A, amount: '6000', deducted: '1230'}, {person: B, amount: '12000', deducted: '0'}]}
+  arithmetic: '6000 + (12000 - 1230)'
+  expected: '16770'
+- id: U6_actual_wk_above
+  rule: U
+  source: § 32b Abs. 2 Nr. 1 EStG
+  input: {filing: single, benefits: [{person: A, amount: '5000', deducted: '2000'}]}
+  arithmetic: 'unused max(0; 1230 - 2000) = 0'
+  expected: '5000'
+- id: U7_two_benefits
+  rule: U
+  source: § 32b Abs. 2 Nr. 1 EStG
+  input: {filing: single, benefits: [{person: A, amount: '3000', deducted: '0'}, {person: A, amount: '2000', deducted: '0'}]}
+  arithmetic: '5000 - 1230'
+  expected: '3770'
+- id: U8_outside_return
+  rule: U
+  source: § 32b Abs. 2 Nr. 1 EStG
+  input: {filing: single, benefits: [{person: X, amount: '4000', deducted: '0'}]}
+  arithmetic: 'ignored + person_not_in_return'
+  expected: '0'
+  notes: [person_not_in_return]

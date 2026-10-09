@@ -58,6 +58,7 @@ def test_tax_package_has_modules() -> None:
         "deductions/sonderausgaben.py",
         "deductions/vorsorge.py",  # #16
     }
+    assert "progression.py" in names  # #86
 
 
 @pytest.mark.parametrize("path", MODULES, ids=lambda p: p.relative_to(TAX_DIR).as_posix())

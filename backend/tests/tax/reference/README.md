@@ -34,3 +34,11 @@ holds the `abzug` of the Altersvorsorge, of the Kranken-/Pflege part, the `total
 codes. Höchstbetrag H = 29 344 (2025) / 30 826 (2026), read in the SVBezGrV and the
 Beitragssatz-Bekanntmachung (see the params `source`). Nothing here is checked against an
 official calculator (none exists); the cases prove our reading of § 10 EStG.
+
+## Progressionsvorbehalt (#86)
+
+`progressionsvorbehalt_{year}.yaml` (read by `tests/tax/test_progression.py`, not by
+`test_reference.py`): rule `P` = `tariff_with_progression` (optional `plain` = the tax without
+Lohnersatz, which must differ), rule `U` = `progression_amount` with the Pauschbetrag of the
+params. P14 / P15 pin the floor of the divisor `b` (an unfloored divisor changes the result), P16 pins the
+zvE < 0 clamp with `b` above the Grundfreibetrag. P10 / P11 (§ 35a order) belong to the assembly in #87.

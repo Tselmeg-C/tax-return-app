@@ -1,5 +1,5 @@
 # Tax parameters for Veranlagungszeitraum 2025. Sections are owned by issues (#14 Decision 2):
-# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; later sections: #76, #77, #86, #87.
+# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; later sections: #76, #77, #87.
 # Money and rates are quoted strings (Decimal); an unquoted number fails to load.
 year: 2025
 
@@ -65,6 +65,11 @@ vorsorge: # § 10 Abs. 1 Nr. 2, 3, 3a, Abs. 3, 4 EStG (#16)
   krankengeld_cut: "0.04" # Nr. 3 Buchst. a Satz 4
   basis_cap: "2800" # Abs. 4 Satz 1
   basis_cap_reduced: "1900" # Abs. 4 Satz 2
+
+progressionsvorbehalt: # § 32b EStG (#86)
+  provisional: true # only the rounding of the besonderer Steuersatz is unconfirmed (see source)
+  source: "§ 32b Abs. 1 Satz 1 Nr. 1 Buchst. a bis k EStG (Lohnersatzleistungen: Arbeitslosengeld, Kurzarbeitergeld, Insolvenzgeld, Krankengeld, Mutterschaftsgeld, Elterngeld u. a.) und § 32b Abs. 2 Nr. 1 EStG (besonderer Steuersatz = Steuersatz auf zvE + Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags, soweit nicht bei den Einkünften aus nichtselbständiger Arbeit abziehbar), i.d.F. der Neufassung v. 8.10.2009 (BGBl. 2009 I S. 3366, 3862), zuletzt geändert durch Art. 7 G. v. 29.6.2026 (BGBl. 2026 I Nr. 197); § 32b Abs. 3 (Bescheinigung der Träger nach § 93c AO) is data delivery only. Read 2026-10-09 at buzer.de/32b_EStG.htm; gesetze-im-internet.de was not reachable. The law text has no rounding rule for the rate and no minimum rate; the rule the Finanzverwaltung applies (e.g. 4 decimals, R 32b EStR) is UNCONFIRMED, therefore rate_decimals exact and provisional true (issue #86 Decision 4)."
+  rate_decimals: "exact" # "exact" or a digit string "0".."8"
 
 mapping: # #9: Category -> (Anlage, Zeile); every Category except irrelevant exactly once
   # Zeilen checked 2026-10-07 against the published 2025 forms (sample review: user, #9).
