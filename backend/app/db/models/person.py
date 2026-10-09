@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from sqlalchemy import CheckConstraint, Date, Index, SmallInteger, String
+from sqlalchemy import Boolean, CheckConstraint, Date, Index, SmallInteger, String, false
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -39,3 +39,7 @@ class Person(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
         server_default=Religion.NONE.value,
     )
     disability_grade: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    # Merkzeichen H, Bl or TBl (hilflos / blind / taubblind): 7.400 EUR Pauschbetrag (#76).
+    merkzeichen_h_bl_tbl: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )

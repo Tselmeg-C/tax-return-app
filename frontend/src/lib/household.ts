@@ -27,6 +27,7 @@ export interface PersonOut {
   dob: string | null;
   religion: string;
   disability_grade: number | null;
+  merkzeichen_h_bl_tbl: boolean;
   steuer_id_masked: string | null;
   is_me: boolean;
 }
@@ -82,6 +83,7 @@ export interface PersonFields {
   dob: string | null;
   religion: string;
   disability_grade: number | null;
+  merkzeichen_h_bl_tbl: boolean;
   steuer_id?: string | null;
 }
 

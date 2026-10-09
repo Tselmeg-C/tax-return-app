@@ -179,6 +179,31 @@ async def test_patch_merges_and_removes_steuer_id(t: T) -> None:
     assert r.json()["last_name"] == "Muster"
 
 
+async def test_merkzeichen_stored_audited_and_validated(t: T) -> None:
+    a = await t.home()
+    p = await person(t, a)
+    assert p["merkzeichen_h_bl_tbl"] is False  # default
+    seen = await audits(t.session)
+    r = await call(t, a, "PATCH", f"/persons/{p['id']}", {"merkzeichen_h_bl_tbl": True})
+    assert r.status_code == 200 and r.json()["merkzeichen_h_bl_tbl"] is True
+    [last] = [r for r in await audits(t.session, "person") if r.id not in {s.id for s in seen}]
+    assert last.after == {"merkzeichen_h_bl_tbl": True} and last.before == {
+        "merkzeichen_h_bl_tbl": False
+    }
+    row = (
+        await t.session.execute(select(Person).where(Person.id == uuid.UUID(p["id"])))
+    ).scalar_one()
+    assert row.merkzeichen_h_bl_tbl is True
+    seen = await audits(t.session)
+    await call(t, a, "PATCH", f"/persons/{p['id']}", {"merkzeichen_h_bl_tbl": True})
+    assert await since(t.session, seen) == []  # unchanged: no audit row
+    for bad in (None, "yes", 1):
+        r = await call(t, a, "PATCH", f"/persons/{p['id']}", {"merkzeichen_h_bl_tbl": bad})
+        assert r.status_code == 422, bad
+    c = await child(t, a, "2020-05-05", merkzeichen_h_bl_tbl=True)
+    assert c["merkzeichen_h_bl_tbl"] is True
+
+
 # --- children ------------------------------------------------------------------------------
 
 

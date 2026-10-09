@@ -57,6 +57,7 @@ def test_tax_package_has_modules() -> None:
         "deductions/werbungskosten.py",
         "deductions/sonderausgaben.py",
         "deductions/vorsorge.py",  # #16
+        "deductions/agb.py",  # #76
     }
     assert "progression.py" in names  # #86
 

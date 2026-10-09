@@ -70,6 +70,7 @@ interface PersonDraft {
   dob: string;
   religion: string;
   disability: string; // "" = keiner
+  merkzeichen: boolean; // Merkzeichen H, Bl oder TBl
   steuerId: string; // typed value only; cleared after every successful save
   steuerIdMode: "keep" | "edit" | "remove";
 }
@@ -80,6 +81,7 @@ const draftOf = (p: PersonOut | undefined): PersonDraft => ({
   dob: p?.dob ?? "",
   religion: p?.religion ?? "none",
   disability: p?.disability_grade ? String(p.disability_grade) : "",
+  merkzeichen: p?.merkzeichen_h_bl_tbl ?? false,
   steuerId: "",
   steuerIdMode: p?.steuer_id_masked ? "keep" : "edit",
 });
@@ -101,6 +103,7 @@ function usePersonDraft(person?: PersonOut) {
       dob: draft.dob || null,
       religion: draft.religion,
       disability_grade: draft.disability ? Number(draft.disability) : null,
+      merkzeichen_h_bl_tbl: draft.merkzeichen,
     };
     if (draft.steuerIdMode === "edit" && typed) out.steuer_id = typed;
     if (draft.steuerIdMode === "remove") out.steuer_id = null;
@@ -215,6 +218,17 @@ export function PersonInputs(props: {
           ))}
         </select>
       </Field>
+      <label className="flex min-h-11 items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={draft.merkzeichen}
+          onChange={(e) => set({ merkzeichen: e.target.checked })}
+        />
+        Merkzeichen H, Bl oder TBl (hilflos, blind, taubblind)
+      </label>
+      {err("merkzeichen_h_bl_tbl") ? (
+        <p className="text-xs text-destructive">{err("merkzeichen_h_bl_tbl")}</p>
+      ) : null}
     </div>
   );
 }

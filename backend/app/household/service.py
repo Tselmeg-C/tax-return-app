@@ -110,7 +110,15 @@ def _months_limit(person: Person, year: int) -> int | None:
 
 # --- persons -------------------------------------------------------------------------------
 
-PERSON_FIELDS = ("first_name", "last_name", "dob", "steuer_id", "religion", "disability_grade")
+PERSON_FIELDS = (
+    "first_name",
+    "last_name",
+    "dob",
+    "steuer_id",
+    "religion",
+    "disability_grade",
+    "merkzeichen_h_bl_tbl",
+)
 
 
 async def _check_duplicate_steuer_id(
@@ -137,6 +145,8 @@ async def _clean_person(
     check_disability_grade(values.get("disability_grade"))
     if values.get("religion") is None:
         values["religion"] = Religion.NONE
+    if not isinstance(values.get("merkzeichen_h_bl_tbl"), bool):
+        raise invalid("invalid_merkzeichen", "merkzeichen_h_bl_tbl")
     if steuer_id_sent and values.get("steuer_id") is not None:
         values["steuer_id"] = normalise_steuer_id(values["steuer_id"])
         await _check_duplicate_steuer_id(scope, values["steuer_id"], exclude)
@@ -156,6 +166,7 @@ async def create_person(
 
     async def work() -> Person:
         values = {key: sent.get(key) for key in PERSON_FIELDS}
+        values["merkzeichen_h_bl_tbl"] = sent.get("merkzeichen_h_bl_tbl", False)
         values = await _clean_person(
             scope, values, kind=kind, today=today, exclude=None, steuer_id_sent=True
         )

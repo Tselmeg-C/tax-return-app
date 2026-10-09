@@ -206,6 +206,54 @@ class VorsorgeParams(_Section):
         return self
 
 
+AGB_GRADES: tuple[str, ...] = tuple(str(g) for g in range(20, 101, 10))
+
+
+class ZumutbareBelastungParams(_Frozen):
+    """§ 33 Abs. 3 Satz 1 EStG: rates (share of the GdE part in bracket 1 / 2 / 3)."""
+
+    bracket1_upper: Dec
+    bracket2_upper: Dec
+    rates: dict[str, tuple[Dec, Dec, Dec]]
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if not 0 < self.bracket1_upper < self.bracket2_upper:
+            raise ValueError("bracket1_upper must be positive and below bracket2_upper")
+        if set(self.rates) != set(AGB_RATE_ROWS):
+            raise ValueError(f"rates: keys must be exactly {', '.join(AGB_RATE_ROWS)}")
+        for row, triple in self.rates.items():
+            for i, rate in enumerate(triple, 1):
+                if not 0 < rate < 1:
+                    raise ValueError(f"rates.{row}[{i}] must be in (0, 1)")
+        return self
+
+
+AGB_RATE_ROWS: tuple[str, ...] = (
+    "no_children_single",
+    "no_children_joint",
+    "one_or_two_children",
+    "three_plus_children",
+)
+
+
+class AgbParams(_Section):
+    """agB (#76): § 33 Abs. 3 (zumutbare Belastung), § 33b Abs. 3 (Behinderten-Pauschbetrag)."""
+
+    zumutbare_belastung: ZumutbareBelastungParams
+    behinderten_pauschbetrag: dict[str, Dec]
+    hilflos_blind: Dec
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if set(self.behinderten_pauschbetrag) != set(AGB_GRADES):
+            raise ValueError("behinderten_pauschbetrag: grades must be 20 to 100 in steps of 10")
+        amounts = [self.behinderten_pauschbetrag[g] for g in AGB_GRADES] + [self.hilflos_blind]
+        if amounts[0] <= 0 or not all(a < b for a, b in zip(amounts, amounts[1:], strict=False)):
+            raise ValueError("behinderten_pauschbetrag must be positive and ascending")
+        return self
+
+
 class ProgressionParams(_Section):
     """§ 32b Abs. 2 EStG (#86). `rate_decimals`: "exact" or a digit string "0".."8"."""
 
@@ -239,6 +287,7 @@ class TaxParams(_Frozen):
     sonderausgaben: SonderausgabenParams
     vorsorge: VorsorgeParams
     progressionsvorbehalt: ProgressionParams
+    agb: AgbParams
     mapping: dict[Category, MappingEntry]
 
     @model_validator(mode="after")

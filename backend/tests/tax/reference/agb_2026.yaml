@@ -1,0 +1,86 @@
+# Hand-computed reference cases for the zumutbare Belastung, VZ 2026 (#76); see README.md.
+# Rates and brackets: § 33 Abs. 3 EStG (5/6/7, 4/5/6, 2/3/4, 1/1/2 %; 15.340 / 51.130 EUR). Same in 2026.
+- id: zb_single_0kids_60k
+  rule: A1
+  source: § 33 Abs. 3 Satz 1 Nr. 1 Buchst. a EStG
+  input: {filing: single, children: 0, gde: '60000'}
+  arithmetic: '15340 x 5% = 767,00; (51130 - 15340) = 35790 x 6% = 2147,40; (60000 - 51130) = 8870 x 7% = 620,90; sum 3535,30'
+  expected: '3535.30'
+- id: zb_joint_0kids_80k
+  rule: A1
+  source: § 33 Abs. 3 Satz 1 Nr. 1 Buchst. b EStG
+  input: {filing: joint, children: 0, gde: '80000'}
+  arithmetic: '15340 x 4% = 613,60; 35790 x 5% = 1789,50; (80000 - 51130) = 28870 x 6% = 1732,20; sum 4135,30'
+  expected: '4135.30'
+- id: zb_single_2kids_40k
+  rule: A1
+  source: § 33 Abs. 3 Satz 1 Nr. 2 Buchst. a EStG
+  input: {filing: single, children: 2, gde: '40000'}
+  arithmetic: '15340 x 2% = 306,80; (40000 - 15340) = 24660 x 3% = 739,80; sum 1046,60'
+  expected: '1046.60'
+- id: zb_joint_3kids_100k
+  rule: A1
+  source: § 33 Abs. 3 Satz 1 Nr. 2 Buchst. b EStG
+  input: {filing: joint, children: 3, gde: '100000'}
+  arithmetic: '15340 x 1% = 153,40; 35790 x 1% = 357,90; (100000 - 51130) = 48870 x 2% = 977,40; sum 1488,70'
+  expected: '1488.70'
+- id: zb_joint_1kid_is_not_splitting_row
+  rule: A1
+  source: § 33 Abs. 3 Satz 1 Nr. 2 EStG
+  input: {filing: joint, children: 1, gde: '40000'}
+  arithmetic: 'with a child the rows of Nr. 2 apply, also in a joint return: 306,80 + 739,80 = 1046,60'
+  expected: '1046.60'
+- id: zb_at_b1
+  rule: A1
+  source: § 33 Abs. 3 Satz 1 Nr. 1 Buchst. a EStG
+  input: {filing: single, children: 0, gde: '15340'}
+  arithmetic: '15340 x 5% = 767,00'
+  expected: '767.00'
+- id: zb_above_b1
+  rule: A1
+  source: § 33 Abs. 3 Satz 1 Nr. 1 Buchst. a EStG
+  input: {filing: single, children: 0, gde: '15341'}
+  arithmetic: '767,00 + 1 x 6% = 767,06'
+  expected: '767.06'
+- id: zb_at_b2
+  rule: A1
+  source: § 33 Abs. 3 Satz 1 Nr. 1 Buchst. a EStG
+  input: {filing: single, children: 0, gde: '51130'}
+  arithmetic: '767,00 + 35790 x 6% (2147,40) = 2914,40'
+  expected: '2914.40'
+- id: zb_above_b2
+  rule: A1
+  source: § 33 Abs. 3 Satz 1 Nr. 1 Buchst. a EStG
+  input: {filing: single, children: 0, gde: '51131'}
+  arithmetic: '2914,40 + 1 x 7% = 2914,47'
+  expected: '2914.47'
+- id: zb_zero
+  rule: A1
+  source: § 33 Abs. 3 EStG
+  input: {filing: single, children: 0, gde: '0'}
+  arithmetic: 'no income in any bracket'
+  expected: '0.00'
+- id: zb_negative_gde
+  rule: A1
+  source: § 33 Abs. 3 EStG
+  input: {filing: joint, children: 0, gde: '-5000'}
+  arithmetic: 'no income in any bracket (issue Decision 1)'
+  expected: '0.00'
+- id: zb_rounds_up_from_half_cent
+  rule: A1
+  source: user decision on #76 (rounding half-up)
+  input: {filing: single, children: 3, gde: '0.50'}
+  arithmetic: '0,50 x 1% = 0,005; half-up gives 0,01 (round-half-even or truncation would give 0,00)'
+  expected: '0.01'
+- id: zb_rounds_below_half_cent
+  rule: A1
+  source: user decision on #76 (rounding half-up)
+  input: {filing: single, children: 0, gde: '15340.08'}
+  arithmetic: '767,00 + 0,08 x 6% = 767,0048; rounds to 767,00'
+  expected: '767.00'
+- id: zb_rounds_above_half_cent
+  rule: A1
+  source: user decision on #76 (rounding half-up)
+  input: {filing: single, children: 0, gde: '15340.09'}
+  arithmetic: '767,00 + 0,09 x 6% = 767,0054; rounds to 767,01'
+  expected: '767.01'

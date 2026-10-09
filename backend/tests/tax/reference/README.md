@@ -42,3 +42,11 @@ official calculator (none exists); the cases prove our reading of § 10 EStG.
 Lohnersatz, which must differ), rule `U` = `progression_amount` with the Pauschbetrag of the
 params. P14 / P15 pin the floor of the divisor `b` (an unfloored divisor changes the result), P16 pins the
 zvE < 0 clamp with `b` above the Grundfreibetrag. P10 / P11 (§ 35a order) belong to the assembly in #87.
+
+## agB (#76)
+
+`agb_{year}.yaml` (read by `tests/tax/test_agb.py`, not by `test_reference.py`): rule `A1` =
+`zumutbare_belastung`, `input` = filing, number of children, GdE; `expected` = ZB in cents (string).
+§ 33 Abs. 3 EStG has the same rates and brackets in 2025 and 2026, so both files hold the same
+cases. The end-to-end cases (`agb()`, Pauschbetrag) are in `test_agb.py` with the arithmetic in
+the test.

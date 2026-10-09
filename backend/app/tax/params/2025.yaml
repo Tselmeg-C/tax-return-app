@@ -1,5 +1,5 @@
 # Tax parameters for Veranlagungszeitraum 2025. Sections are owned by issues (#14 Decision 2):
-# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; later sections: #76, #77, #87.
+# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; agb: #76; later sections: #77, #87.
 # Money and rates are quoted strings (Decimal); an unquoted number fails to load.
 year: 2025
 
@@ -70,6 +70,28 @@ progressionsvorbehalt: # § 32b EStG (#86)
   provisional: true # only the rounding of the besonderer Steuersatz is unconfirmed (see source)
   source: "§ 32b Abs. 1 Satz 1 Nr. 1 Buchst. a bis k EStG (Lohnersatzleistungen: Arbeitslosengeld, Kurzarbeitergeld, Insolvenzgeld, Krankengeld, Mutterschaftsgeld, Elterngeld u. a.) und § 32b Abs. 2 Nr. 1 EStG (besonderer Steuersatz = Steuersatz auf zvE + Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags, soweit nicht bei den Einkünften aus nichtselbständiger Arbeit abziehbar), i.d.F. der Neufassung v. 8.10.2009 (BGBl. 2009 I S. 3366, 3862), zuletzt geändert durch Art. 7 G. v. 29.6.2026 (BGBl. 2026 I Nr. 197); § 32b Abs. 3 (Bescheinigung der Träger nach § 93c AO) is data delivery only. Read 2026-10-09 at buzer.de/32b_EStG.htm; gesetze-im-internet.de was not reachable. The law text has no rounding rule for the rate and no minimum rate; the rule the Finanzverwaltung applies (e.g. 4 decimals, R 32b EStR) is UNCONFIRMED, therefore rate_decimals exact and provisional true (issue #86 Decision 4)."
   rate_decimals: "exact" # "exact" or a digit string "0".."8"
+
+agb: # §§ 33, 33b EStG (#76)
+  source: "§ 33 Abs. 3 Satz 1 EStG (zumutbare Belastung: Gesamtbetrag der Einkünfte bis 15.340 / bis 51.130 / darüber, Prozentsätze 5/6/7 ohne Kinder Grundtarif, 4/5/6 ohne Kinder Splitting, 2/3/4 bei einem oder zwei Kindern, 1/1/2 bei drei oder mehr Kindern) und Satz 2 (Kinder = Anspruch auf Freibetrag nach § 32 Abs. 6 oder Kindergeld), i.d.F. Art. 1 G. v. 9.12.2020 (BGBl. 2020 I S. 2770) m.W.v. 15.12.2020, unverändert; stufenweise Berechnung: BFH v. 19.1.2017 VI R 75/14; § 33b Abs. 3 Satz 2 und 3 EStG (Behinderten-Pauschbetrag 384 bis 2.840 Euro je Grad der Behinderung, 7.400 Euro bei Hilflosigkeit, Blindheit, Taubblindheit), i.d.F. Art. 1 G. v. 9.12.2020 (BGBl. 2020 I S. 2770), Absatz 3 in späteren Fassungen (JStG 2024, BGBl. 2024 I Nr. 387, m.W.v. 1.1.2026) unverändert. Read 2026-10-09 at buzer.de/33_EStG.htm and buzer.de/33b_EStG.htm (consolidated to 29.6.2026); gesetze-im-internet.de was not reachable. All constants confirmed for VZ 2025 and VZ 2026. Not in the law: the rounding of the zumutbare Belastung to cents (half-up, user decision on #76)."
+  zumutbare_belastung:
+    bracket1_upper: "15340"
+    bracket2_upper: "51130"
+    rates: # share of the part of the GdE in bracket 1 / 2 / 3
+      no_children_single: ["0.05", "0.06", "0.07"] # Nr. 1 Buchst. a
+      no_children_joint: ["0.04", "0.05", "0.06"] # Nr. 1 Buchst. b
+      one_or_two_children: ["0.02", "0.03", "0.04"] # Nr. 2 Buchst. a
+      three_plus_children: ["0.01", "0.01", "0.02"] # Nr. 2 Buchst. b
+  behinderten_pauschbetrag: # § 33b Abs. 3 Satz 2, by Grad der Behinderung
+    "20": "384"
+    "30": "620"
+    "40": "860"
+    "50": "1140"
+    "60": "1440"
+    "70": "1780"
+    "80": "2120"
+    "90": "2460"
+    "100": "2840"
+  hilflos_blind: "7400" # § 33b Abs. 3 Satz 3 (Merkzeichen H, Bl, TBl)
 
 mapping: # #9: Category -> (Anlage, Zeile); every Category except irrelevant exactly once
   # Zeilen checked 2026-10-07 against the published 2025 forms (sample review: user, #9).

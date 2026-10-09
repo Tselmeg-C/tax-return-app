@@ -232,3 +232,30 @@ class VorsorgeResult:
     kranken: KrankenLine
     total: Decimal
     notes: tuple[Note, ...] = field(default=())
+
+
+@dataclass(frozen=True, slots=True)
+class PersonInput:
+    """Disability data of one person for agB (#76); no name, no dates."""
+
+    person_id: str
+    disability_grade: int | None
+    merkzeichen_h_bl_tbl: bool  # hilflos / blind / taubblind (§ 33b Abs. 3 Satz 3)
+
+    def __post_init__(self) -> None:
+        _check_id(self.person_id, "person_id")
+        if self.disability_grade is not None:
+            check_count(self.disability_grade, "disability_grade")
+        if not isinstance(self.merkzeichen_h_bl_tbl, bool):
+            raise TypeError("merkzeichen_h_bl_tbl must be bool")
+
+
+@dataclass(frozen=True, slots=True)
+class AgbResult:
+    zumutbare_belastung: Decimal
+    belastung_gross: Decimal
+    belastung_after_zb: Decimal
+    pauschbetrag_by_person: dict[str, Decimal]
+    pauschbetrag_total: Decimal
+    total: Decimal  # what #17 subtracts from the Gesamtbetrag der Einkünfte
+    notes: tuple[Note, ...] = field(default=())
