@@ -144,7 +144,8 @@ async def test_persons(t: T) -> None:
     await t.session.commit()
     r = await t.get(a, "/persons")
     assert r.status_code == 200
-    assert r.json() == [
+    keys = ("id", "kind", "first_name", "last_name")  # #13 adds fields (additive only)
+    assert [{k: p[k] for k in keys} for p in r.json()] == [
         {"id": str(alex.id), "kind": "adult", "first_name": "Alex", "last_name": None},
         {"id": str(bea.id), "kind": "adult", "first_name": "Bea", "last_name": "Muster"},
         {"id": str(kid.id), "kind": "child", "first_name": "Anna", "last_name": None},

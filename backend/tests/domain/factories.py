@@ -17,22 +17,29 @@ from app.db.audit import Actor, record, snapshot
 from app.db.models import (
     AppUser,
     AuditLog,
+    ChildYear,
     Document,
+    Employment,
     Extraction,
     Household,
     Job,
     MagicLinkToken,
     Person,
     TaxItem,
+    TaxProfile,
     UserSession,
 )
 from app.domain.enums import (
+    AllowanceShare,
     AuditAction,
+    Bundesland,
     Category,
     Channel,
     ExtractionStep,
+    FilingStatus,
     JobKind,
     PersonKind,
+    Steuerklasse,
     UserRole,
 )
 
@@ -173,6 +180,9 @@ class World:
     link_token: MagicLinkToken
     user_session: UserSession
     job: Job
+    tax_profile: TaxProfile
+    employment: Employment
+    child_year: ChildYear
 
     def by_model(self) -> dict[type[Any], Any]:
         return {
@@ -186,6 +196,9 @@ class World:
             MagicLinkToken: self.link_token,
             UserSession: self.user_session,
             Job: self.job,
+            TaxProfile: self.tax_profile,
+            Employment: self.employment,
+            ChildYear: self.child_year,
         }
 
 
@@ -214,5 +227,42 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
     user_session = await make_user_session(session, hh, user)
     job = Job(household_id=hh.id, kind=JobKind.PROCESS_DOCUMENT, document_id=doc.id, max_attempts=5)
     session.add(job)
+    profile = TaxProfile(
+        household_id=hh.id,
+        year=2025,
+        filing_status=FilingStatus.SINGLE,
+        bundesland=Bundesland.BE,
+        taxpayer_person_id=person.id,
+    )
+    employment = Employment(
+        household_id=hh.id,
+        person_id=person.id,
+        year=2025,
+        employer_name="Muster GmbH",
+        steuerklasse=Steuerklasse.I,
+    )
+    # The DB does not check the person's kind (the service does).
+    child_year = ChildYear(
+        household_id=hh.id,
+        person_id=person.id,
+        year=2025,
+        months=12,
+        allowance_share=AllowanceShare.FULL,
+    )
+    session.add_all([profile, employment, child_year])
     await session.flush()
-    return World(hh, person, user, doc, ext, item, audit, link_token, user_session, job)
+    return World(
+        hh,
+        person,
+        user,
+        doc,
+        ext,
+        item,
+        audit,
+        link_token,
+        user_session,
+        job,
+        profile,
+        employment,
+        child_year,
+    )

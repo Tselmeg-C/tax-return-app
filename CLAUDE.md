@@ -173,6 +173,37 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   carry ids, field names and codes only.
 - The UI takes enum labels only from `GET /meta/labels` (no copy of `LABELS_DE` in the frontend).
 
+## Household and profile (rules from #13)
+
+- One return per household and year: `tax_profile` (`UNIQUE (household_id, year)`) names the
+  taxpayer and, for `joint`, the spouse. Persons are household-wide; `tax_profile`,
+  `employment` and `child_year` are per year. Every per-year route answers `422
+  unsupported_year` for a year outside `supported_years()` (never a 500).
+- Every write to `person`, `tax_profile`, `employment` and `child_year` goes through
+  `app/household/service.py` (one audit row per changed row, in the caller's transaction);
+  the rules live in `app/household/validation.py` (pure, `422 {"detail", "field"}`, never the
+  sent value).
+- Steuer-ID: optional, write-only, validated only in `app/household/validation.py` (11 digits,
+  digit-repeat rule, ISO 7064 MOD 11,10). Responses carry `steuer_id_masked`
+  (`XX XXX XXX 901`) only; the duplicate check decrypts in memory, never in SQL. Never in logs,
+  spans, metrics, error bodies, audit rows (`[redacted]`), URLs, the frontend query cache or an
+  LLM call (a static test checks `app/pipeline/`, `app/llm/`, `evals/`). Tests use IDs from the
+  runtime generator (`tests/household/steuer_ids.py`), never a fixed literal.
+- Audit rows never hold names, dob or employer: `REDACTED_COLUMNS` in `app/db/audit.py` stores
+  `"[redacted]"` for them (the key still shows which field changed); add a column there when a
+  table gets new plain-text personal data.
+- `Bundesland` codes are lowercase; `bundesland.value.upper()` is the key of
+  `params/{year}.yaml` → `church_tax.rate_by_state`. Church tax is derived from
+  `person.religion` + params at calculation time, never stored.
+- Deleting a person never deletes tax items, documents or logins: `409 person_has_tax_items`
+  / `409 person_in_profile`, otherwise only that person's `employment` / `child_year` rows go
+  (each with a `delete` audit row).
+- The Haushalt wizard (Du, Veranlagung) is first-time setup only and keeps no state of its own:
+  it shows while the year has no `tax_profile`; a saved profile counts as set up and employers /
+  children are added on the page view. The step is derived from
+  `GET /household/{jahr}`. Household writes in the frontend are plain `apiFetch` calls (no
+  `useMutation`), so a typed Steuer-ID never lands in the query or mutation cache.
+
 ## Stack
 
 - Backend (`backend/`): Python 3.12, `uv`, FastAPI, SQLAlchemy 2.0 + Alembic, Postgres 16, Postgres-based job queue

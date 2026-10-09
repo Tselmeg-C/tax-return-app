@@ -22,7 +22,8 @@ class PersonKind(StrEnum):
 
 
 class Religion(StrEnum):
-    """Church-tax relevant denomination; #13 may refine this."""
+    """Church-tax membership (#13): `none` = no church-tax-levying community, `other` = another
+    church-tax-levying community. The rate comes from params (`church_tax.rate_by_state`)."""
 
     NONE = "none"
     EV = "ev"
@@ -150,6 +151,44 @@ class DeductionNote(StrEnum):
     PAYMENT_UNVERIFIED = "payment_unverified"
     SPENDEN_OVER_LIMIT = "spenden_over_limit"
     LABOUR_SHARE_MISSING = "labour_share_missing"
+
+
+class Bundesland(StrEnum):
+    """ISO 3166-2:DE codes, lowercased (#13). `.value.upper()` is the params' `rate_by_state`
+    key."""
+
+    BW = "bw"
+    BY = "by"
+    BE = "be"
+    BB = "bb"
+    HB = "hb"
+    HH = "hh"
+    HE = "he"
+    MV = "mv"
+    NI = "ni"
+    NW = "nw"
+    RP = "rp"
+    SL = "sl"
+    SN = "sn"
+    ST = "st"
+    SH = "sh"
+    TH = "th"
+
+
+class Steuerklasse(StrEnum):
+    I = "1"  # noqa: E741
+    II = "2"
+    III = "3"
+    IV = "4"
+    V = "5"
+    VI = "6"
+
+
+class AllowanceShare(StrEnum):
+    """Kinderfreibetrag + BEA: both halves (`full`) or one (`half`)."""
+
+    FULL = "full"
+    HALF = "half"
 
 
 class AuditAction(StrEnum):
@@ -353,8 +392,50 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         AttentionReason.LOW_CONFIDENCE: "Unsichere Erkennung",
     },
     FilingStatus: {
-        FilingStatus.SINGLE: "Grundtarif",
-        FilingStatus.JOINT: "Splittingtarif (Zusammenveranlagung)",
+        FilingStatus.SINGLE: "Einzelveranlagung (Grundtarif)",
+        FilingStatus.JOINT: "Zusammenveranlagung (Splittingtarif)",
+    },
+    PersonKind: {
+        PersonKind.ADULT: "Erwachsene Person",
+        PersonKind.CHILD: "Kind",
+    },
+    Religion: {
+        Religion.NONE: "Keine / nicht kirchensteuerpflichtig",
+        Religion.EV: "Evangelisch",
+        Religion.RK: "Römisch-katholisch",
+        Religion.OTHER: (
+            "Andere kirchensteuerpflichtige Gemeinschaft (z. B. altkatholisch, jüdisch)"
+        ),
+    },
+    Bundesland: {
+        Bundesland.BW: "Baden-Württemberg",
+        Bundesland.BY: "Bayern",
+        Bundesland.BE: "Berlin",
+        Bundesland.BB: "Brandenburg",
+        Bundesland.HB: "Bremen",
+        Bundesland.HH: "Hamburg",
+        Bundesland.HE: "Hessen",
+        Bundesland.MV: "Mecklenburg-Vorpommern",
+        Bundesland.NI: "Niedersachsen",
+        Bundesland.NW: "Nordrhein-Westfalen",
+        Bundesland.RP: "Rheinland-Pfalz",
+        Bundesland.SL: "Saarland",
+        Bundesland.SN: "Sachsen",
+        Bundesland.ST: "Sachsen-Anhalt",
+        Bundesland.SH: "Schleswig-Holstein",
+        Bundesland.TH: "Thüringen",
+    },
+    Steuerklasse: {
+        Steuerklasse.I: "I",
+        Steuerklasse.II: "II",
+        Steuerklasse.III: "III",
+        Steuerklasse.IV: "IV",
+        Steuerklasse.V: "V",
+        Steuerklasse.VI: "VI",
+    },
+    AllowanceShare: {
+        AllowanceShare.FULL: "Voller Freibetrag (beide Elternteile)",
+        AllowanceShare.HALF: "Halber Freibetrag",
     },
     DeductionNote: {
         _N.PERSON_NOT_IN_RETURN: "Beleg einer Person außerhalb der Erklärung nicht berücksichtigt",
@@ -408,4 +489,7 @@ ALL_ENUMS: tuple[type[StrEnum], ...] = (
     JobKind,
     JobStatus,
     AttentionReason,
+    Bundesland,
+    Steuerklasse,
+    AllowanceShare,
 )

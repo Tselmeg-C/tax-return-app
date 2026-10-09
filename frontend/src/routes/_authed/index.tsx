@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { belegeSearch } from "@/lib/taxItems";
+import { useYear } from "@/lib/year";
 import { anlageLabel, estimate, eur, items, missing, type Anlage } from "@/lib/mock";
 
 export const Route = createFileRoute("/_authed/")({
@@ -21,10 +23,12 @@ export const Route = createFileRoute("/_authed/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: belegeSearch,
   component: Dashboard,
 });
 
 function Dashboard() {
+  const { jahr, select } = useYear();
   const totals = items
     .filter((i) => i.relevant)
     .reduce<Record<string, number>>((acc, i) => {
@@ -35,11 +39,11 @@ function Dashboard() {
   const recent = items.slice(0, 4);
 
   return (
-    <AppShell>
+    <AppShell {...(select ? { year: select } : {})}>
       <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <div className="sheet relative overflow-hidden p-8">
           <p className="stamp text-muted-foreground">
-            Steuerjahr {estimate.year} · {estimate.assessment}
+            Steuerjahr {jahr} · {estimate.assessment}
           </p>
           <h1 className="mt-4 text-lg font-normal text-muted-foreground">
             Voraussichtliche Erstattung
