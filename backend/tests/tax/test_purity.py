@@ -15,7 +15,7 @@ ALLOWED = {
     "dataclasses",
     "enum",
     "typing",
-    "collections.abc",
+    "collections.abc",  # #87: Callable (the injected tariff) and Iterable only
     "functools",
     "datetime",
     "pydantic",
@@ -59,6 +59,7 @@ def test_tax_package_has_modules() -> None:
         "deductions/vorsorge.py",  # #16
     }
     assert "progression.py" in names  # #86
+    assert {"kinder.py", "assessment.py"} <= names  # #87
 
 
 @pytest.mark.parametrize("path", MODULES, ids=lambda p: p.relative_to(TAX_DIR).as_posix())
