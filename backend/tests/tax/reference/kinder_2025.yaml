@@ -1,0 +1,61 @@
+# Hand-computed Kinderfreibetrag + BEA and Kindergeld per child (#87 K1), VZ 2025; see README.md.
+- id: K1_half_0m
+  rule: K1
+  source: § 32 Abs. 6 Satz 1, 2, 5 EStG, § 66 Abs. 1, 2 EStG, § 31 Satz 4 EStG
+  input: {months: 0, half: true}
+  arithmetic: Freibetrag = (3336 + 1464) x 1 x 0 / 12 = 0; Kindergeld = 255 x 0 x 1 / 2 = 0
+  expected: {freibetrag: '0', kindergeld: '0'}
+- id: K1_full_0m
+  rule: K1
+  source: § 32 Abs. 6 Satz 1, 2, 5 EStG, § 66 Abs. 1, 2 EStG, § 31 Satz 4 EStG
+  input: {months: 0, half: false}
+  arithmetic: Freibetrag = (3336 + 1464) x 2 x 0 / 12 = 0; Kindergeld = 255 x 0 x 2 / 2 = 0
+  expected: {freibetrag: '0', kindergeld: '0'}
+- id: K1_half_1m
+  rule: K1
+  source: § 32 Abs. 6 Satz 1, 2, 5 EStG, § 66 Abs. 1, 2 EStG, § 31 Satz 4 EStG
+  input: {months: 1, half: true}
+  arithmetic: Freibetrag = (3336 + 1464) x 1 x 1 / 12 = 400; Kindergeld = 255 x 1 x 1 / 2 = 127.50
+  expected: {freibetrag: '400', kindergeld: '127.50'}
+- id: K1_full_1m
+  rule: K1
+  source: § 32 Abs. 6 Satz 1, 2, 5 EStG, § 66 Abs. 1, 2 EStG, § 31 Satz 4 EStG
+  input: {months: 1, half: false}
+  arithmetic: Freibetrag = (3336 + 1464) x 2 x 1 / 12 = 800; Kindergeld = 255 x 1 x 2 / 2 = 255
+  expected: {freibetrag: '800', kindergeld: '255'}
+- id: K1_half_5m
+  rule: K1
+  source: § 32 Abs. 6 Satz 1, 2, 5 EStG, § 66 Abs. 1, 2 EStG, § 31 Satz 4 EStG
+  input: {months: 5, half: true}
+  arithmetic: Freibetrag = (3336 + 1464) x 1 x 5 / 12 = 2000; Kindergeld = 255 x 5 x 1 / 2 = 637.50
+  expected: {freibetrag: '2000', kindergeld: '637.50'}
+- id: K1_full_5m
+  rule: K1
+  source: § 32 Abs. 6 Satz 1, 2, 5 EStG, § 66 Abs. 1, 2 EStG, § 31 Satz 4 EStG
+  input: {months: 5, half: false}
+  arithmetic: Freibetrag = (3336 + 1464) x 2 x 5 / 12 = 4000; Kindergeld = 255 x 5 x 2 / 2 = 1275
+  expected: {freibetrag: '4000', kindergeld: '1275'}
+- id: K1_half_7m
+  rule: K1
+  source: § 32 Abs. 6 Satz 1, 2, 5 EStG, § 66 Abs. 1, 2 EStG, § 31 Satz 4 EStG
+  input: {months: 7, half: true}
+  arithmetic: Freibetrag = (3336 + 1464) x 1 x 7 / 12 = 2800; Kindergeld = 255 x 7 x 1 / 2 = 892.50
+  expected: {freibetrag: '2800', kindergeld: '892.50'}
+- id: K1_full_7m
+  rule: K1
+  source: § 32 Abs. 6 Satz 1, 2, 5 EStG, § 66 Abs. 1, 2 EStG, § 31 Satz 4 EStG
+  input: {months: 7, half: false}
+  arithmetic: Freibetrag = (3336 + 1464) x 2 x 7 / 12 = 5600; Kindergeld = 255 x 7 x 2 / 2 = 1785
+  expected: {freibetrag: '5600', kindergeld: '1785'}
+- id: K1_half_12m
+  rule: K1
+  source: § 32 Abs. 6 Satz 1, 2, 5 EStG, § 66 Abs. 1, 2 EStG, § 31 Satz 4 EStG
+  input: {months: 12, half: true}
+  arithmetic: Freibetrag = (3336 + 1464) x 1 x 12 / 12 = 4800; Kindergeld = 255 x 12 x 1 / 2 = 1530
+  expected: {freibetrag: '4800', kindergeld: '1530'}
+- id: K1_full_12m
+  rule: K1
+  source: § 32 Abs. 6 Satz 1, 2, 5 EStG, § 66 Abs. 1, 2 EStG, § 31 Satz 4 EStG
+  input: {months: 12, half: false}
+  arithmetic: Freibetrag = (3336 + 1464) x 2 x 12 / 12 = 9600; Kindergeld = 255 x 12 x 2 / 2 = 3060
+  expected: {freibetrag: '9600', kindergeld: '3060'}

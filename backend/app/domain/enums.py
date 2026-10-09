@@ -154,6 +154,7 @@ class DeductionNote(StrEnum):
     EMPLOYER_SHARE_ASSUMED = "employer_share_assumed"
     KV_PV_UNSPLIT = "kv_pv_unsplit"
     RIESTER_NOT_SUPPORTED = "riester_not_supported"
+    CHILD_OVER_25_DISABLED = "child_over_25_disabled"
 
 
 class Bundesland(StrEnum):
@@ -462,6 +463,7 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         _N.EMPLOYER_SHARE_ASSUMED: "Arbeitgeberanteil RV gleich Arbeitnehmeranteil angenommen",
         _N.KV_PV_UNSPLIT: "Kranken- und Pflegebeitrag nicht getrennt, 4 % Kürzung für beide",
         _N.RIESTER_NOT_SUPPORTED: "Riester-Beitrag noch nicht berücksichtigt",
+        _N.CHILD_OVER_25_DISABLED: "Kind über 25 mit Behinderung, Voraussetzungen nicht geprüft",
     },
     PaymentMethod: {
         PaymentMethod.CASH: "Bar",

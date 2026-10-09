@@ -218,6 +218,21 @@ class ProgressionParams(_Section):
         return self
 
 
+class KinderParams(_Section):
+    """§ 32 Abs. 6 Satz 1, § 66 Abs. 1, § 31 Satz 4 EStG (#87). Freibeträge are per parent."""
+
+    kinderfreibetrag: Dec
+    bea_freibetrag: Dec
+    kindergeld_per_month: Dec
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        for name in ("kinderfreibetrag", "bea_freibetrag", "kindergeld_per_month"):
+            if getattr(self, name) <= 0:
+                raise ValueError(f"{name} must be positive")
+        return self
+
+
 class MappingEntry(_Frozen):
     """Where a category goes on the forms (#9). `zeile` null = not mapped / computed elsewhere."""
 
@@ -239,6 +254,7 @@ class TaxParams(_Frozen):
     sonderausgaben: SonderausgabenParams
     vorsorge: VorsorgeParams
     progressionsvorbehalt: ProgressionParams
+    kinder: KinderParams
     mapping: dict[Category, MappingEntry]
 
     @model_validator(mode="after")
