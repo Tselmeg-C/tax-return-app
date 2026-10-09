@@ -123,6 +123,70 @@ class ChurchTaxParams(_Section):
         return self
 
 
+def _rate(name: str, value: Decimal) -> None:
+    if not 0 < value <= 1:
+        raise ValueError(f"{name} must be in (0, 1]")
+
+
+HOMEOFFICE_MAX_DAYS = 210  # § 4 Abs. 5 Satz 1 Nr. 6c: 6 Euro, höchstens 1.260 Euro = 210 Tage
+
+
+class EntfernungspauschaleParams(_Frozen):
+    rate_km_1_to_20: Dec
+    rate_from_km_21: Dec
+    max_without_car: Dec  # stored, not applied in v1 (#74)
+
+
+class HomeofficeParams(_Frozen):
+    per_day: Dec
+    max_amount: Dec
+
+
+class WerbungskostenParams(_Section):
+    arbeitnehmer_pauschbetrag: Dec
+    entfernungspauschale: EntfernungspauschaleParams
+    homeoffice: HomeofficeParams
+    # § 9a Satz 3 EStG (from VZ 2026): Gewerkschaftsbeiträge count on top of the Pauschbetrag.
+    union_dues_beside_pauschbetrag: bool
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        e = self.entfernungspauschale
+        _rate("entfernungspauschale.rate_km_1_to_20", e.rate_km_1_to_20)
+        _rate("entfernungspauschale.rate_from_km_21", e.rate_from_km_21)
+        if self.homeoffice.max_amount != self.homeoffice.per_day * HOMEOFFICE_MAX_DAYS:
+            raise ValueError(f"homeoffice.max_amount must be per_day × {HOMEOFFICE_MAX_DAYS}")
+        return self
+
+
+class KinderbetreuungParams(_Frozen):
+    share: Dec
+    max_per_child: Dec
+    age_limit: int
+
+
+class SchulgeldParams(_Frozen):
+    share: Dec
+    max_per_child: Dec
+
+
+class SonderausgabenParams(_Section):
+    pauschbetrag_single: Dec
+    pauschbetrag_joint: Dec
+    spenden_max_share_of_gde: Dec
+    kinderbetreuung: KinderbetreuungParams
+    schulgeld: SchulgeldParams
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if self.pauschbetrag_joint != 2 * self.pauschbetrag_single:
+            raise ValueError("pauschbetrag_joint must be 2 × pauschbetrag_single")
+        _rate("spenden_max_share_of_gde", self.spenden_max_share_of_gde)
+        _rate("kinderbetreuung.share", self.kinderbetreuung.share)
+        _rate("schulgeld.share", self.schulgeld.share)
+        return self
+
+
 class MappingEntry(_Frozen):
     """Where a category goes on the forms (#9). `zeile` null = not mapped / computed elsewhere."""
 
@@ -140,6 +204,8 @@ class TaxParams(_Frozen):
     tariff: TariffParams
     soli: SoliParams
     church_tax: ChurchTaxParams
+    werbungskosten: WerbungskostenParams
+    sonderausgaben: SonderausgabenParams
     mapping: dict[Category, MappingEntry]
 
     @model_validator(mode="after")

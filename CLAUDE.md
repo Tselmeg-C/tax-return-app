@@ -8,7 +8,8 @@ before starting a task.
 
 - dont log, print, publish, commit, leak any kind of credentials like password, tokens, internal data, privacy data etc.
 - allowed to create pull requests when the criteria met, but leave them for me to merge.
-- `backend/app/tax/` is pure (no I/O, no DB, no network); every tax rule change needs a golden test.
+- `backend/app/tax/` is pure (no I/O, no DB, no network); every tax rule change needs a golden test (tariff: `tests/tax/golden/`; deductions: a
+  reference case in `tests/tax/reference/`, see "Deductions").
 - Never log document contents or the Steuer-ID (not in logs, traces, metrics, fixtures or error messages).
 - Never put request/response bodies, query strings, cookies, auth headers, the Steuer-ID or document contents in span attributes or log fields (spans are scrubbed and log keys redacted as a safety net only).
 - Never run migrations at app or worker startup; they run only in Railway's pre-deploy step.
@@ -125,6 +126,36 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   at tolerance 0 (ESt to the euro, Soli to the cent). Expected values come only from the
   calculator, never from the engine; collect / re-verify them with
   `uv run python -m tests.tax.golden.collect --year YYYY` (`tests/tax/golden/README.md`).
+
+## Deductions (rules from #15)
+
+- `app/tax/deductions/` (pure, same purity test as the rest of `app/tax/`) works on frozen DTOs
+  (`ReturnContext`, `ItemInput`, `EmploymentInput`, `ChildInput`, `models.py`) and `TaxParams`;
+  #17 builds them from the DB. Ids are `str`. A float, NaN / infinite `Decimal`, negative
+  count or an item `year` other than the context's raises (`TypeError` / `ValueError`).
+- Order of calls: `werbungskosten` -> (#17: Gesamtbetrag der Einkuenfte) -> `sonderausgaben(gde=...)`
+  -> `agb(gde=...)` (#76) -> (#17: zvE, tariff) -> `haushaltsnahe` (#77, off the tariff tax).
+- Item selection (`select.py`, shared with #76 / #77): I1 wrong year raises; I2 `is_relevant = false`
+  ignored; I3 person = taxpayer / spouse, `None` or a child = household-level, anyone else
+  `person_not_in_return`; I4 `overridden_by_user` always counts, unreviewed (`attention_reason`)
+  counts with `included_unreviewed` except `implausible_amount` / `sum_mismatch` / `sign_mismatch`
+  (`excluded_attention`); I5 only the categories of the group; I6 net per (person, category),
+  negative -> 0 + `net_negative_clipped`; I7 order never matters (notes are sorted).
+- Notes are `DeductionNote` codes with item / person ids (`Note`), never amounts or names.
+  Adding one needs a `LABELS_DE` entry; no DB column, no migration.
+- Rounding: exact `Decimal`; a share of an amount in cents (80 %, 30 %, 20 %) rounds down to
+  cents; nothing else is rounded.
+- Params sections `werbungskosten` and `sonderausgaben` belong to #15. `union_dues_beside_pauschbetrag`
+  (true from 2026) is `§ 9a Satz 3`: Gewerkschaftsbeitraege (`wk_berufsverband`) are added on top of
+  the Pauschbetrag comparison. `provisional: true` marks a value not read in the law text;
+  `TaxParams.provisional_sections` lists them for "vorlaeufig" in the UI.
+- Golden tests for deduction rules are the hand-computed cases in `tests/tax/reference/`
+  (`{werbungskosten,sonderausgaben}_{year}.yaml`): each has `source` (paragraph), `arithmetic` and
+  `expected`, computed by hand from the law text and never with the engine. A rule or value change
+  needs a new or changed case for every year it applies to, and a case changes only together
+  with its `arithmetic`. They prove our reading of the law, not the reading (README there).
+- Not applied in v1 (own issues): 4 500 EUR commute cap (#74), doppelte Haushaltsfuehrung limits
+  (#73), the Pauschbetrag limit by the wage (`§ 9a Satz 2`, #17), Spendenvortrag (#74).
 
 ## Tax items and overrides (rules from #10)
 

@@ -129,6 +129,30 @@ class FilingStatus(StrEnum):
     JOINT = "joint"
 
 
+class DeductionNote(StrEnum):
+    """Why the deduction engine (#15, `app/tax/deductions/`) excluded, clipped or assumed
+    something. No DB column: results carry codes and ids only, never amounts or names."""
+
+    PERSON_NOT_IN_RETURN = "person_not_in_return"
+    PERSON_UNASSIGNED = "person_unassigned"
+    NO_EMPLOYMENT = "no_employment"
+    EXCLUDED_ATTENTION = "excluded_attention"
+    INCLUDED_UNREVIEWED = "included_unreviewed"
+    NET_NEGATIVE_CLIPPED = "net_negative_clipped"
+    COVERED_BY_PAUSCHALE = "covered_by_pauschale"
+    ARBEITSZIMMER_REPLACES_HOMEOFFICE = "arbeitszimmer_replaces_homeoffice"
+    FAHRTKOSTEN_WITH_ENTFERNUNGSPAUSCHALE = "fahrtkosten_with_entfernungspauschale"
+    COMMUTE_ASSUMES_CAR = "commute_assumes_car"
+    DHF_UNCHECKED = "dhf_unchecked"
+    CHILD_NOT_ELIGIBLE = "child_not_eligible"
+    CHILD_AGE_REVIEW = "child_age_review"
+    CHILD_UNASSIGNED = "child_unassigned"
+    CASH_EXCLUDED = "cash_excluded"
+    PAYMENT_UNVERIFIED = "payment_unverified"
+    SPENDEN_OVER_LIMIT = "spenden_over_limit"
+    LABOUR_SHARE_MISSING = "labour_share_missing"
+
+
 class Bundesland(StrEnum):
     """ISO 3166-2:DE codes, lowercased (#13). `.value.upper()` is the params' `rate_by_state`
     key."""
@@ -269,6 +293,8 @@ CATEGORY_GROUP: dict[Category, CategoryGroup] = {
     _C.KAPITAL_BESCHEINIGUNG: _G.KAPITAL,
     _C.IRRELEVANT: _G.IRRELEVANT,
 }
+
+_N = DeductionNote
 
 LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
     Category: {
@@ -411,6 +437,26 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         AllowanceShare.FULL: "Voller Freibetrag (beide Elternteile)",
         AllowanceShare.HALF: "Halber Freibetrag",
     },
+    DeductionNote: {
+        _N.PERSON_NOT_IN_RETURN: "Beleg einer Person außerhalb der Erklärung nicht berücksichtigt",
+        _N.PERSON_UNASSIGNED: "Beleg keiner Person zugeordnet, nicht berücksichtigt",
+        _N.NO_EMPLOYMENT: "Person ohne Beschäftigung, Beleg nicht berücksichtigt",
+        _N.EXCLUDED_ATTENTION: "Beleg mit auffälligem Betrag nicht berücksichtigt",
+        _N.INCLUDED_UNREVIEWED: "Beleg noch ungeprüft, mitgerechnet",
+        _N.NET_NEGATIVE_CLIPPED: "Gutschriften übersteigen die Kosten, Summe auf 0 gesetzt",
+        _N.COVERED_BY_PAUSCHALE: "Beleg durch die Pauschale abgegolten, nicht addiert",
+        _N.ARBEITSZIMMER_REPLACES_HOMEOFFICE: "Arbeitszimmer ersetzt die Homeoffice-Pauschale",
+        _N.FAHRTKOSTEN_WITH_ENTFERNUNGSPAUSCHALE: "Fahrtkosten neben Entfernungspauschale prüfen",
+        _N.COMMUTE_ASSUMES_CAR: "Arbeitsweg mit eigenem Pkw angenommen",
+        _N.DHF_UNCHECKED: "Doppelte Haushaltsführung ohne Prüfung der Höchstgrenzen",
+        _N.CHILD_NOT_ELIGIBLE: "Kind nicht berücksichtigt",
+        _N.CHILD_AGE_REVIEW: "Alter oder Behinderung des Kindes bitte prüfen",
+        _N.CHILD_UNASSIGNED: "Beleg keinem Kind zugeordnet",
+        _N.CASH_EXCLUDED: "Barzahlung nicht abziehbar",
+        _N.PAYMENT_UNVERIFIED: "Zahlungsweg nicht belegt, bitte prüfen",
+        _N.SPENDEN_OVER_LIMIT: "Spenden über der Höchstgrenze, Rest nicht abziehbar",
+        _N.LABOUR_SHARE_MISSING: "Lohnanteil fehlt",
+    },
     PaymentMethod: {
         PaymentMethod.CASH: "Bar",
         PaymentMethod.BANK_TRANSFER: "Überweisung",
@@ -435,6 +481,7 @@ ALL_ENUMS: tuple[type[StrEnum], ...] = (
     Anlage,
     PaymentMethod,
     FilingStatus,
+    DeductionNote,
     AuditAction,
     ActorType,
     CategoryGroup,

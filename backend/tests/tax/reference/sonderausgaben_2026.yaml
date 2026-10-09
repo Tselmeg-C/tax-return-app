@@ -1,0 +1,1062 @@
+# Hand-computed reference cases for sonderausgaben, VZ 2026 (#15). Every case cites its paragraph and shows
+# its arithmetic; a case may only change together with its `arithmetic` (README.md).
+- id: sa_empty_single
+  rule: S5
+  source: § 10c EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items: []
+    children: []
+  arithmetic: max(0; 36) = 36
+  expected:
+    actual_total: '0.00'
+    applied: '36.00'
+    used_pauschbetrag: true
+- id: sa_empty_joint
+  rule: S5
+  source: § 10c EStG
+  input:
+    filing: joint
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items: []
+    children: []
+  arithmetic: max(0; 72) = 72 (Pauschbetrag doubles)
+  expected:
+    actual_total: '0.00'
+    applied: '72.00'
+    used_pauschbetrag: true
+- id: sa_kist_spenden
+  rule: S1/S2
+  source: § 10 Abs. 1 Nr. 4, § 10b Abs. 1 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: kirchensteuer
+      amount: '500.00'
+      payment: bank_transfer
+    - person: A
+      category: spenden
+      amount: '100.00'
+      payment: bank_transfer
+    children: []
+  arithmetic: 500,00 + 100,00 (limit 0,20 × 50000 = 10000) = 600 > 36
+  expected:
+    kirchensteuer: '500.00'
+    spenden_deductible: '100.00'
+    actual_total: '600.00'
+    applied: '600.00'
+    used_pauschbetrag: false
+- id: sa_pausch_tie
+  rule: S5
+  source: § 10c EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: kirchensteuer
+      amount: '36.00'
+      payment: bank_transfer
+    children: []
+  arithmetic: Kirchensteuer 36,00 = Pauschbetrag 36 → Pauschbetrag used
+  expected:
+    applied: '36.00'
+    used_pauschbetrag: true
+- id: sa_pausch_above
+  rule: S5
+  source: § 10c EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: kirchensteuer
+      amount: '36.01'
+      payment: bank_transfer
+    children: []
+  arithmetic: Kirchensteuer 36,01 > 36 → 36,01 actual used
+  expected:
+    applied: '36.01'
+    used_pauschbetrag: false
+- id: sa_official_kist
+  rule: S1
+  source: § 10 Abs. 1 Nr. 4 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '1200.00'
+    items: []
+    children: []
+  arithmetic: official 1200,00 only
+  expected:
+    kirchensteuer: '1200.00'
+    applied: '1200.00'
+- id: sa_kist_refund
+  rule: S1/I6
+  source: § 10 Abs. 1 Nr. 4 EStG; I6
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: kirchensteuer
+      amount: '-50.00'
+      payment: bank_transfer
+    children: []
+  arithmetic: Kirchensteuer −50,00 → net 0; max(0; 36) = 36
+  expected:
+    kirchensteuer: '0.00'
+    applied: '36.00'
+    used_pauschbetrag: true
+    notes:
+    - net_negative_clipped
+- id: sa_kist_sum
+  rule: S1
+  source: § 10 Abs. 1 Nr. 4 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '450.00'
+    items:
+    - person: A
+      category: kirchensteuer
+      amount: '300.00'
+      payment: bank_transfer
+    children: []
+  arithmetic: item 300,00 + official 450,00
+  expected:
+    kirchensteuer: '750.00'
+    applied: '750.00'
+- id: spenden_over_limit
+  rule: S2
+  source: § 10b Abs. 1 Satz 1 Nr. 1 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: spenden
+      amount: '12000.00'
+      payment: bank_transfer
+    children: []
+  arithmetic: limit 0,20 × 50000 = 10000,00; 12000 − 10000 = 2000 excess
+  expected:
+    spenden_limit: '10000.00'
+    spenden_deductible: '10000.00'
+    spenden_excess: '2000.00'
+    applied: '10000.00'
+    notes:
+    - spenden_over_limit
+- id: spenden_at_limit
+  rule: S2
+  source: § 10b Abs. 1 Satz 1 Nr. 1 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: spenden
+      amount: '10000.00'
+      payment: bank_transfer
+    children: []
+  arithmetic: 10000,00 = limit → no excess
+  expected:
+    spenden_deductible: '10000.00'
+    spenden_excess: '0.00'
+- id: spenden_one_cent_over
+  rule: S2
+  source: § 10b Abs. 1 Satz 1 Nr. 1 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: spenden
+      amount: '10000.01'
+      payment: bank_transfer
+    children: []
+  arithmetic: 10000,01 − 10000,00 = 0,01 excess
+  expected:
+    spenden_deductible: '10000.00'
+    spenden_excess: '0.01'
+    notes:
+    - spenden_over_limit
+- id: spenden_gde_15340
+  rule: S2
+  source: § 10b Abs. 1 Satz 1 Nr. 1 EStG
+  input:
+    filing: single
+    gde: '15340.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: spenden
+      amount: '3068.01'
+      payment: bank_transfer
+    children: []
+  arithmetic: 0,20 × 15340 = 3068,00; 3068,01 → 3068,00
+  expected:
+    spenden_limit: '3068.00'
+    spenden_deductible: '3068.00'
+    spenden_excess: '0.01'
+    notes:
+    - spenden_over_limit
+- id: spenden_gde_odd
+  rule: S2
+  source: § 10b Abs. 1 Satz 1 Nr. 1 EStG
+  input:
+    filing: single
+    gde: '33333.33'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: spenden
+      amount: '7000.00'
+      payment: bank_transfer
+    children: []
+  arithmetic: 0,2 × 33333,33 = 6666,666 → down 6666,66
+  expected:
+    spenden_limit: '6666.66'
+    spenden_deductible: '6666.66'
+    spenden_excess: '333.34'
+    notes:
+    - spenden_over_limit
+- id: spenden_gde_zero
+  rule: S2
+  source: § 10b Abs. 1 Satz 1 Nr. 1 EStG
+  input:
+    filing: single
+    gde: '0.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: spenden
+      amount: '100.00'
+      payment: bank_transfer
+    children: []
+  arithmetic: 'GdE 0: limit 0 → deductible 0, excess 100,00'
+  expected:
+    spenden_limit: '0.00'
+    spenden_deductible: '0.00'
+    spenden_excess: '100.00'
+    applied: '36.00'
+    notes:
+    - spenden_over_limit
+- id: spenden_gde_negative
+  rule: S2
+  source: § 10b Abs. 1 Satz 1 Nr. 1 EStG
+  input:
+    filing: single
+    gde: '-1000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: spenden
+      amount: '100.00'
+      payment: bank_transfer
+    children: []
+  arithmetic: 'GdE −1000: limit = 0,20 × max(−1000; 0) = 0'
+  expected:
+    spenden_limit: '0.00'
+    spenden_deductible: '0.00'
+    spenden_excess: '100.00'
+    notes:
+    - spenden_over_limit
+- id: spenden_credit
+  rule: S2/I6
+  source: § 10b Abs. 1 Satz 1 Nr. 1 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: spenden
+      amount: '500.00'
+      payment: bank_transfer
+    - person: A
+      category: spenden
+      amount: '-200.00'
+      payment: bank_transfer
+    children: []
+  arithmetic: Spenden 500,00 − 200,00 = 300,00
+  expected:
+    spenden_net: '300.00'
+    spenden_deductible: '300.00'
+- id: kb_1000
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 0,80 × 1000 = 800
+  expected:
+    kinderbetreuung:
+      K1: '800.00'
+    applied: '800.00'
+- id: kb_6000
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '6000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 0,80 × 6000 = 4800 = cap, cap reached
+  expected:
+    kinderbetreuung:
+      K1: '4800.00'
+    kinderbetreuung_cap_reached:
+      K1: true
+- id: kb_5999_99
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '5999.99'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 0,80 × 5999,99 = 4799,992 → down 4799,99
+  expected:
+    kinderbetreuung:
+      K1: '4799.99'
+    kinderbetreuung_cap_reached:
+      K1: false
+- id: kb_7000
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '7000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 0,80 × 7000 = 5600 → cap 4800
+  expected:
+    kinderbetreuung:
+      K1: '4800.00'
+- id: kb_two_children
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '3000.00'
+      payment: bank_transfer
+    - person: K2
+      category: kinderbetreuung
+      amount: '7000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+    - id: K2
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 0,80 × 3000 = 2400; 0,80 × 7000 = 5600 → 4800; sum 7200
+  expected:
+    kinderbetreuung:
+      K1: '2400.00'
+      K2: '4800.00'
+    applied: '7200.00'
+- id: kb_lump
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '10000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: '10000 on one child: 0,80 × 10000 = 8000 → cap 4800'
+  expected:
+    kinderbetreuung:
+      K1: '4800.00'
+    applied: '4800.00'
+- id: kb_split
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '5000.00'
+      payment: bank_transfer
+    - person: K2
+      category: kinderbetreuung
+      amount: '5000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+    - id: K2
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: '5000 + 5000: 4000 + 4000 = 8000'
+  expected:
+    applied: '8000.00'
+- id: kb_credit
+  rule: S3/I6
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    - person: K1
+      category: kinderbetreuung
+      amount: '-200.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 1000,00 − 200,00 = 800,00 × 0,80 = 640,00
+  expected:
+    kinderbetreuung:
+      K1: '640.00'
+- id: kb_clipped
+  rule: S3/I6
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '-50.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: −50 → net 0 → 0,00; Pauschbetrag 36
+  expected:
+    kinderbetreuung:
+      K1: '0.00'
+    applied: '36.00'
+    notes:
+    - net_negative_clipped
+- id: kb_cash
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG Satz 4
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: cash
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'paid in cash: excluded (Rechnung und Überweisung)'
+  expected:
+    kinderbetreuung: {}
+    applied: '36.00'
+    notes:
+    - cash_excluded
+- id: kb_payment_unknown
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG Satz 4
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: unknown
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'unknown payment: counted 0,80 × 1000 = 800, noted'
+  expected:
+    kinderbetreuung:
+      K1: '800.00'
+    notes:
+    - payment_unverified
+- id: kb_not_in_household
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: false
+      allowance_half: false
+  arithmetic: 'child not in the household: excluded'
+  expected:
+    kinderbetreuung: {}
+    notes:
+    - child_not_eligible
+- id: kb_unknown_child
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: X
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'person is no child with a child_year row: excluded'
+  expected:
+    kinderbetreuung: {}
+    notes:
+    - child_not_eligible
+- id: kb_unassigned
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: null
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'no child: one bucket, 0,80 × 1000 = 800'
+  expected:
+    kinderbetreuung:
+      '-': '800.00'
+    notes:
+    - child_unassigned
+- id: kb_age_full_jan1
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG Satz 1
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2013-01-01'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'dob 2013-01-01: 14th birthday 2027-01-01 > 31.12.2026 → full year'
+  expected:
+    kinderbetreuung:
+      K1: '800.00'
+    notes: []
+- id: kb_age_full_june
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG Satz 1
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2013-06-15'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'dob 2013-06-15: 14th birthday in 2027 → full year'
+  expected:
+    kinderbetreuung:
+      K1: '800.00'
+    notes: []
+- id: kb_age_dec31
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG Satz 1
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2012-12-31'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'dob 2012-12-31: 14th birthday 2026-12-31: part year, counted in full, review'
+  expected:
+    kinderbetreuung:
+      K1: '800.00'
+    notes:
+    - child_age_review
+- id: kb_age_mid_year
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG Satz 1
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2012-06-15'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'dob 2012-06-15: turns 14 in June: part year, review'
+  expected:
+    kinderbetreuung:
+      K1: '800.00'
+    notes:
+    - child_age_review
+- id: kb_age_jan2
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG Satz 1
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2012-01-02'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'dob 2012-01-02: 14th birthday 2026-01-02: 1 day under 14, part year, review'
+  expected:
+    kinderbetreuung:
+      K1: '800.00'
+    notes:
+    - child_age_review
+- id: kb_age_jan1
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG Satz 1
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2012-01-01'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'dob 2012-01-01: 14th birthday 2026-01-01 ≤ 1.1.: no day under 14, excluded'
+  expected:
+    kinderbetreuung: {}
+    applied: '36.00'
+    notes:
+    - child_not_eligible
+- id: kb_disabled_over_14
+  rule: S3
+  source: § 10 Abs. 1 Nr. 5 EStG Satz 1
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: kinderbetreuung
+      amount: '1000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2006-03-03'
+      disability_grade: 50
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'over 14 with disability grade: counted 800,00, review (condition cannot be checked)'
+  expected:
+    kinderbetreuung:
+      K1: '800.00'
+    notes:
+    - child_age_review
+- id: sg_4000
+  rule: S4
+  source: § 10 Abs. 1 Nr. 9 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: schulgeld
+      amount: '4000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 0,30 × 4000 = 1200
+  expected:
+    schulgeld:
+      K1: '1200.00'
+    applied: '1200.00'
+- id: sg_16666_66
+  rule: S4
+  source: § 10 Abs. 1 Nr. 9 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: schulgeld
+      amount: '16666.66'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 0,30 × 16666,66 = 4999,998 → down 4999,99
+  expected:
+    schulgeld:
+      K1: '4999.99'
+    schulgeld_cap_reached:
+      K1: false
+- id: sg_16666_67
+  rule: S4
+  source: § 10 Abs. 1 Nr. 9 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: schulgeld
+      amount: '16666.67'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 0,30 × 16666,67 = 5000,001 → cap 5000,00
+  expected:
+    schulgeld:
+      K1: '5000.00'
+    schulgeld_cap_reached:
+      K1: true
+- id: sg_20000
+  rule: S4
+  source: § 10 Abs. 1 Nr. 9 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: schulgeld
+      amount: '20000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 0,30 × 20000 = 6000 → cap 5000
+  expected:
+    schulgeld:
+      K1: '5000.00'
+- id: sg_no_age_limit
+  rule: S4
+  source: § 10 Abs. 1 Nr. 9 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: schulgeld
+      amount: '4000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2006-03-03'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'no age limit: 20-year-old with Kindergeld claim: 0,30 × 4000 = 1200'
+  expected:
+    schulgeld:
+      K1: '1200.00'
+- id: sg_cash_ok
+  rule: S4
+  source: § 10 Abs. 1 Nr. 9 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: schulgeld
+      amount: '1000.00'
+      payment: cash
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'no cash rule here: 0,30 × 1000 = 300'
+  expected:
+    schulgeld:
+      K1: '300.00'
+- id: sg_no_months
+  rule: S4
+  source: § 10 Abs. 1 Nr. 9 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: K1
+      category: schulgeld
+      amount: '4000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 0
+      in_household: true
+      allowance_half: false
+  arithmetic: 'child_year with 0 months: no Kindergeld / Freibetrag claim, excluded'
+  expected:
+    schulgeld: {}
+    notes:
+    - child_not_eligible
+- id: sg_unassigned
+  rule: S4
+  source: § 10 Abs. 1 Nr. 9 EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: null
+      category: schulgeld
+      amount: '4000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 'no child: one bucket 0,30 × 4000 = 1200'
+  expected:
+    schulgeld:
+      '-': '1200.00'
+    notes:
+    - child_unassigned
+- id: sa_combined
+  rule: S5
+  source: §§ 10, 10b, 10c EStG
+  input:
+    filing: single
+    gde: '50000.00'
+    kirchensteuer_official: '0.00'
+    items:
+    - person: A
+      category: kirchensteuer
+      amount: '800.00'
+      payment: bank_transfer
+    - person: A
+      category: spenden
+      amount: '200.00'
+      payment: bank_transfer
+    - person: K1
+      category: kinderbetreuung
+      amount: '3000.00'
+      payment: bank_transfer
+    - person: K1
+      category: schulgeld
+      amount: '2000.00'
+      payment: bank_transfer
+    children:
+    - id: K1
+      dob: '2020-05-05'
+      disability_grade: null
+      months: 12
+      in_household: true
+      allowance_half: false
+  arithmetic: 800 + 200 (limit 10000) + 0,80 × 3000 = 2400 + 0,30 × 2000 = 600 = 4000
+  expected:
+    actual_total: '4000.00'
+    applied: '4000.00'
+    used_pauschbetrag: false

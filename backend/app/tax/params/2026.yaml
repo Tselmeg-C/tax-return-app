@@ -1,5 +1,5 @@
 # Tax parameters for Veranlagungszeitraum 2026. Sections are owned by issues (#14 Decision 2):
-# year + mapping: #9; tariff, soli, church_tax: #14; later sections: #15, #16.
+# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; later sections: #16, #76, #77.
 # Money and rates are quoted strings (Decimal); an unquoted number fails to load.
 year: 2026
 
@@ -38,6 +38,26 @@ church_tax:
     ST: "0.09"
     SH: "0.09"
     TH: "0.09"
+
+werbungskosten: # §§ 9, 9a EStG, § 4 Abs. 5 Satz 1 Nr. 6c EStG (#15)
+  source: "§ 9a Satz 1 Nr. 1 Buchst. a EStG (1.230 Euro) und Satz 3 (neu: Beitragszahlungen an Gewerkschaften, § 9 Abs. 1 Satz 3 Nr. 3, werden neben den Pauschbeträgen berücksichtigt) i.d.F. Art. 2 Nr. 4 StÄndG 2025 v. 22.12.2025 (BGBl. 2025 I Nr. 363), m.W.v. 1.1.2026; § 9 Abs. 1 Satz 3 Nr. 4 Satz 2 EStG i.d.F. Art. 2 Nr. 3 StÄndG 2025 (0,38 Euro je Kilometer ab dem ersten km, Satz 8 aufgehoben; Höchstbetrag 4.500 Euro bei Nicht-Kfz-Nutzung); § 4 Abs. 5 Satz 1 Nr. 6c i.V.m. § 9 Abs. 5 Satz 1 EStG (Tagespauschale 6 Euro, höchstens 1.260 Euro; unverändert). Read 2026-10-08 at buzer.de/9_EStG.htm, 9a_EStG.htm, 4_EStG.htm and buzer.de/gesetz/17325/a335478.htm (Art. 2 StÄndG 2025); gesetze-im-internet.de was not reachable."
+  arbeitnehmer_pauschbetrag: "1230" # § 9a Satz 1 Nr. 1 Buchst. a
+  entfernungspauschale: # § 9 Abs. 1 Satz 3 Nr. 4
+    rate_km_1_to_20: "0.38"
+    rate_from_km_21: "0.38"
+    max_without_car: "4500" # stored, NOT applied in v1 (#74)
+  homeoffice: # § 4 Abs. 5 Satz 1 Nr. 6c
+    per_day: "6"
+    max_amount: "1260" # = 210 days
+  union_dues_beside_pauschbetrag: true # § 9a Satz 3 (new from VZ 2026)
+
+sonderausgaben: # §§ 10 Abs. 1 Nr. 4, 5, 9, 10b Abs. 1, 10c EStG (#15)
+  source: "§ 10c EStG (Sonderausgaben-Pauschbetrag 36 Euro, doppelt bei Zusammenveranlagung; Fassung Art. 5 ZollkodexAnpG v. 22.12.2014, BGBl. 2014 I S. 2417, unverändert); § 10b Abs. 1 Satz 1 Nr. 1 EStG (20 % des Gesamtbetrags der Einkünfte; VZ 2026: Art. 2 StÄndG 2025 ändert nur Abs. 2); § 10 Abs. 1 Nr. 5 EStG i.d.F. Art. 4 JStG 2024 v. 2.12.2024 (BGBl. 2024 I Nr. 387), m.W.v. 1.1.2025: 80 % der Aufwendungen, höchstens 4.800 Euro je Kind (vorher zwei Drittel / 4.000 Euro), Kind unter 14 Jahren, Rechnung und Überweisung (Satz 4); § 10 Abs. 1 Nr. 9 EStG: 30 % des Entgelts, höchstens 5.000 Euro (cap on the deductible amount, reading of the sentence, see PR), Schule in freier Trägerschaft, ohne Beherbergung, Betreuung, Verpflegung; § 10 Abs. 1 Nr. 4 EStG (gezahlte Kirchensteuer). Read 2026-10-08 at buzer.de/10_EStG.htm, 10b_EStG.htm, 10c_EStG.htm and buzer.de/gesetz/4499/al210133-0.htm (a.F. before JStG 2024); gesetze-im-internet.de was not reachable. § 4f EStG named in the issue is Schuldübernahme and not relevant."
+  pauschbetrag_single: "36" # § 10c Satz 1
+  pauschbetrag_joint: "72" # § 10c Satz 2
+  spenden_max_share_of_gde: "0.20" # § 10b Abs. 1 Satz 1 Nr. 1
+  kinderbetreuung: {share: "0.80", max_per_child: "4800", age_limit: 14} # § 10 Abs. 1 Nr. 5
+  schulgeld: {share: "0.30", max_per_child: "5000"} # § 10 Abs. 1 Nr. 9
 
 mapping: # #9: Category -> (Anlage, Zeile); every Category except irrelevant exactly once
   # 2026 forms not published yet: Zeilen copied from 2025, provisional (#54 verifies).

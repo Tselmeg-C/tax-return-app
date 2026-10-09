@@ -138,6 +138,23 @@ _DELETE = object()
         (_set("tariff.zone2.upper", "69000"), "tariff: Value error, zone bounds must ascend"),
         (_set("soli.freigrenze_joint", "39901"), "soli: Value error, freigrenze_joint must be 2"),
         (_set("soli.rate", "5.5"), "soli: Value error, rate must be in (0, 1)"),
+        (_set("werbungskosten.homeoffice.max_amount", _DELETE), "werbungskosten.homeoffice."
+                                                                "max_amount: missing"),
+        (_set("werbungskosten.homeoffice.per_day", 6), "werbungskosten.homeoffice.per_day: Value "
+                                                       "error, must be a quoted"),
+        (_set("werbungskosten.homeoffice.max_amount", "1000"), "werbungskosten: Value error, "
+                                                               "homeoffice.max_amount must be"),
+        (_set("werbungskosten.extra", "1"), "werbungskosten.extra: unknown key"),
+        (_set("werbungskosten.entfernungspauschale.rate_from_km_21", "1.5"), "werbungskosten: "
+         "Value error, entfernungspauschale.rate_from_km_21 must be in (0, 1]"),
+        (_set("sonderausgaben.pauschbetrag_joint", "70"), "sonderausgaben: Value error, "
+                                                          "pauschbetrag_joint must be 2"),
+        (_set("sonderausgaben.kinderbetreuung.share", 0.8), "sonderausgaben.kinderbetreuung."
+                                                            "share: Value error, must be a quoted"),
+        (_set("sonderausgaben.schulgeld.share", "0"), "sonderausgaben: Value error, "
+                                                      "schulgeld.share must be in (0, 1]"),
+        (_set("sonderausgaben.spenden_max_share_of_gde", _DELETE), "sonderausgaben.spenden_max_"
+                                                                   "share_of_gde: missing"),
     ],
 )  # fmt: skip
 def test_invalid_file_names_the_key(tmp_path: Path, edit: Any, message: str) -> None:
@@ -149,3 +166,25 @@ def test_provisional_sections_listed(tmp_path: Path) -> None:
     p = parse_params_file(_broken(tmp_path, _set("tariff.provisional", True)))
     assert isinstance(p, TaxParams)
     assert p.provisional_sections == ("tariff", "church_tax")
+
+
+@pytest.mark.parametrize(("year", "rate1", "union"), [(2025, "0.30", False), (2026, "0.38", True)])
+def test_deduction_values(year: int, rate1: str, union: bool) -> None:
+    w = load_params(year).werbungskosten
+    s = load_params(year).sonderausgaben
+    assert w.arbeitnehmer_pauschbetrag == D(1230)
+    assert (w.entfernungspauschale.rate_km_1_to_20, w.entfernungspauschale.rate_from_km_21) == (
+        D(rate1),
+        D("0.38"),
+    )
+    assert w.entfernungspauschale.max_without_car == D(4500)
+    assert (w.homeoffice.per_day, w.homeoffice.max_amount) == (D(6), D(1260))
+    assert w.union_dues_beside_pauschbetrag is union
+    assert (s.pauschbetrag_single, s.pauschbetrag_joint) == (D(36), D(72))
+    assert s.spenden_max_share_of_gde == D("0.20")
+    assert (s.kinderbetreuung.share, s.kinderbetreuung.max_per_child) == (D("0.80"), D(4800))
+    assert s.kinderbetreuung.age_limit == 14
+    assert (s.schulgeld.share, s.schulgeld.max_per_child) == (D("0.30"), D(5000))
+    for section in (w, s):
+        assert "§" in section.source and "BGBl" in section.source
+        assert not section.provisional  # every value read in the law text, see the PR table
