@@ -155,6 +155,11 @@ _DELETE = object()
                                                       "schulgeld.share must be in (0, 1]"),
         (_set("sonderausgaben.spenden_max_share_of_gde", _DELETE), "sonderausgaben.spenden_max_"
                                                                    "share_of_gde: missing"),
+        (_set("vorsorge.basis_cap", _DELETE), "vorsorge.basis_cap: missing"),
+        (_set("vorsorge.basis_cap", 2800), "vorsorge.basis_cap: Value error, must be a quoted"),
+        (_set("vorsorge.extra", "1"), "vorsorge.extra: unknown key"),
+        (_set("vorsorge.krankengeld_cut", "1.5"), "vorsorge: Value error, krankengeld_cut must be"),
+        (_set("vorsorge.basis_cap_reduced", "3000"), "vorsorge: Value error, basis_cap_reduced"),
     ],
 )  # fmt: skip
 def test_invalid_file_names_the_key(tmp_path: Path, edit: Any, message: str) -> None:
@@ -188,3 +193,12 @@ def test_deduction_values(year: int, rate1: str, union: bool) -> None:
     for section in (w, s):
         assert "§" in section.source and "BGBl" in section.source
         assert not section.provisional  # every value read in the law text, see the PR table
+
+
+@pytest.mark.parametrize(("year", "hoechst"), [(2025, "29344"), (2026, "30826")])
+def test_vorsorge_values(year: int, hoechst: str) -> None:
+    v = load_params(year).vorsorge
+    assert v.altersvorsorge_hoechstbetrag == D(hoechst)
+    assert (v.krankengeld_cut, v.basis_cap, v.basis_cap_reduced) == (D("0.04"), D(2800), D(1900))
+    assert "§ 10 Abs. 3" in v.source and "BGBl" in v.source
+    assert not v.provisional  # every value read in the law text, see the PR table

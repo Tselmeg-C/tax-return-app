@@ -26,6 +26,15 @@ does; that limit is applied by #17, not here).
 Persons in the YAML: `A` taxpayer, `B` spouse (joint), `K1` / `K2` children, `X` an adult outside
 the return, `null` no person; the key `-` stands for the bucket of items without a child.
 
+## Vorsorge (#16)
+
+`vorsorge_{year}.yaml`: rules A1 (Altersvorsorge), K1 / K2 (Kranken- und Pflegeversicherung,
+single / joint), A3 (total). Amounts per person (`A`, `B`) as `VorsorgeInput` fields; `expected`
+holds the `abzug` of the Altersvorsorge, of the Kranken-/Pflege part, the `total` and the note
+codes. Höchstbetrag H = 29 344 (2025) / 30 826 (2026), read in the SVBezGrV and the
+Beitragssatz-Bekanntmachung (see the params `source`). Nothing here is checked against an
+official calculator (none exists); the cases prove our reading of § 10 EStG.
+
 ## Progressionsvorbehalt (#86)
 
 `progressionsvorbehalt_{year}.yaml` (read by `tests/tax/test_progression.py`, not by

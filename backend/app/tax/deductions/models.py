@@ -176,3 +176,59 @@ class SonderausgabenResult:
     applied: Decimal
     used_pauschbetrag: bool
     notes: tuple[Note, ...] = field(default=())
+
+
+@dataclass(frozen=True, slots=True)
+class VorsorgeInput:
+    """Final Vorsorge amounts of one person (#16); their source is not this DTO's business."""
+
+    person_id: str
+    employed: bool  # selects 1.900 EUR, the 4 % cut and the assumed employer share
+    rv_employee: Decimal  # Nr. 2 Buchst. a
+    rv_employer: Decimal | None  # steuerfreier Arbeitgeberanteil (§ 3 Nr. 62); None = assume
+    basisrente: Decimal  # Nr. 2 Buchst. b
+    kv: Decimal  # Nr. 3 Buchst. a, as certified (before the 4 % cut)
+    pv: Decimal  # Nr. 3 Buchst. b
+    sonstige: Decimal  # Nr. 3a
+
+    def __post_init__(self) -> None:
+        _check_id(self.person_id, "person_id")
+        if not isinstance(self.employed, bool):
+            raise TypeError("employed must be bool")
+        amounts = {
+            "rv_employee": self.rv_employee,
+            "basisrente": self.basisrente,
+            "kv": self.kv,
+            "pv": self.pv,
+            "sonstige": self.sonstige,
+        }
+        if self.rv_employer is not None:
+            amounts["rv_employer"] = self.rv_employer
+        for name, value in amounts.items():
+            if check_decimal(value, name) < 0:
+                raise ValueError(f"{name} must not be negative")
+
+
+@dataclass(frozen=True, slots=True)
+class AltersvorsorgeLine:
+    beitraege: Decimal
+    hoechstbetrag: Decimal
+    angesetzt: Decimal
+    arbeitgeberanteil: Decimal
+    abzug: Decimal
+
+
+@dataclass(frozen=True, slots=True)
+class KrankenLine:
+    nr3: Decimal
+    nr3a: Decimal
+    cap: Decimal
+    abzug: Decimal
+
+
+@dataclass(frozen=True, slots=True)
+class VorsorgeResult:
+    altersvorsorge: AltersvorsorgeLine
+    kranken: KrankenLine
+    total: Decimal
+    notes: tuple[Note, ...] = field(default=())
