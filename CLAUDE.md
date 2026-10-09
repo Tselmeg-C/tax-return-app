@@ -157,6 +157,33 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
 - Not applied in v1 (own issues): 4 500 EUR commute cap (#74), doppelte Haushaltsfuehrung limits
   (#73), the Pauschbetrag limit by the wage (`§ 9a Satz 2`, #17), Spendenvortrag (#74).
 
+## Vorsorge (rules from #16)
+
+- `app/tax/deductions/vorsorge.py`: `vorsorge(ctx, persons, params.vorsorge)` is a pure function on
+  `VorsorgeInput` (final amounts per person: `rv_employee`, `rv_employer | None`, `basisrente`, `kv`,
+  `pv`, `sonstige`, `employed`; exactly the persons of the return). `vorsorge_from_items` fills the
+  DTO from tax items with #15's rules I1 to I7 (`vorsorge_rv`, `_ruerup`, `_kv_pv`, `_sonstige`;
+  `vorsorge_riester` is skipped with `riester_not_supported`, #82). Its result (`total`) is added to
+  #15's `sonderausgaben(...).applied`; the Pauschbetrag of § 10c does not cover it.
+- Amounts of an official source (#18 Lohnsteuerbescheinigung, `official_record`) or a manual value
+  replace the item sum per field; never use both (the contribution would be counted twice). #17
+  decides the source, not this module.
+- v1 `employed` (the person has an employment that year): Höchstbetrag 1.900 EUR (else 2.800), 4 %
+  Krankengeld cut on `kv` (rounded down to cents), employer pension share = employee share when
+  `rv_employer is None` (`employer_share_assumed`). With that assumption the Altersvorsorge `abzug`
+  is not monotone above the Höchstbetrag. `vorsorge_kv_pv` is not split (`kv_pv_unsplit`): the cut
+  also hits the PV part (#84). No Abs. 3 Satz 3 Kürzung (Beamte), no Erstattungsüberhang (#84).
+- Pooling (joint): amounts add up, the Höchstbetrag doubles (Abs. 3 Satz 2), the 1.900 / 2.800 cap
+  is the sum per spouse (Abs. 4 Satz 3) and Abs. 4 Satz 4 ("Nr. 3 above the cap excludes Nr. 3a")
+  is applied once to the pooled sums, so joint can be lower than two single returns (case K9).
+- No Günstigerprüfung and no Vorsorgepauschale: § 10 Abs. 4a EStG applies to 2013 to 2019 only, § 39b
+  is Lohnsteuer withholding. Do not add a code path.
+- Params section `vorsorge` belongs to #16. Höchstbetrag = knappschaftliche BBG (§ 4 SVBezGrV) x
+  Beitragssatz 24,7 % (RVBeitrSBek), rounded up: 29.344 (2025), 30.826 (2026). A new year needs both
+  inputs read from the law, not from memory.
+- Golden tests: `tests/tax/reference/vorsorge_{year}.yaml` (hand-computed, as in #15) plus property
+  tests; no official calculator exists for Vorsorge.
+
 ## Tax items and overrides (rules from #10)
 
 - Every user write to `tax_item` goes through `app/tax_items.py` (`update_item` /
