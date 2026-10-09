@@ -1,0 +1,9 @@
+# BMF building blocks for the Progressionsvorbehalt cases, VZ 2026 (#86): ESt(zvE + Lohnersatz) and the plain ESt.
+# `bmf` is read from the BMF Einkommensteuerrechner only, never from the engine; null = not collected yet
+# (blocks: pending, see README.md). Values copied from tariff_2026.yaml were collected there by the same script.
+year: 2026
+blocks:
+  - {zve: "55000", filing: single, bmf: null}
+  - {zve: "40000", filing: single, bmf: null}
+  - {zve: "120000", filing: joint, bmf: null}
+  - {zve: "100000", filing: joint, bmf: "21096"}

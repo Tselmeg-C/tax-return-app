@@ -1,5 +1,5 @@
 # Tax parameters for Veranlagungszeitraum 2026. Sections are owned by issues (#14 Decision 2):
-# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; later sections: #16, #76, #77.
+# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; progressionsvorbehalt: #86; later sections: #16, #76, #77.
 # Money and rates are quoted strings (Decimal); an unquoted number fails to load.
 year: 2026
 
@@ -58,6 +58,11 @@ sonderausgaben: # §§ 10 Abs. 1 Nr. 4, 5, 9, 10b Abs. 1, 10c EStG (#15)
   spenden_max_share_of_gde: "0.20" # § 10b Abs. 1 Satz 1 Nr. 1
   kinderbetreuung: {share: "0.80", max_per_child: "4800", age_limit: 14} # § 10 Abs. 1 Nr. 5
   schulgeld: {share: "0.30", max_per_child: "5000"} # § 10 Abs. 1 Nr. 9
+
+progressionsvorbehalt: # § 32b EStG (#86)
+  provisional: true # only the rounding of the besonderer Steuersatz is unconfirmed (see source)
+  source: "§ 32b Abs. 1 Satz 1 Nr. 1 Buchst. a bis k EStG (Lohnersatzleistungen: Arbeitslosengeld, Kurzarbeitergeld, Insolvenzgeld, Krankengeld, Mutterschaftsgeld, Elterngeld u. a.) und § 32b Abs. 2 Nr. 1 EStG (besonderer Steuersatz = Steuersatz auf zvE + Summe der Leistungen nach Abzug des Arbeitnehmer-Pauschbetrags, soweit nicht bei den Einkünften aus nichtselbständiger Arbeit abziehbar), i.d.F. der Neufassung v. 8.10.2009 (BGBl. 2009 I S. 3366, 3862), zuletzt geändert durch Art. 7 G. v. 29.6.2026 (BGBl. 2026 I Nr. 197); § 32b Abs. 3 (Bescheinigung der Träger nach § 93c AO) is data delivery only. Read 2026-10-09 at buzer.de/32b_EStG.htm; gesetze-im-internet.de was not reachable. The law text has no rounding rule for the rate and no minimum rate; the rule the Finanzverwaltung applies (e.g. 4 decimals, R 32b EStR) is UNCONFIRMED, therefore rate_decimals exact and provisional true (issue #86 Decision 4)."
+  rate_decimals: "exact" # "exact" or a digit string "0".."8"
 
 mapping: # #9: Category -> (Anlage, Zeile); every Category except irrelevant exactly once
   # 2026 forms not published yet: Zeilen copied from 2025, provisional (#54 verifies).

@@ -187,6 +187,18 @@ class SonderausgabenParams(_Section):
         return self
 
 
+class ProgressionParams(_Section):
+    """§ 32b Abs. 2 EStG (#86). `rate_decimals`: "exact" or a digit string "0".."8"."""
+
+    rate_decimals: str
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if self.rate_decimals != "exact" and self.rate_decimals not in tuple("012345678"):
+            raise ValueError('rate_decimals must be "exact" or a digit string "0" to "8"')
+        return self
+
+
 class MappingEntry(_Frozen):
     """Where a category goes on the forms (#9). `zeile` null = not mapped / computed elsewhere."""
 
@@ -206,6 +218,7 @@ class TaxParams(_Frozen):
     church_tax: ChurchTaxParams
     werbungskosten: WerbungskostenParams
     sonderausgaben: SonderausgabenParams
+    progressionsvorbehalt: ProgressionParams
     mapping: dict[Category, MappingEntry]
 
     @model_validator(mode="after")

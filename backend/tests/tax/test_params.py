@@ -87,7 +87,7 @@ def test_sections_cite_sources() -> None:
         assert "BGBl. 2024 I Nr. 449" in p.tariff.source
         assert "BGBl. 2024 I Nr. 449" in p.soli.source
         # church_tax: per-Land source and rounding not verified in #14 (see its `source`).
-        assert p.provisional_sections == ("church_tax",)
+        assert p.provisional_sections == ("church_tax", "progressionsvorbehalt")
 
 
 def test_unsupported_year() -> None:
@@ -165,7 +165,7 @@ def test_invalid_file_names_the_key(tmp_path: Path, edit: Any, message: str) -> 
 def test_provisional_sections_listed(tmp_path: Path) -> None:
     p = parse_params_file(_broken(tmp_path, _set("tariff.provisional", True)))
     assert isinstance(p, TaxParams)
-    assert p.provisional_sections == ("tariff", "church_tax")
+    assert p.provisional_sections == ("tariff", "church_tax", "progressionsvorbehalt")
 
 
 @pytest.mark.parametrize(("year", "rate1", "union"), [(2025, "0.30", False), (2026, "0.38", True)])

@@ -25,3 +25,10 @@ does; that limit is applied by #17, not here).
 
 Persons in the YAML: `A` taxpayer, `B` spouse (joint), `K1` / `K2` children, `X` an adult outside
 the return, `null` no person; the key `-` stands for the bucket of items without a child.
+
+## Progressionsvorbehalt (#86)
+
+`progressionsvorbehalt_{year}.yaml` (read by `tests/tax/test_progression.py`, not by
+`test_reference.py`): rule `P` = `tariff_with_progression` (optional `plain` = the tax without
+Lohnersatz, which must differ), rule `U` = `progression_amount` with the Pauschbetrag of the
+params. P10 / P11 (§ 35a order) belong to the assembly in #87.

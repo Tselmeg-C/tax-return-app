@@ -157,6 +157,21 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
 - Not applied in v1 (own issues): 4 500 EUR commute cap (#74), doppelte Haushaltsfuehrung limits
   (#73), the Pauschbetrag limit by the wage (`§ 9a Satz 2`, #17), Spendenvortrag (#74).
 
+## Progressionsvorbehalt (rules from #86)
+
+- `app/tax/progression.py` (pure): `tariff_with_progression(zve, filing, lohnersatz, tariff, p)`
+  returns the tarifliche ESt in full euros with the besonderer Steuersatz (§ 32b Abs. 2 Nr. 1):
+  `floor(x * ESt(floor(x + lohnersatz)) / floor(x + lohnersatz))`, tariff from `income_tax`
+  (never copy the zone formulas). `lohnersatz = 0` equals `income_tax`. `filing` must be a
+  `FilingStatus` member (a string raises `TypeError`).
+- The rounding of the rate is OPEN: the law text has no rule and no minimum rate; v1 is exact.
+  `progressionsvorbehalt.rate_decimals` (`"exact"` or `"0"`..`"8"`) switches it without code
+  change once the Finanzverwaltung rule is found; the section stays `provisional: true` until then.
+- `progression_amount` deducts the Arbeitnehmer-Pauschbetrag (`werbungskosten.arbeitnehmer_pauschbetrag`,
+  never a literal) once per person, only the part not used against wages (§ 32b Abs. 2 Nr. 1).
+- Reference cases: `tests/tax/reference/progressionsvorbehalt_{year}.yaml` (hand-computed). BMF
+  building blocks: `tests/tax/golden/blocks_{year}.yaml` (`bmf: null` = pending, see its README).
+
 ## Tax items and overrides (rules from #10)
 
 - Every user write to `tax_item` goes through `app/tax_items.py` (`update_item` /

@@ -55,3 +55,14 @@ YAML, setting `source.method: manual` and `source.fetched_at` to today (Europe/B
 
 Click "Berechnen" and copy the "Betrag" of the rows "Einkommensteuer" (to `est`, without
 the `,00`) and "Solidaritätszuschlag" (to `soli`, with cents, `.` as decimal separator).
+
+## Progressionsvorbehalt building blocks (#86)
+
+The BMF calculator has no Progressionsvorbehalt input, so `blocks_{year}.yaml` lists the zvE
+values the cases of `reference/progressionsvorbehalt_{year}.yaml` feed into `income_tax`
+(`zvE + Lohnersatz`, and the plain zvE). `tests/tax/test_progression.py` asserts engine = BMF at
+tolerance 0 for every block with a `bmf` value; a block with `bmf: null` is `blocks: pending`
+(`xfail(strict)`, it turns red once all values are in, then remove the marker). Fill `bmf` with
+the same Playwright procedure as above (2 s throttle, one value at a time, by hand or by
+extending `collect.py`). The composition (rate, flooring, Pauschbetrag) is covered by the
+hand-computed reference cases only.
