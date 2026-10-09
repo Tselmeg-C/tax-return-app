@@ -57,6 +57,26 @@
   input: {filing: single, zve: '40000.99', lohnersatz: '15000.50'}
   arithmetic: 'x = 40000; b = floor(55001,49) = 55001; ESt(55001) = 12509; 40000 x 12509 / 55001 = 9097,29'
   expected: '9097'
+- id: P14_divisor_floored
+  rule: P
+  source: § 32b Abs. 2 Nr. 1 EStG, § 32a Abs. 1 Satz 1 EStG
+  input: {filing: single, zve: '17543', lohnersatz: '10699.37'}
+  arithmetic: 'b = floor(28242,37) = 28242; ESt(28242) = 3809; 17543 x 3809 = 66821287; / 28242 = 2366.03 -> 2366 (dividing by the unfloored 28242,37 gives 2365,9 -> 2365)'
+  expected: '2366'
+  plain: '1039'
+- id: P15_divisor_floored_b
+  rule: P
+  source: § 32b Abs. 2 Nr. 1 EStG, § 32a Abs. 1 Satz 1 EStG
+  input: {filing: single, zve: '30000', lohnersatz: '5000.60'}
+  arithmetic: 'b = floor(35000,60) = 35000; ESt(35000) = 5768; 30000 x 5768 = 173040000; / 35000 = 4944.00 -> 4944 (unfloored divisor: 4943)'
+  expected: '4944'
+  plain: '4303'
+- id: P16_negative_zve_above_gfb
+  rule: P
+  source: § 32b Abs. 2 Nr. 1 EStG, § 32a Abs. 1 Satz 1 EStG
+  input: {filing: single, zve: '-500', lohnersatz: '20000'}
+  arithmetic: 'x = 0 (zvE below 0 counts as 0) -> 0; without the clamp: -500 x ESt(20000) = 1639 / 20000 -> -41'
+  expected: '0'
 - id: U1_no_wages
   rule: U
   source: § 32b Abs. 2 Nr. 1 EStG

@@ -40,4 +40,5 @@ official calculator (none exists); the cases prove our reading of § 10 EStG.
 `progressionsvorbehalt_{year}.yaml` (read by `tests/tax/test_progression.py`, not by
 `test_reference.py`): rule `P` = `tariff_with_progression` (optional `plain` = the tax without
 Lohnersatz, which must differ), rule `U` = `progression_amount` with the Pauschbetrag of the
-params. P10 / P11 (§ 35a order) belong to the assembly in #87.
+params. P14 / P15 pin the floor of the divisor `b` (an unfloored divisor changes the result), P16 pins the
+zvE < 0 clamp with `b` above the Grundfreibetrag. P10 / P11 (§ 35a order) belong to the assembly in #87.
