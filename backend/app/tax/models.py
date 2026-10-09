@@ -187,6 +187,25 @@ class SonderausgabenParams(_Section):
         return self
 
 
+class VorsorgeParams(_Section):
+    altersvorsorge_hoechstbetrag: (
+        Dec  # § 10 Abs. 3 Satz 1: Höchstbeitrag knappschaftl. RV, aufgerundet
+    )
+    krankengeld_cut: Dec  # § 10 Abs. 1 Nr. 3 Buchst. a Satz 4
+    basis_cap: Dec  # § 10 Abs. 4 Satz 1
+    basis_cap_reduced: Dec  # § 10 Abs. 4 Satz 2
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if not 0 < self.krankengeld_cut < 1:
+            raise ValueError("krankengeld_cut must be in (0, 1)")
+        if not 0 < self.basis_cap_reduced < self.basis_cap:
+            raise ValueError("basis_cap_reduced must be in (0, basis_cap)")
+        if self.altersvorsorge_hoechstbetrag <= 0:
+            raise ValueError("altersvorsorge_hoechstbetrag must be positive")
+        return self
+
+
 class MappingEntry(_Frozen):
     """Where a category goes on the forms (#9). `zeile` null = not mapped / computed elsewhere."""
 
@@ -206,6 +225,7 @@ class TaxParams(_Frozen):
     church_tax: ChurchTaxParams
     werbungskosten: WerbungskostenParams
     sonderausgaben: SonderausgabenParams
+    vorsorge: VorsorgeParams
     mapping: dict[Category, MappingEntry]
 
     @model_validator(mode="after")

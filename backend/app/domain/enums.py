@@ -151,6 +151,9 @@ class DeductionNote(StrEnum):
     PAYMENT_UNVERIFIED = "payment_unverified"
     SPENDEN_OVER_LIMIT = "spenden_over_limit"
     LABOUR_SHARE_MISSING = "labour_share_missing"
+    EMPLOYER_SHARE_ASSUMED = "employer_share_assumed"
+    KV_PV_UNSPLIT = "kv_pv_unsplit"
+    RIESTER_NOT_SUPPORTED = "riester_not_supported"
 
 
 class Bundesland(StrEnum):
@@ -456,6 +459,9 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         _N.PAYMENT_UNVERIFIED: "Zahlungsweg nicht belegt, bitte prüfen",
         _N.SPENDEN_OVER_LIMIT: "Spenden über der Höchstgrenze, Rest nicht abziehbar",
         _N.LABOUR_SHARE_MISSING: "Lohnanteil fehlt",
+        _N.EMPLOYER_SHARE_ASSUMED: "Arbeitgeberanteil RV gleich Arbeitnehmeranteil angenommen",
+        _N.KV_PV_UNSPLIT: "Kranken- und Pflegebeitrag nicht getrennt, 4 % Kürzung für beide",
+        _N.RIESTER_NOT_SUPPORTED: "Riester-Beitrag noch nicht berücksichtigt",
     },
     PaymentMethod: {
         PaymentMethod.CASH: "Bar",

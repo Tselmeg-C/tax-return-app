@@ -10,9 +10,12 @@ from app.tax.deductions.models import (
     PersonWk,
     ReturnContext,
     SonderausgabenResult,
+    VorsorgeInput,
+    VorsorgeResult,
     WerbungskostenResult,
 )
 from app.tax.deductions.sonderausgaben import sonderausgaben
+from app.tax.deductions.vorsorge import vorsorge, vorsorge_from_items
 from app.tax.deductions.werbungskosten import (
     entfernungspauschale,
     homeoffice_pauschale,
@@ -29,9 +32,13 @@ __all__ = [
     "PersonWk",
     "ReturnContext",
     "SonderausgabenResult",
+    "VorsorgeInput",
+    "VorsorgeResult",
     "WerbungskostenResult",
     "entfernungspauschale",
     "homeoffice_pauschale",
     "sonderausgaben",
+    "vorsorge",
+    "vorsorge_from_items",
     "werbungskosten",
 ]
