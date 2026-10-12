@@ -199,6 +199,34 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
 - Reference cases: `tests/tax/reference/progressionsvorbehalt_{year}.yaml` (hand-computed). BMF
   building blocks: `tests/tax/golden/blocks_{year}.yaml` (`bmf: null` = pending, see its README).
 
+## Kinder and assessment (rules from #87)
+
+- `app/tax/kinder.py` (pure): `kinder_amounts` and `guenstigerpruefung(zve, children, filing, est_fn,
+  kinder_params, year=)`; `app/tax/assessment.py`: `festsetzung(zve_before_children, ctx, state,
+  lohnersatz, children, ermaessigung_35a, params)`. Params section `kinder` (Freibeträge are
+  per parent; `provisional: true`, the two unconfirmed readings are named in its `source`).
+- #13 fields: `months` (0..12) = Zwölftelung of Kinderfreibetrag + BEA and of the Kindergeld
+  (`months = 0`: child ignored); `allowance_share` (`ChildInput.allowance_half`): full = both
+  parents' halves (x2), half = one half, the Kindergeld in the comparison follows the same share
+  (§ 31 Satz 4); `in_household` is not used here (#15 Kinderbetreuung, #81).
+- Günstigerprüfung (OPEN reading): child by child, larger Freibetrag first (then dob, person_id);
+  the Freibetrag only if it saves STRICTLY more than the child's Kindergeld, a tie keeps Kindergeld.
+  The law text does not state the order for several children; no R 31 EStR read. Used children add
+  their Kindergeld to the tarifliche ESt.
+- Bemessungsgrundlage of Soli / KiSt (§ 51a Abs. 2 EStG, § 3 Abs. 2 SolzG): ESt with ALL
+  Freibeträge (also where Kindergeld was chosen), without the Kindergeld addition, minus § 35a;
+  Soli / KiSt are `solidarity_surcharge(bmg)` / `church_tax(bmg)`, never of the tax.
+- § 35a (arrives as a plain number from #77) is capped by the tarifliche ESt including the
+  Kindergeld addition (OPEN reading, unused part lost); agB (#76) arrives inside the zvE.
+- Chain (what #17 calls): werbungskosten -> Einkünfte -> minus Entlastungsbetrag (#81) = GdE ->
+  sonderausgaben + vorsorge -> agB -> zvE before children (>= 0) -> `progression_amount` ->
+  `festsetzung` -> minus Lohnsteuer / Soli / KiSt withheld. `ctx.year` must equal `params.year`.
+- Golden tests: `tests/tax/reference/{kinder,festsetzung}_{year}.yaml` (hand-computed, never from
+  the engine; the 2025 issue figures are literals in `test_assessment.py`). The Günstigerprüfung,
+  the Kindergeld addition, the § 35a cap and KiSt cannot be checked with the BMF calculator.
+- Notes: `child_over_25_disabled` (disabled child over 25, `months` trusted) and `child_age_review`
+  (over 25 without grade, counted as given). Results and notes carry ids and codes only.
+
 ## Tax items and overrides (rules from #10)
 
 - Every user write to `tax_item` goes through `app/tax_items.py` (`update_item` /

@@ -1,0 +1,613 @@
+# Hand-computed reference cases of the assembly `festsetzung` (#87), VZ 2025; see README.md.
+# Expected values: independent exact-Fraction model of the params tariff (never the engine);
+# the issue's 2025 figures (C1 to C20) are cross-checked in test_assessment.py.
+- id: C1_single_half
+  rule: F
+  source: § 31 Satz 4, § 32 Abs. 6 Satz 1, § 51a Abs. 2 EStG
+  input:
+    filing: single
+    state: BY
+    zve: '80000'
+    children:
+    - {id: K1, months: 12, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'half share: F = 4 800 (2025) / 4 878 (2026); KG = 12 x KG/month / 2; benefit = ESt(80 000) - ESt(80 000 - F) > KG; Bemessungsgrundlage = ESt(80 000 - F) without the Kindergeld addition. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 22688; benefits per child (in order) = K1 2016; F used 4800, F all 4800; zve_tariff 75200, zve_bmg 75200; ESt(zve_tariff) = 20672; + Kindergeld 1530; BMG = ESt(zve_bmg) - Ermäßigung = 20672'
+  expected:
+    used: [K1]
+    zve_tariff: '75200'
+    zve_bmg: '75200'
+    kindergeld_added: '1530'
+    tarifliche_est_without_kindergeld: '20672'
+    tarifliche_est: '22202'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '22202'
+    bmg: '20672'
+    soli: '85.91'
+    kist: '1653.76'
+    notes: []
+- id: C2_joint_2_children
+  rule: F
+  source: § 31 Satz 4, § 32 Abs. 6 Satz 2 EStG
+  input:
+    filing: joint
+    state: NW
+    zve: '100000'
+    children:
+    - {id: K1, months: 12, half: false, dob: '2014-04-04', grade: null}
+    - {id: K2, months: 12, half: false, dob: '2017-07-07', grade: null}
+  arithmetic: 'full share: F = 9 600 / 9 756, KG = 3 060 / 3 108 each; both children tested in turn, both benefits > KG. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 21382; benefits per child (in order) = K1 3324, K2 3162; F used 19200, F all 19200; zve_tariff 80800, zve_bmg 80800; ESt(zve_tariff) = 14896; + Kindergeld 6120; BMG = ESt(zve_bmg) - Ermäßigung = 14896'
+  expected:
+    used: [K1, K2]
+    zve_tariff: '80800'
+    zve_bmg: '80800'
+    kindergeld_added: '6120'
+    tarifliche_est_without_kindergeld: '14896'
+    tarifliche_est: '21016'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '21016'
+    bmg: '14896'
+    soli: '0'
+    kist: '1340.64'
+    notes: []
+- id: C3_kindergeld_wins
+  rule: F
+  source: § 31 Satz 1, 4 EStG, § 51a Abs. 2 EStG
+  input:
+    filing: joint
+    state: NW
+    zve: '40000'
+    children:
+    - {id: K1, months: 12, half: false, dob: '2014-04-04', grade: null}
+  arithmetic: 'benefit ESt(40 000) - ESt(40 000 - F) < KG: Kindergeld stays; Bemessungsgrundlage of KiSt is still the ESt with the Freibetrag (zve_bmg = 40 000 - F). Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 3278; benefits per child (in order) = K1 2230; F used 0, F all 9600; zve_tariff 40000, zve_bmg 30400; ESt(zve_tariff) = 3278; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 1048'
+  expected:
+    used: []
+    zve_tariff: '40000'
+    zve_bmg: '30400'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '3278'
+    tarifliche_est: '3278'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '3278'
+    bmg: '1048'
+    soli: '0'
+    kist: '94.32'
+    notes: []
+- id: C4_five_months
+  rule: F
+  source: § 32 Abs. 6 Satz 5 EStG, § 66 Abs. 2 EStG
+  input:
+    filing: joint
+    state: NW
+    zve: '100000'
+    children:
+    - {id: K1, months: 5, half: false, dob: '2014-04-04', grade: null}
+  arithmetic: 'F = full-year F x 5 / 12, KG = KG/month x 5. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 21382; benefits per child (in order) = K1 1406; F used 4000, F all 4000; zve_tariff 96000, zve_bmg 96000; ESt(zve_tariff) = 19976; + Kindergeld 1275; BMG = ESt(zve_bmg) - Ermäßigung = 19976'
+  expected:
+    used: [K1]
+    zve_tariff: '96000'
+    zve_bmg: '96000'
+    kindergeld_added: '1275'
+    tarifliche_est_without_kindergeld: '19976'
+    tarifliche_est: '21251'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '21251'
+    bmg: '19976'
+    soli: '0'
+    kist: '1797.84'
+    notes: []
+- id: C5_single_60000
+  rule: F
+  source: § 31 Satz 4, § 32 Abs. 6 EStG
+  input:
+    filing: single
+    state: BY
+    zve: '60000'
+    children:
+    - {id: K1, months: 12, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'half share, zvE 60 000, 12 months. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 14415; benefits per child (in order) = K1 1832; F used 4800, F all 4800; zve_tariff 55200, zve_bmg 55200; ESt(zve_tariff) = 12583; + Kindergeld 1530; BMG = ESt(zve_bmg) - Ermäßigung = 12583'
+  expected:
+    used: [K1]
+    zve_tariff: '55200'
+    zve_bmg: '55200'
+    kindergeld_added: '1530'
+    tarifliche_est_without_kindergeld: '12583'
+    tarifliche_est: '14113'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '14113'
+    bmg: '12583'
+    soli: '0'
+    kist: '1006.64'
+    notes: []
+- id: C6_joint_two_children_60000
+  rule: F
+  source: § 31 Satz 4, § 32 Abs. 6 Satz 2 EStG
+  input:
+    filing: joint
+    state: NW
+    zve: '80000'
+    children:
+    - {id: K1, months: 12, half: false, dob: '2014-04-04', grade: null}
+    - {id: K2, months: 12, half: false, dob: '2017-07-07', grade: null}
+  arithmetic: 'two children full; the second is tested on the zvE left after the first. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 14640; benefits per child (in order) = K1 2984, K2 2984; F used 0, F all 19200; zve_tariff 80000, zve_bmg 60800; ESt(zve_tariff) = 14640; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 8834'
+  expected:
+    used: []
+    zve_tariff: '80000'
+    zve_bmg: '60800'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '14640'
+    tarifliche_est: '14640'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '14640'
+    bmg: '8834'
+    soli: '0'
+    kist: '795.06'
+    notes: []
+- id: C7_tie_single_above
+  rule: F
+  source: § 31 Satz 1, 4 EStG
+  input:
+    filing: single
+    state: NW
+    zve: '42231'
+    children:
+    - {id: K1, months: 12, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'break-even search of the tariff: zvE 42231; benefit = KG + at least 1: Freibetrag. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 8042; benefits per child (in order) = K1 1531; F used 4800, F all 4800; zve_tariff 37431, zve_bmg 37431; ESt(zve_tariff) = 6511; + Kindergeld 1530; BMG = ESt(zve_bmg) - Ermäßigung = 6511'
+  expected:
+    used: [K1]
+    zve_tariff: '37431'
+    zve_bmg: '37431'
+    kindergeld_added: '1530'
+    tarifliche_est_without_kindergeld: '6511'
+    tarifliche_est: '8041'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '8041'
+    bmg: '6511'
+    soli: '0'
+    kist: '585.99'
+    notes: []
+- id: C7_tie_single_at
+  rule: F
+  source: § 31 Satz 1, 4 EStG
+  input:
+    filing: single
+    state: NW
+    zve: '42232'
+    children:
+    - {id: K1, months: 12, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'break-even search of the tariff: zvE 42232; benefit == KG exactly: Kindergeld stays (strictly greater needed). Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 8042; benefits per child (in order) = K1 1530; F used 0, F all 4800; zve_tariff 42232, zve_bmg 37432; ESt(zve_tariff) = 8042; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 6512'
+  expected:
+    used: []
+    zve_tariff: '42232'
+    zve_bmg: '37432'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '8042'
+    tarifliche_est: '8042'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '8042'
+    bmg: '6512'
+    soli: '0'
+    kist: '586.08'
+    notes: []
+- id: C7_tie_joint_above
+  rule: F
+  source: § 31 Satz 1, 4 EStG
+  input:
+    filing: joint
+    state: NW
+    zve: '84463'
+    children:
+    - {id: K1, months: 12, half: false, dob: '2014-04-04', grade: null}
+  arithmetic: 'break-even search of the tariff: zvE 84463; benefit = KG + at least 1: Freibetrag. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 16084; benefits per child (in order) = K1 3062; F used 9600, F all 9600; zve_tariff 74863, zve_bmg 74863; ESt(zve_tariff) = 13022; + Kindergeld 3060; BMG = ESt(zve_bmg) - Ermäßigung = 13022'
+  expected:
+    used: [K1]
+    zve_tariff: '74863'
+    zve_bmg: '74863'
+    kindergeld_added: '3060'
+    tarifliche_est_without_kindergeld: '13022'
+    tarifliche_est: '16082'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '16082'
+    bmg: '13022'
+    soli: '0'
+    kist: '1171.98'
+    notes: []
+- id: C7_tie_joint_at
+  rule: F
+  source: § 31 Satz 1, 4 EStG
+  input:
+    filing: joint
+    state: NW
+    zve: '84464'
+    children:
+    - {id: K1, months: 12, half: false, dob: '2014-04-04', grade: null}
+  arithmetic: 'break-even search of the tariff: zvE 84464; benefit == KG exactly: Kindergeld stays (strictly greater needed). Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 16084; benefits per child (in order) = K1 3060; F used 0, F all 9600; zve_tariff 84464, zve_bmg 74864; ESt(zve_tariff) = 16084; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 13024'
+  expected:
+    used: []
+    zve_tariff: '84464'
+    zve_bmg: '74864'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '16084'
+    tarifliche_est: '16084'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '16084'
+    bmg: '13024'
+    soli: '0'
+    kist: '1172.16'
+    notes: []
+- id: C8_zve_below_freibetrag
+  rule: F
+  source: § 31 Satz 4, § 32 Abs. 6 EStG
+  input:
+    filing: single
+    state: BY
+    zve: '3000'
+    children:
+    - {id: K1, months: 12, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'zvE 3 000 < F: benefit 0 < KG; zve_bmg floored at 0, everything 0. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 0; benefits per child (in order) = K1 0; F used 0, F all 4800; zve_tariff 3000, zve_bmg 0; ESt(zve_tariff) = 0; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 0'
+  expected:
+    used: []
+    zve_tariff: '3000'
+    zve_bmg: '0'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '0'
+    tarifliche_est: '0'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '0'
+    bmg: '0'
+    soli: '0'
+    kist: '0'
+    notes: []
+- id: C9_second_child_kindergeld
+  rule: F
+  source: § 31 Satz 4 EStG (child by child, provisional reading)
+  input:
+    filing: joint
+    state: NW
+    zve: '90000'
+    children:
+    - {id: K1, months: 12, half: false, dob: '2014-04-04', grade: null}
+    - {id: K2, months: 12, half: false, dob: '2017-07-07', grade: null}
+  arithmetic: 'child 1: ESt(90 000) - ESt(90 000 - F) > KG: Freibetrag; child 2 tested on 90 000 - F: benefit < KG: Kindergeld. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 17922; benefits per child (in order) = K1 3154, K2 2990; F used 9600, F all 19200; zve_tariff 80400, zve_bmg 70800; ESt(zve_tariff) = 14768; + Kindergeld 3060; BMG = ESt(zve_bmg) - Ermäßigung = 11778'
+  expected:
+    used: [K1]
+    zve_tariff: '80400'
+    zve_bmg: '70800'
+    kindergeld_added: '3060'
+    tarifliche_est_without_kindergeld: '14768'
+    tarifliche_est: '17828'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '17828'
+    bmg: '11778'
+    soli: '0'
+    kist: '1060.02'
+    notes: []
+- id: C10_small_second_child
+  rule: F
+  source: § 31 Satz 4 EStG
+  input:
+    filing: joint
+    state: NW
+    zve: '90000'
+    children:
+    - {id: K1, months: 12, half: false, dob: '2014-04-04', grade: null}
+    - {id: K2, months: 2, half: false, dob: '2017-07-07', grade: null}
+  arithmetic: 'second child 2 months: F2 = F x 2 / 12, KG2 = 2 x KG/month; tested after the first. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 17922; benefits per child (in order) = K1 3154, K2 510; F used 9600, F all 11200; zve_tariff 80400, zve_bmg 78800; ESt(zve_tariff) = 14768; + Kindergeld 3060; BMG = ESt(zve_bmg) - Ermäßigung = 14258'
+  expected:
+    used: [K1]
+    zve_tariff: '80400'
+    zve_bmg: '78800'
+    kindergeld_added: '3060'
+    tarifliche_est_without_kindergeld: '14768'
+    tarifliche_est: '17828'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '17828'
+    bmg: '14258'
+    soli: '0'
+    kist: '1283.22'
+    notes: []
+- id: C11_seven_months
+  rule: F
+  source: § 32 Abs. 6 Satz 5 EStG
+  input:
+    filing: single
+    state: BY
+    zve: '60000'
+    children:
+    - {id: K1, months: 7, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'F = 4 878 x 7 / 12 = 2 845,50 (2026), KG = 259 x 7 / 2 = 906,50; nothing rounded. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 14415; benefits per child (in order) = K1 1079; F used 2800, F all 2800; zve_tariff 57200, zve_bmg 57200; ESt(zve_tariff) = 13336; + Kindergeld 892.50; BMG = ESt(zve_bmg) - Ermäßigung = 13336'
+  expected:
+    used: [K1]
+    zve_tariff: '57200'
+    zve_bmg: '57200'
+    kindergeld_added: '892.50'
+    tarifliche_est_without_kindergeld: '13336'
+    tarifliche_est: '14228.50'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '14228.50'
+    bmg: '13336'
+    soli: '0'
+    kist: '1066.88'
+    notes: []
+- id: C12_no_children
+  rule: F
+  source: § 32a EStG
+  input:
+    filing: single
+    state: BY
+    zve: '80000'
+    children: []
+  arithmetic: 'no child: result = tariff. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 22688; benefits per child (in order) = ; F used 0, F all 0; zve_tariff 80000, zve_bmg 80000; ESt(zve_tariff) = 22688; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 22688'
+  expected:
+    used: []
+    zve_tariff: '80000'
+    zve_bmg: '80000'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '22688'
+    tarifliche_est: '22688'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '22688'
+    bmg: '22688'
+    soli: '325.82'
+    kist: '1815.04'
+    notes: []
+- id: C12b_months_zero
+  rule: F
+  source: § 32 Abs. 6 Satz 5 EStG
+  input:
+    filing: single
+    state: BY
+    zve: '80000'
+    children:
+    - {id: K1, months: 0, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'a child with 0 months is ignored. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 22688; benefits per child (in order) = ; F used 0, F all 0; zve_tariff 80000, zve_bmg 80000; ESt(zve_tariff) = 22688; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 22688'
+  expected:
+    used: []
+    zve_tariff: '80000'
+    zve_bmg: '80000'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '22688'
+    tarifliche_est: '22688'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '22688'
+    bmg: '22688'
+    soli: '325.82'
+    kist: '1815.04'
+    notes: []
+- id: C14_disabled_over_25
+  rule: F
+  source: § 32 Abs. 4 Satz 1 Nr. 3 EStG
+  input:
+    filing: joint
+    state: NW
+    zve: '100000'
+    children:
+    - {id: K1, months: 12, half: false, dob: '1995-04-04', grade: 50}
+    - {id: K2, months: 12, half: false, dob: '2017-07-07', grade: null}
+  arithmetic: 'as C2, child 1 born 1995 with disability_grade 50: counted as given, note child_over_25_disabled. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 21382; benefits per child (in order) = K1 3324, K2 3162; F used 19200, F all 19200; zve_tariff 80800, zve_bmg 80800; ESt(zve_tariff) = 14896; + Kindergeld 6120; BMG = ESt(zve_bmg) - Ermäßigung = 14896'
+  expected:
+    used: [K1, K2]
+    zve_tariff: '80800'
+    zve_bmg: '80800'
+    kindergeld_added: '6120'
+    tarifliche_est_without_kindergeld: '14896'
+    tarifliche_est: '21016'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '21016'
+    bmg: '14896'
+    soli: '0'
+    kist: '1340.64'
+    notes: [child_over_25_disabled]
+- id: C14b_over_25_no_grade
+  rule: F
+  source: § 32 Abs. 4 Satz 1 Nr. 2 EStG
+  input:
+    filing: single
+    state: BY
+    zve: '80000'
+    children:
+    - {id: K1, months: 12, half: true, dob: '1995-04-04', grade: null}
+  arithmetic: 'child born 1995 without grade and months > 0: counted as given, note child_age_review. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 22688; benefits per child (in order) = K1 2016; F used 4800, F all 4800; zve_tariff 75200, zve_bmg 75200; ESt(zve_tariff) = 20672; + Kindergeld 1530; BMG = ESt(zve_bmg) - Ermäßigung = 20672'
+  expected:
+    used: [K1]
+    zve_tariff: '75200'
+    zve_bmg: '75200'
+    kindergeld_added: '1530'
+    tarifliche_est_without_kindergeld: '20672'
+    tarifliche_est: '22202'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '22202'
+    bmg: '20672'
+    soli: '85.91'
+    kist: '1653.76'
+    notes: [child_age_review]
+- id: C15_joint_half
+  rule: F
+  source: § 32 Abs. 6 Satz 1, § 31 Satz 4 EStG
+  input:
+    filing: joint
+    state: NW
+    zve: '100000'
+    children:
+    - {id: K1, months: 12, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'joint, child of one spouse only (half): F and KG halved. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 21382; benefits per child (in order) = K1 1682; F used 4800, F all 4800; zve_tariff 95200, zve_bmg 95200; ESt(zve_tariff) = 19700; + Kindergeld 1530; BMG = ESt(zve_bmg) - Ermäßigung = 19700'
+  expected:
+    used: [K1]
+    zve_tariff: '95200'
+    zve_bmg: '95200'
+    kindergeld_added: '1530'
+    tarifliche_est_without_kindergeld: '19700'
+    tarifliche_est: '21230'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '21230'
+    bmg: '19700'
+    soli: '0'
+    kist: '1773'
+    notes: []
+- id: C16_progression
+  rule: F
+  source: § 32b Abs. 2 Nr. 1, § 31 Satz 4 EStG
+  input:
+    filing: single
+    state: BY
+    zve: '80000'
+    lohnersatz: '15000'
+    children:
+    - {id: K1, months: 12, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'est_fn(z) = floor(z x ESt(z + 15 000) / (z + 15 000)); the Freibetrag lowers z, the Lohnersatz stays. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 24410; benefits per child (in order) = K1 1924; F used 4800, F all 4800; zve_tariff 75200, zve_bmg 75200; ESt(zve_tariff) = 22486; + Kindergeld 1530; BMG = ESt(zve_bmg) - Ermäßigung = 22486'
+  expected:
+    used: [K1]
+    zve_tariff: '75200'
+    zve_bmg: '75200'
+    kindergeld_added: '1530'
+    tarifliche_est_without_kindergeld: '22486'
+    tarifliche_est: '24016'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '24016'
+    bmg: '22486'
+    soli: '301.78'
+    kist: '1798.88'
+    notes: []
+- id: C17_35a_with_kindergeld
+  rule: F
+  source: § 35a Abs. 3, § 31 Satz 4, § 51a Abs. 2 EStG
+  input:
+    filing: joint
+    state: NW
+    zve: '40000'
+    ermaessigung_35a: '1200'
+    children:
+    - {id: K1, months: 12, half: false, dob: '2014-04-04', grade: null}
+  arithmetic: 'C3 plus Ermäßigung 1 200: min(1 200, tarifliche ESt); Bemessungsgrundlage = max(ESt(zve_bmg) - 1 200, 0). Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 3278; benefits per child (in order) = K1 2230; F used 0, F all 9600; zve_tariff 40000, zve_bmg 30400; ESt(zve_tariff) = 3278; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 0'
+  expected:
+    used: []
+    zve_tariff: '40000'
+    zve_bmg: '30400'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '3278'
+    tarifliche_est: '3278'
+    ermaessigung_applied: '1200'
+    festzusetzende_est: '2078'
+    bmg: '0'
+    soli: '0'
+    kist: '0'
+    notes: []
+- id: C18_35a_progression
+  rule: F
+  source: § 35a Abs. 3, § 32b EStG
+  input:
+    filing: single
+    state: BY
+    zve: '80000'
+    lohnersatz: '15000'
+    ermaessigung_35a: '1200'
+    children:
+    - {id: K1, months: 12, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'C16 plus Ermäßigung 1 200 on the tarifliche ESt incl. Kindergeld and Progressionsvorbehalt. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 24410; benefits per child (in order) = K1 1924; F used 4800, F all 4800; zve_tariff 75200, zve_bmg 75200; ESt(zve_tariff) = 22486; + Kindergeld 1530; BMG = ESt(zve_bmg) - Ermäßigung = 21286'
+  expected:
+    used: [K1]
+    zve_tariff: '75200'
+    zve_bmg: '75200'
+    kindergeld_added: '1530'
+    tarifliche_est_without_kindergeld: '22486'
+    tarifliche_est: '24016'
+    ermaessigung_applied: '1200'
+    festzusetzende_est: '22816'
+    bmg: '21286'
+    soli: '158.98'
+    kist: '1702.88'
+    notes: []
+- id: C19_35a_exceeds
+  rule: F
+  source: § 35a Abs. 3 EStG
+  input:
+    filing: single
+    state: BY
+    zve: '3000'
+    ermaessigung_35a: '500'
+    children:
+    - {id: K1, months: 12, half: true, dob: '2014-04-04', grade: null}
+  arithmetic: 'C8 plus Ermäßigung 500: tarifliche ESt 0, nothing applied, rest lost. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 0; benefits per child (in order) = K1 0; F used 0, F all 4800; zve_tariff 3000, zve_bmg 0; ESt(zve_tariff) = 0; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 0'
+  expected:
+    used: []
+    zve_tariff: '3000'
+    zve_bmg: '0'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '0'
+    tarifliche_est: '0'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '0'
+    bmg: '0'
+    soli: '0'
+    kist: '0'
+    notes: []
+- id: C20_high_income_soli
+  rule: F
+  source: § 3 Abs. 3, 4 SolzG 1995, § 51a Abs. 2 EStG
+  input:
+    filing: joint
+    state: BY
+    zve: '250000'
+    children:
+    - {id: K1, months: 12, half: false, dob: '2014-04-04', grade: null}
+    - {id: K2, months: 12, half: false, dob: '2017-07-07', grade: null}
+  arithmetic: 'joint 250 000, two children full: Soli on the Bemessungsgrundlage (no Kindergeld addition), Milderungszone. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 83176; benefits per child (in order) = K1 4032, K2 4032; F used 19200, F all 19200; zve_tariff 230800, zve_bmg 230800; ESt(zve_tariff) = 75112; + Kindergeld 6120; BMG = ESt(zve_bmg) - Ermäßigung = 75112'
+  expected:
+    used: [K1, K2]
+    zve_tariff: '230800'
+    zve_bmg: '230800'
+    kindergeld_added: '6120'
+    tarifliche_est_without_kindergeld: '75112'
+    tarifliche_est: '81232'
+    ermaessigung_applied: '0'
+    festzusetzende_est: '81232'
+    bmg: '75112'
+    soli: '4131.16'
+    kist: '6008.96'
+    notes: []
+- id: P10_with_35a
+  rule: F
+  source: § 32b Abs. 2 Nr. 1, § 35a EStG
+  input:
+    filing: single
+    state: BY
+    zve: '40000'
+    lohnersatz: '15000'
+    ermaessigung_35a: '1200'
+    children: []
+  arithmetic: 'P1 (zvE 40 000, Lohnersatz 15 000) plus Ermäßigung 1 200: reduces the ESt with Progressionsvorbehalt, not the plain ESt. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 9097; benefits per child (in order) = ; F used 0, F all 0; zve_tariff 40000, zve_bmg 40000; ESt(zve_tariff) = 9097; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 7897'
+  expected:
+    used: []
+    zve_tariff: '40000'
+    zve_bmg: '40000'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '9097'
+    tarifliche_est: '9097'
+    ermaessigung_applied: '1200'
+    festzusetzende_est: '7897'
+    bmg: '7897'
+    soli: '0'
+    kist: '631.76'
+    notes: []
+- id: P11_35a_exceeds
+  rule: F
+  source: § 32b Abs. 2 Nr. 1, § 35a EStG
+  input:
+    filing: single
+    state: BY
+    zve: '12000'
+    lohnersatz: '5000'
+    ermaessigung_35a: '1000'
+    children: []
+  arithmetic: 'P7 (zvE 12 000, Lohnersatz 5 000) plus Ermäßigung 1 000: min(1 000, tarifliche ESt), rest lost. Numbers (exact, from an independent Fraction model of the YAML tariff): ESt(zvE) = 642; benefits per child (in order) = ; F used 0, F all 0; zve_tariff 12000, zve_bmg 12000; ESt(zve_tariff) = 642; + Kindergeld 0; BMG = ESt(zve_bmg) - Ermäßigung = 0'
+  expected:
+    used: []
+    zve_tariff: '12000'
+    zve_bmg: '12000'
+    kindergeld_added: '0'
+    tarifliche_est_without_kindergeld: '642'
+    tarifliche_est: '642'
+    ermaessigung_applied: '642'
+    festzusetzende_est: '0'
+    bmg: '0'
+    soli: '0'
+    kist: '0'
+    notes: []

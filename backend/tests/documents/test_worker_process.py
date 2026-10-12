@@ -140,3 +140,17 @@ async def test_sigterm_during_a_job_releases_it(
     worker = make_worker(committed, volume, migrated_database)
     assert await worker.run_once()
     assert (await doc_of(committed, doc.id)).status is DocumentStatus.DONE
+
+
+def test_stop_handler_only_sets_a_flag(
+    committed: async_sessionmaker[AsyncSession], migrated_database: str, tmp_path: Path
+) -> None:
+    """#52: `Worker.stop` is the SIGTERM/SIGINT handler; it must not log or do I/O (a log
+    line from a signal handler can interleave with the main thread's stdout write)."""
+    from structlog.testing import capture_logs
+
+    worker = make_worker(committed, LocalVolume(tmp_path), migrated_database)
+    with capture_logs() as logs:
+        worker.stop()
+    assert worker.stopping.is_set()
+    assert logs == []

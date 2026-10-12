@@ -50,3 +50,17 @@ zvE < 0 clamp with `b` above the Grundfreibetrag. P10 / P11 (§ 35a order) belon
 § 33 Abs. 3 EStG has the same rates and brackets in 2025 and 2026, so both files hold the same
 cases. The end-to-end cases (`agb()`, Pauschbetrag) are in `test_agb.py` with the arithmetic in
 the test.
+
+## Kinder and assessment (#87)
+
+`kinder_{year}.yaml` (rule `K1`: Freibetrag + BEA and Kindergeld per child for 0, 1, 5, 7, 12 months,
+half / full share) and `festsetzung_{year}.yaml` (rule `F`: the whole `festsetzung` from the zvE
+before children; ids C1 to C20 of the issue, the two P10 / P11 cases pinned from #86, plus
+a break-even search per year in `C7_tie_*`). Both are read by `tests/tax/test_assessment.py`
+(not by `test_reference.py`) and fail, never skip, on a missing file or field.
+
+The `expected` numbers come from an independent exact-`Fraction` model of the params tariff
+(never from the engine); the 2025 figures of the issue's table (C1 to C20) are pinned again as
+literals in `test_assessment.py::ISSUE_2025`. `used` lists the children whose Freibetrag is used
+(child by child, larger Freibetrag first, a tie keeps Kindergeld; PROVISIONAL, see
+`kinder.source`). Expected cents are quoted strings.
