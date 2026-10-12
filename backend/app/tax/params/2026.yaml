@@ -1,5 +1,5 @@
 # Tax parameters for Veranlagungszeitraum 2026. Sections are owned by issues (#14 Decision 2):
-# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; agb: #76; kinder: #87; haushaltsnahe: #77.
+# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; agb: #76; kinder: #87; filing: #92; haushaltsnahe: #77.
 # Money and rates are quoted strings (Decimal); an unquoted number fails to load.
 year: 2026
 
@@ -99,6 +99,11 @@ kinder: # § 32 Abs. 6, § 31 Satz 4, § 66 Abs. 1 EStG (#87)
   kinderfreibetrag: "3414" # per parent; joint x 2 (Satz 2)
   bea_freibetrag: "1464" # per parent; joint x 2 (Satz 2)
   kindergeld_per_month: "259" # § 66 Abs. 1
+
+filing: # § 149 Abs. 2 und 3 AO (#92)
+  source: "§ 149 Abs. 2 Satz 1 AO (Steuererklärungen für ein Kalenderjahr spätestens sieben Monate nach Ablauf des Kalenderjahres, also 31. Juli 2027) und § 149 Abs. 3 Nr. 1 AO (von Steuerberatern erstellte Einkommensteuererklärungen, ausgenommen Erklärungen nach § 46 Abs. 2 Nr. 8 EStG: spätestens bis zum letzten Tag des Monats Februar des zweiten auf den Besteuerungszeitraum folgenden Kalenderjahres, also 29. Februar 2028), i.d.F. Art. 3 G. v. 29.6.2026 (BGBl. 2026 I Nr. 197) m.W.v. 1.9.2026, Absätze 2 und 3 in diesen Punkten unverändert; keine Verlängerung nach Art. 97 § 36 EGAO (gilt nur für Besteuerungszeiträume 2019 bis 2024, letzter: 30.4.2026 für 2024; Art. 97 § 36 read 2026-10-12 at lxgesetze.de/egao/97-36). Read 2026-10-12 at buzer.de/149_AO.htm; gesetze-im-internet.de was not reachable. The dates are the statutory ones; a Saturday, Sunday or holiday moves the end of the period to the next working day (§ 108 Abs. 3 AO, not applied here)."
+  deadline_self: "2027-07-31"
+  deadline_advised: "2028-02-29"
 
 haushaltsnahe: # § 35a Abs. 2, 3, 5 EStG (#77)
   source: "§ 35a Abs. 2 Satz 1 EStG (haushaltsnahe Beschäftigungsverhältnisse und Dienstleistungen: 20 Prozent, höchstens 4.000 Euro), Abs. 3 Satz 1 (Handwerkerleistungen: 20 Prozent, höchstens 1.200 Euro), Abs. 5 Satz 2 und 3 (nur Arbeitskosten; Rechnung und unbare Zahlung auf das Konto des Erbringers), Text i.d.F. Art. 4 JStG 2024 (G. v. 2.12.2024, BGBl. 2024 I Nr. 387) m.W.v. 1.1.2025, in der Neufassung v. 8.10.2009 (BGBl. 2009 I S. 3366, 3862); Betraege und Prozentsatz unveraendert seit dem Steuervereinfachungsgesetz 2011 (BGBl. 2011 I S. 2131). Read 2026-10-12 at buzer.de/35a_EStG.htm; gesetze-im-internet.de was not reachable. The 20 percent are taken off the tarifliche Einkommensteuer (Abs. 2/3: ermaessigt sich die tarifliche Einkommensteuer), not off the income."

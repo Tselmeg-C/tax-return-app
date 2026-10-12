@@ -1,0 +1,98 @@
+# Reference cases for the Pflichtveranlagung check, VZ 2025 (#92); see README.md.
+# Hand-derived from the law text of § 46 Abs. 2 EStG (buzer.de, read 2026-10-12) and § 149 AO.
+# input: filing, advised, today, employments [person, klasse, factor, concurrent], persons [person, lohnersatz, other]
+- id: single_one_job_klasse1
+  source: § 46 Abs. 2 EStG (keine Nummer erfüllt)
+  arithmetic: 'one employment, no Lohnersatz, other income unknown: no Nr. 1 to 3a applies'
+  input: {filing: single, today: '2026-06-01', employments: [{person: A, klasse: '1'}], persons: [{person: A, lohnersatz: '0', other: '0'}]}
+  expected: {state: voluntary, reasons: [], deadline: '2029-12-31', kind: voluntary, overdue: false}
+- id: single_other_income_unknown
+  source: § 46 Abs. 2 Nr. 1 EStG
+  arithmetic: 'other_income null: not decidable, listed in not_checked'
+  input: {filing: single, today: '2026-06-01', employments: [{person: A, klasse: '1'}], persons: [{person: A, lohnersatz: '0', other: null}]}
+  expected: {state: voluntary, reasons: [], not_checked_has: [side_income_not_checked, freibetrag_39a, finanzamt_request], deadline: '2029-12-31', kind: voluntary, overdue: false}
+- id: lohnersatz_410_not_over
+  source: § 46 Abs. 2 Nr. 1 EStG ("mehr als 410 Euro")
+  arithmetic: '410,00 > 410 is false'
+  input: {filing: single, today: '2026-06-01', employments: [{person: A, klasse: '1'}], persons: [{person: A, lohnersatz: '410.00', other: '0'}]}
+  expected: {state: voluntary, reasons: [], deadline: '2029-12-31', kind: voluntary, overdue: false}
+- id: lohnersatz_41001_over
+  source: § 46 Abs. 2 Nr. 1 EStG
+  arithmetic: '410,01 > 410'
+  input: {filing: single, today: '2026-06-01', employments: [{person: A, klasse: '1'}], persons: [{person: A, lohnersatz: '410.01', other: '0'}]}
+  expected: {state: mandatory, reasons: [side_income_over_limit], deadline: '2026-07-31', kind: self, overdue: false}
+- id: other_income_41001_over
+  source: § 46 Abs. 2 Nr. 1 EStG
+  arithmetic: 'Einkünfte ohne Steuerabzug 410,01 > 410'
+  input: {filing: single, today: '2026-06-01', employments: [{person: A, klasse: '1'}], persons: [{person: A, lohnersatz: '0', other: '410.01'}]}
+  expected: {state: mandatory, reasons: [side_income_over_limit], deadline: '2026-07-31', kind: self, overdue: false}
+- id: sums_are_not_added
+  source: § 46 Abs. 2 Nr. 1 EStG ("oder ... jeweils mehr als 410 Euro")
+  arithmetic: '300 + 300 = 600, but each sum alone is below 410: no Pflicht'
+  input: {filing: single, today: '2026-06-01', employments: [{person: A, klasse: '1'}], persons: [{person: A, lohnersatz: '300', other: '300'}]}
+  expected: {state: voluntary, reasons: [], deadline: '2029-12-31', kind: voluntary, overdue: false}
+- id: single_klasse1_and_6
+  source: § 46 Abs. 2 Nr. 2 EStG
+  arithmetic: 'Steuerklasse VI means a second employment at the same time'
+  input: {filing: single, today: '2026-06-01', employments: [{person: A, klasse: '1'}, {person: A, klasse: '6'}], persons: [{person: A, lohnersatz: '0', other: '0'}]}
+  expected: {state: mandatory, reasons: [multiple_employers], deadline: '2026-07-31', kind: self, overdue: false}
+- id: single_two_jobs_klasse1
+  source: § 46 Abs. 2 Nr. 2 EStG
+  arithmetic: 'two employments, concurrent by default'
+  input: {filing: single, today: '2026-06-01', employments: [{person: A, klasse: '1'}, {person: A, klasse: '1'}], persons: [{person: A, lohnersatz: '0', other: '0'}]}
+  expected: {state: mandatory, reasons: [multiple_employers], deadline: '2026-07-31', kind: self, overdue: false}
+- id: single_two_jobs_one_after_the_other
+  source: § 46 Abs. 2 Nr. 2 EStG ("nebeneinander")
+  arithmetic: 'concurrent false (dates do not overlap): Nr. 2 does not apply'
+  input: {filing: single, today: '2026-06-01', employments: [{person: A, klasse: '1', concurrent: false}, {person: A, klasse: '1', concurrent: false}], persons: [{person: A, lohnersatz: '0', other: '0'}]}
+  expected: {state: voluntary, reasons: [], deadline: '2029-12-31', kind: voluntary, overdue: false}
+- id: joint_3_and_5
+  source: § 46 Abs. 2 Nr. 3a EStG
+  arithmetic: 'both have wages, one has Steuerklasse V'
+  input: {filing: joint, today: '2026-06-01', employments: [{person: A, klasse: '3'}, {person: B, klasse: '5'}], persons: [{person: A, lohnersatz: '0', other: '0'}, {person: B, lohnersatz: '0', other: '0'}]}
+  expected: {state: mandatory, reasons: [steuerklasse_combination], deadline: '2026-07-31', kind: self, overdue: false}
+- id: joint_4_factor_and_4
+  source: § 46 Abs. 2 Nr. 3a EStG
+  arithmetic: 'both have wages, one has IV mit Faktor'
+  input: {filing: joint, today: '2026-06-01', employments: [{person: A, klasse: '4', factor: true}, {person: B, klasse: '4'}], persons: [{person: A, lohnersatz: '0', other: '0'}, {person: B, lohnersatz: '0', other: '0'}]}
+  expected: {state: mandatory, reasons: [steuerklasse_combination], deadline: '2026-07-31', kind: self, overdue: false}
+- id: joint_3_spouse_without_job
+  source: § 46 Abs. 2 Nr. 3a EStG ("beide Arbeitslohn bezogen")
+  arithmetic: 'the spouse has no wages: Nr. 3a does not apply'
+  input: {filing: joint, today: '2026-06-01', employments: [{person: A, klasse: '3'}], persons: [{person: A, lohnersatz: '0', other: '0'}, {person: B, lohnersatz: '0', other: '0'}]}
+  expected: {state: voluntary, reasons: [], deadline: '2029-12-31', kind: voluntary, overdue: false}
+- id: joint_4_and_4_no_factor
+  source: § 46 Abs. 2 Nr. 3a EStG
+  arithmetic: 'IV without Faktor: Nr. 3a does not apply'
+  input: {filing: joint, today: '2026-06-01', employments: [{person: A, klasse: '4'}, {person: B, klasse: '4'}], persons: [{person: A, lohnersatz: '0', other: '0'}, {person: B, lohnersatz: '0', other: '0'}]}
+  expected: {state: voluntary, reasons: [], deadline: '2029-12-31', kind: voluntary, overdue: false}
+- id: joint_spouse_lohnersatz_triggers_return
+  source: § 46 Abs. 2 Nr. 1 EStG (per person), § 56 Satz 1 Nr. 1 Buchst. b EStDV
+  arithmetic: 'the spouse has 500 Lohnersatz > 410: the joint return is mandatory'
+  input: {filing: joint, today: '2026-06-01', employments: [{person: A, klasse: '4'}], persons: [{person: A, lohnersatz: '0', other: '0'}, {person: B, lohnersatz: '500', other: '0'}]}
+  expected: {state: mandatory, reasons: [side_income_over_limit], deadline: '2026-07-31', kind: self, overdue: false}
+- id: single_ignores_spouse_data
+  source: § 46 Abs. 2 EStG (nur Personen der Erklärung)
+  arithmetic: 'single return: B is outside the return, VI of B and 500 Lohnersatz of B are ignored'
+  input: {filing: single, today: '2026-06-01', employments: [{person: A, klasse: '1'}, {person: B, klasse: '6'}], persons: [{person: A, lohnersatz: '0', other: '0'}, {person: B, lohnersatz: '500', other: '0'}]}
+  expected: {state: voluntary, reasons: [], deadline: '2029-12-31', kind: voluntary, overdue: false}
+- id: deadline_day_not_overdue
+  source: § 149 Abs. 2 Satz 1 AO
+  arithmetic: 'sieben Monate nach Ablauf 2025: 31.07.2026; on that day not yet late'
+  input: {filing: single, today: '2026-07-31', employments: [{person: A, klasse: '1'}, {person: A, klasse: '6'}], persons: [{person: A, lohnersatz: '0', other: '0'}]}
+  expected: {state: mandatory, reasons: [multiple_employers], deadline: '2026-07-31', kind: self, overdue: false}
+- id: day_after_deadline_overdue
+  source: § 149 Abs. 2 Satz 1 AO
+  arithmetic: '01.08.2026 > 31.07.2026'
+  input: {filing: single, today: '2026-08-01', employments: [{person: A, klasse: '1'}, {person: A, klasse: '6'}], persons: [{person: A, lohnersatz: '0', other: '0'}]}
+  expected: {state: mandatory, reasons: [multiple_employers], deadline: '2026-07-31', kind: self, overdue: true}
+- id: advised_deadline
+  source: § 149 Abs. 3 Nr. 1 AO
+  arithmetic: 'letzter Tag des Monats Februar des zweiten Folgejahres: 28.02.2027'
+  input: {filing: single, advised: true, today: '2026-08-01', employments: [{person: A, klasse: '1'}, {person: A, klasse: '6'}], persons: [{person: A, lohnersatz: '0', other: '0'}]}
+  expected: {state: mandatory, reasons: [multiple_employers], deadline: '2027-02-28', kind: advised, overdue: false}
+- id: voluntary_ignores_advised
+  source: § 149 Abs. 3 Nr. 1 AO (ausgenommen § 46 Abs. 2 Nr. 8 EStG), § 169 Abs. 2 Satz 1 Nr. 2, § 170 Abs. 1 AO
+  arithmetic: 'Antragsveranlagung: 4 Jahre Festsetzungsfrist ab Ende 2025: 31.12.2029'
+  input: {filing: single, advised: true, today: '2030-01-01', employments: [{person: A, klasse: '1'}], persons: [{person: A, lohnersatz: '0', other: '0'}]}
+  expected: {state: voluntary, reasons: [], deadline: '2029-12-31', kind: voluntary, overdue: true}

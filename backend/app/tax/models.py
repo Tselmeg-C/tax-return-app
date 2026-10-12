@@ -6,6 +6,7 @@ Money and rates are `Decimal`, given in the YAML as quoted strings: an unquoted 
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Annotated, Self
 
@@ -281,6 +282,31 @@ class KinderParams(_Section):
         return self
 
 
+def _quoted_date(value: object) -> date:
+    if not isinstance(value, str):
+        raise ValueError('must be a quoted ISO date (e.g. "2026-07-31")')
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        raise ValueError(f"not an ISO date: {value!r}") from None
+
+
+IsoDate = Annotated[date, BeforeValidator(_quoted_date)]
+
+
+class FilingParams(_Section):
+    """Abgabefristen (#92): § 149 Abs. 2 (self) and Abs. 3 (advised) AO for this year."""
+
+    deadline_self: IsoDate
+    deadline_advised: IsoDate
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if self.deadline_advised <= self.deadline_self:
+            raise ValueError("deadline_advised must be after deadline_self")
+        return self
+
+
 class HaushaltsnaheParams(_Section):
     """§ 35a Abs. 2 Satz 1 and Abs. 3 EStG (#77): rate of the Arbeitskosten and the two caps."""
 
@@ -320,6 +346,7 @@ class TaxParams(_Frozen):
     progressionsvorbehalt: ProgressionParams
     agb: AgbParams
     kinder: KinderParams
+    filing: FilingParams
     haushaltsnahe: HaushaltsnaheParams
     mapping: dict[Category, MappingEntry]
 
