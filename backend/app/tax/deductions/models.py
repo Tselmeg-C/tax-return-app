@@ -259,3 +259,19 @@ class AgbResult:
     pauschbetrag_total: Decimal
     total: Decimal  # what #17 subtracts from the Gesamtbetrag der Einkünfte
     notes: tuple[Note, ...] = field(default=())
+
+
+@dataclass(frozen=True, slots=True)
+class HaushaltsnaheLine:
+    labour_sum: Decimal
+    ermaessigung: Decimal
+    cap: Decimal
+    cap_reached: bool
+
+
+@dataclass(frozen=True, slots=True)
+class HaushaltsnaheResult:
+    dienstleistung: HaushaltsnaheLine
+    handwerker: HaushaltsnaheLine
+    total: Decimal  # what #17 subtracts from the tarifliche Einkommensteuer (min with that tax)
+    notes: tuple[Note, ...] = field(default=())

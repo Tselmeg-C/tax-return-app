@@ -1,0 +1,69 @@
+# Hand-computed reference cases for § 35a EStG, VZ 2025 (#77); see README.md.
+# Rates and caps: § 35a Abs. 2 Satz 1 / Abs. 3 Satz 1 EStG (20 %, max 4.000 / 1.200 EUR). Same in 2025 and 2026.
+# `input`: labour shares (EUR) of items paid by transfer, `hw` Handwerker, `dl` Dienstleistung.
+- id: hw_below_cap
+  rule: H1
+  source: § 35a Abs. 3 Satz 1 EStG
+  input: {hw: ['5000.00'], dl: []}
+  arithmetic: '20% x 5000 = 1000'
+  expected: '1000.00'
+- id: hw_at_cap
+  rule: H1
+  source: § 35a Abs. 3 Satz 1 EStG
+  input: {hw: ['6000.00'], dl: []}
+  arithmetic: '20% x 6000 = 1200 = cap'
+  expected: '1200.00'
+- id: hw_above_cap
+  rule: H1
+  source: § 35a Abs. 3 Satz 1 EStG
+  input: {hw: ['7000.00'], dl: []}
+  arithmetic: '20% x 7000 = 1400 -> cap 1200'
+  expected: '1200.00'
+- id: hw_just_below
+  rule: H1
+  source: § 35a Abs. 3 Satz 1 EStG
+  input: {hw: ['5999.99'], dl: []}
+  arithmetic: '0,2 x 5999,99 = 1199,998 -> down 1199,99'
+  expected: '1199.99'
+- id: dl_at_cap
+  rule: H1
+  source: § 35a Abs. 2 Satz 1 EStG
+  input: {hw: [], dl: ['20000.00']}
+  arithmetic: '20% x 20000 = 4000 = cap'
+  expected: '4000.00'
+- id: dl_above
+  rule: H1
+  source: § 35a Abs. 2 Satz 1 EStG
+  input: {hw: [], dl: ['25000.00']}
+  arithmetic: '20% x 25000 = 5000 -> cap 4000'
+  expected: '4000.00'
+- id: both
+  rule: H1
+  source: § 35a Abs. 2 Satz 1 und Abs. 3 Satz 1 EStG
+  input: {hw: ['6000.00'], dl: ['3000.00']}
+  arithmetic: '1200 + 600'
+  expected: '1800.00'
+- id: both_capped
+  rule: H1
+  source: § 35a Abs. 2 Satz 1 und Abs. 3 Satz 1 EStG
+  input: {hw: ['8000.00'], dl: ['30000.00']}
+  arithmetic: '1200 + 4000'
+  expected: '5200.00'
+- id: two_invoices
+  rule: H1
+  source: § 35a Abs. 3 Satz 1 EStG
+  input: {hw: ['2500.00', '3500.00'], dl: []}
+  arithmetic: '2500 + 3500 = 6000 -> 1200'
+  expected: '1200.00'
+- id: none
+  rule: H1
+  source: § 35a Abs. 2 Satz 1 und Abs. 3 Satz 1 EStG
+  input: {hw: [], dl: []}
+  arithmetic: 'no items'
+  expected: '0.00'
+- id: cash_excluded
+  rule: H1
+  source: § 35a Abs. 5 Satz 3 EStG
+  input: {hw: [], dl: [], cash_hw: ['6000.00']}
+  arithmetic: 'paid in cash: excluded, 0'
+  expected: '0.00'

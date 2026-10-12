@@ -157,6 +157,18 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
 - Not applied in v1 (own issues): 4 500 EUR commute cap (#74), doppelte Haushaltsfuehrung limits
   (#73), the Pauschbetrag limit by the wage (`§ 9a Satz 2`, #17), Spendenvortrag (#74).
 
+## § 35a (rules from #77)
+
+- `app/tax/deductions/haushaltsnahe.py`: `haushaltsnahe(ctx, items, params.haushaltsnahe)`. It is a
+  Steuerermäßigung: #17 subtracts `total` from the tarifliche Einkommensteuer (`min` with that tax,
+  no carry-over), never from the income; Soli / KiSt follow from the reduced ESt (#17).
+- Per category `min(cap, 20 % x labour sum)`, rounded down to cents; caps 4 000 (Abs. 2) and
+  1 200 (Abs. 3) are independent, one pair per return. Item amount = `min(deductible_amount,
+  labour_share_35a)`; NULL share -> 0 + `labour_share_missing`.
+- Cash (`payment_method = cash`) is excluded whatever `is_relevant` / overrides say (Abs. 5 Satz 3),
+  note `cash_excluded`; `unknown` / `other` count with `payment_unverified`.
+- Reference cases: `tests/tax/reference/haushaltsnahe_{year}.yaml`. Minijob (Abs. 1) is #75.
+
 ## Vorsorge (rules from #16)
 
 - `app/tax/deductions/vorsorge.py`: `vorsorge(ctx, persons, params.vorsorge)` is a pure function on
