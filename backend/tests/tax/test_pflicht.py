@@ -99,6 +99,26 @@ def test_always_not_checked_and_order() -> None:
     assert [c.value for c in r.not_checked] == [c.value for c in PflichtCheck]
 
 
+def _persons() -> list[dict[str, Any]]:
+    return [{"person": p, "lohnersatz": "0", "other": "0"} for p in ("A", "B")]
+
+
+def test_lone_klasse_vi_is_multiple_employers() -> None:
+    inp = {"filing": "single", "today": "2026-01-01", "persons": _persons()[:1]}
+    inp["employments"] = [{"person": "A", "klasse": "6", "concurrent": False}]
+    r = _run(2025, inp)
+    assert r.state is PflichtState.MANDATORY
+    assert PflichtReason.MULTIPLE_EMPLOYERS in r.reasons
+
+
+def test_joint_with_klasse_vi_spouse_is_mandatory() -> None:
+    inp = {"filing": "joint", "today": "2026-01-01", "persons": _persons()}
+    inp["employments"] = [{"person": "A", "klasse": "3"}, {"person": "B", "klasse": "6"}]
+    r = _run(2025, inp)
+    assert r.state is PflichtState.MANDATORY
+    assert PflichtReason.STEUERKLASSE_COMBINATION in r.reasons
+
+
 def test_year_mismatch_and_float() -> None:
     ctx = ReturnContext(2025, FilingStatus.SINGLE, "p-A")
     with pytest.raises(ValueError, match="another year"):
