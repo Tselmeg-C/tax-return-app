@@ -1,12 +1,15 @@
-"""Deductions without Vorsorge, agB and § 35a (#15): pure functions on frozen DTOs."""
+"""Deductions (#15, #16, #76, #77): pure functions on frozen DTOs."""
 
 from app.tax.deductions.agb import agb, behinderten_pauschbetrag, zumutbare_belastung
+from app.tax.deductions.haushaltsnahe import haushaltsnahe
 from app.tax.deductions.models import (
     UNASSIGNED,
     AgbResult,
     ChildInput,
     ChildLine,
     EmploymentInput,
+    HaushaltsnaheLine,
+    HaushaltsnaheResult,
     ItemInput,
     Note,
     PersonInput,
@@ -34,6 +37,9 @@ __all__ = [
     "UNASSIGNED",
     "ChildInput",
     "ChildLine",
+    "HaushaltsnaheLine",
+    "HaushaltsnaheResult",
+    "haushaltsnahe",
     "EmploymentInput",
     "ItemInput",
     "Note",

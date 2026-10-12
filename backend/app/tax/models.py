@@ -281,6 +281,22 @@ class KinderParams(_Section):
         return self
 
 
+class HaushaltsnaheParams(_Section):
+    """§ 35a Abs. 2 Satz 1 and Abs. 3 EStG (#77): rate of the Arbeitskosten and the two caps."""
+
+    rate: Dec
+    max_dienstleistung: Dec
+    max_handwerker: Dec
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if not 0 < self.rate < 1:
+            raise ValueError("rate must be in (0, 1)")
+        if self.max_dienstleistung <= 0 or self.max_handwerker <= 0:
+            raise ValueError("max_dienstleistung and max_handwerker must be positive")
+        return self
+
+
 class MappingEntry(_Frozen):
     """Where a category goes on the forms (#9). `zeile` null = not mapped / computed elsewhere."""
 
@@ -304,6 +320,7 @@ class TaxParams(_Frozen):
     progressionsvorbehalt: ProgressionParams
     agb: AgbParams
     kinder: KinderParams
+    haushaltsnahe: HaushaltsnaheParams
     mapping: dict[Category, MappingEntry]
 
     @model_validator(mode="after")
