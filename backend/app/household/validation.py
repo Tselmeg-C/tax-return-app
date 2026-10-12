@@ -7,8 +7,10 @@ api answers `422 {"detail": "<code>", "field": "<name>"}`).
 from __future__ import annotations
 
 import calendar
+import re
 from collections import Counter
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 MIN_DOB = date(1900, 1, 1)
@@ -115,6 +117,22 @@ def check_dob(dob: date | None, *, is_child: bool, today: date) -> None:
 def check_disability_grade(value: int | None) -> None:
     if value is not None and value not in DISABILITY_GRADES:
         raise invalid("invalid_disability_grade", "disability_grade")
+
+
+# --- money (#17) --------------------------------------------------------------------------
+
+AMOUNT_RE = re.compile(r"^\d{1,9}\.\d{2}$")
+
+
+def clean_amount(value: Any, field: str, *, required: bool = False) -> Decimal | None:
+    """A non-negative dot-decimal string (`"1234.50"`) or `None`; a JSON number is refused."""
+    if value is None and not required:
+        return None
+    if isinstance(value, Decimal):  # already stored (merge with the current row)
+        return value
+    if not isinstance(value, str) or not AMOUNT_RE.fullmatch(value):
+        raise invalid("invalid_amount", field)
+    return Decimal(value)
 
 
 # --- employment ----------------------------------------------------------------------------

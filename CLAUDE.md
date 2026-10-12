@@ -286,6 +286,38 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   `GET /household/{jahr}`. Household writes in the frontend are plain `apiFetch` calls (no
   `useMutation`), so a typed Steuer-ID never lands in the query or mutation cache.
 
+## Estimate (rules from #17)
+
+- `app.estimate.service.build_summary(scope, year, today)` is the only place the estimate is
+  computed (web `GET /summary`, bot #11 calls it too). It calls the pure engines of `app/tax/`
+  in the order of #17, never computes tax itself and returns a JSON-ready dict (money as
+  dot-decimal strings, codes only). Compute on read, no job; the `estimate` row is a snapshot
+  per `(household, year, inputs_hash)` (`ON CONFLICT DO NOTHING`), never served.
+- Refund sign: positive = Erstattung, negative = Nachzahlung (UI says "Nachzahlung", never a
+  negative "Erstattung"). Refund = Lohnsteuer + Soli + KiSt withheld - (festzusetzende ESt +
+  Soli + KiSt). Kindergeld is not part of it (`kindergeld_added` is shown separately).
+- Manual inputs until #18: `employment.gross_wage / lohnsteuer / soli_withheld /
+  kirchensteuer_withheld / rv_employee / rv_employer / basisrente / kv / pv /
+  sonstige_vorsorge` (NULL = not entered, `copy_year` never copies them) and the `lohnersatz`
+  table (`PUT|DELETE /household/{year}/lohnersatz/{person_id}`). Amounts are audited, never
+  logged, never in span attributes or error bodies (`invalid_amount` + field name only).
+- Vorsorge is never counted twice: per person a group with any employment field set
+  (RV: `rv_employee`/`rv_employer`, KV/PV: `kv`/`pv`, `basisrente`, `sonstige_vorsorge`)
+  replaces the matching item categories entirely; otherwise `vorsorge_from_items`; neither =
+  0 + `vorsorge_missing`.
+- Only the Arbeitnehmer-Pauschbetrag is limited by the wage (§ 9a); real Werbungskosten may
+  exceed it. Pass a real `FilingStatus` member; `state = bundesland.value.upper()`, `None` when
+  nobody in the return is a church member. Persons outside the return are ignored.
+- Pflichtveranlagung gets employment rows only for persons whose wage is not 0 (an entered
+  wage of 0 means no wage; a wage not entered yet counts as a wage). The § 108 Abs. 3 AO shift
+  (`app/estimate/deadlines.py`) and `overdue` are applied at display time only: the stored
+  `estimate.result` holds the statutory `deadline_statutory`.
+- KAP / Anlage V (#19 / #20) and Entlastungsbetrag (#81) are 0; items of those groups only
+  produce `kap_v_not_supported` in `what_missing`.
+- Golden service scenarios: `backend/tests/estimate/scenarios/golden_2025.yaml` (hand-derived
+  chain per line) + `bmf_inputs_2025.yaml` (BMF values only, refresh with
+  `uv run python -m tests.estimate.collect_bmf --year 2025`, needs the `golden` group).
+
 ## Stack
 
 - Backend (`backend/`): Python 3.12, `uv`, FastAPI, SQLAlchemy 2.0 + Alembic, Postgres 16, Postgres-based job queue

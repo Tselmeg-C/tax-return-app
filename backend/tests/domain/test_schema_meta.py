@@ -24,9 +24,11 @@ CORE_TABLES = {
     "child_year",  # #13
     "document",
     "employment",  # #13
+    "estimate",  # #17
     "extraction",
     "household",
     "job",  # #6
+    "lohnersatz",  # #17
     "magic_link_token",  # #5
     "person",
     "tax_item",

@@ -19,7 +19,16 @@ from sqlalchemy import case, func, or_
 
 from app.db.audit import Actor, record, snapshot
 from app.db.base import Base
-from app.db.models import AppUser, ChildYear, Employment, Person, TaxItem, TaxProfile
+from app.db.models import (
+    AppUser,
+    ChildYear,
+    Employment,
+    Lohnersatz,
+    Person,
+    TaxItem,
+    TaxProfile,
+)
+from app.db.models.profile import EMPLOYMENT_MONEY_FIELDS
 from app.db.scope import HouseholdScope
 from app.domain.enums import (
     AllowanceShare,
@@ -35,6 +44,7 @@ from app.household.validation import (
     check_disability_grade,
     check_dob,
     check_employment,
+    clean_amount,
     clean_employer_name,
     clean_first_name,
     clean_last_name,
@@ -280,7 +290,7 @@ async def delete_person(scope: HouseholdScope, user_id: uuid.UUID, person_id: uu
         )
         if profiles:
             raise Rejected(409, "person_in_profile", years=sorted(p.year for p in profiles))
-        for model in (Employment, ChildYear):
+        for model in (Employment, ChildYear, Lohnersatz):
             rows = await _all(scope, model, model.person_id == person.id)
             removed[model.__tablename__] = len(rows)
             for row in rows:
@@ -364,7 +374,8 @@ async def put_profile(
 
 # --- employments ---------------------------------------------------------------------------
 
-EMPLOYMENT_FIELDS = (
+# What `copy_year` carries over; the year's Lohnsteuer / Vorsorge amounts never are.
+EMPLOYMENT_COPY_FIELDS = (
     "employer_name",
     "steuerklasse",
     "has_factor",
@@ -372,11 +383,13 @@ EMPLOYMENT_FIELDS = (
     "office_days",
     "homeoffice_days",
 )
+EMPLOYMENT_FIELDS = (*EMPLOYMENT_COPY_FIELDS, *EMPLOYMENT_MONEY_FIELDS)
 EMPLOYMENT_DEFAULTS: dict[str, Any] = {
     "has_factor": False,
     "commute_km": None,
     "office_days": 0,
     "homeoffice_days": 0,
+    **dict.fromkeys(EMPLOYMENT_MONEY_FIELDS),
 }
 
 
@@ -389,6 +402,8 @@ async def _check_employment(
     if person_id not in _in_return(profile):
         raise invalid("person_not_in_return", "person_id")
     values["employer_name"] = clean_employer_name(values["employer_name"])
+    for key in EMPLOYMENT_MONEY_FIELDS:
+        values[key] = clean_amount(values[key], key)
     for key in ("steuerklasse", "has_factor", "office_days", "homeoffice_days"):
         if values[key] is None:
             raise invalid("invalid_request", key)
@@ -476,6 +491,65 @@ async def delete_employment(
 
     await _transaction(scope, work)
     log.info("household.employment_deleted", employment_id=str(employment_id))
+
+
+# --- Lohnersatz (#17) ----------------------------------------------------------------------
+
+
+async def put_lohnersatz(
+    scope: HouseholdScope, user_id: uuid.UUID, year: int, person_id: uuid.UUID, amount: Any
+) -> Lohnersatz:
+    """Create or replace the Lohnersatz (Elterngeld, ALG I, Kurzarbeitergeld) of a person."""
+    actor = Actor.user(user_id)
+
+    async def work() -> Lohnersatz:
+        check_year(year)
+        value = clean_amount(amount, "amount", required=True)
+        assert value is not None
+        profile = await _profile(scope, year)
+        if profile is None:
+            raise invalid("profile_required", "year")
+        if person_id not in _in_return(profile):
+            raise invalid("person_not_in_return", "person_id")
+        rows = await _all(
+            scope, Lohnersatz, Lohnersatz.person_id == person_id, Lohnersatz.year == year
+        )
+        if not rows:
+            row = Lohnersatz(person_id=person_id, year=year, amount=value)
+            scope.add(row)
+            await scope.session.flush()
+            await _audit(scope, actor, row, AuditAction.CREATE)
+            return row
+        row = rows[0]
+        before = snapshot(row)
+        row.amount = value
+        await scope.session.flush()
+        await _audit(scope, actor, row, AuditAction.UPDATE, before)
+        return row
+
+    row = await _transaction(scope, work)
+    log.info("household.lohnersatz_saved", lohnersatz_id=str(row.id), year=year)
+    return row
+
+
+async def delete_lohnersatz(
+    scope: HouseholdScope, user_id: uuid.UUID, year: int, person_id: uuid.UUID
+) -> None:
+    actor = Actor.user(user_id)
+
+    async def work() -> None:
+        check_year(year)
+        rows = await _all(
+            scope, Lohnersatz, Lohnersatz.person_id == person_id, Lohnersatz.year == year
+        )
+        if not rows:
+            raise Rejected(404, NOT_FOUND)
+        await _audit(scope, actor, rows[0], AuditAction.DELETE)
+        await scope.session.delete(rows[0])
+        await scope.session.flush()
+
+    await _transaction(scope, work)
+    log.info("household.lohnersatz_deleted", person_id=str(person_id), year=year)
 
 
 # --- children ------------------------------------------------------------------------------
@@ -600,7 +674,7 @@ async def copy_year(
         # ponytail: days are copied as they are; a leap-year source (366 days) into a
         # non-leap year would need a cap once such a pair of years is supported.
         for job in sorted(jobs, key=lambda e: (e.created_at, str(e.id))):
-            values = {key: getattr(job, key) for key in EMPLOYMENT_FIELDS}
+            values = {key: getattr(job, key) for key in EMPLOYMENT_COPY_FIELDS}
             new_rows.append(Employment(person_id=job.person_id, year=year, **values))
         existing = {row.person_id for row in await _all(scope, ChildYear, ChildYear.year == year)}
         persons = {p.id: p for p in await _all(scope, Person)}
@@ -651,6 +725,7 @@ class HouseholdYear:
     in_return: set[uuid.UUID]
     children: list[ChildEntry]
     years_with_profile: list[int]
+    lohnersatz: list[Lohnersatz]
 
 
 async def list_persons(scope: HouseholdScope) -> list[Person]:
@@ -684,4 +759,5 @@ async def read_year(scope: HouseholdScope, year: int) -> HouseholdYear:
         in_return=_in_return(profile),
         children=children,
         years_with_profile=sorted(p.year for p in profiles),
+        lohnersatz=await _all(scope, Lohnersatz, Lohnersatz.year == year),
     )

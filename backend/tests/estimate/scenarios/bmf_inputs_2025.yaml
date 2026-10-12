@@ -1,0 +1,22 @@
+# zvE values queried at the BMF Einkommensteuerrechner for the golden scenarios (VZ 2025, #17).
+# `est` / `soli` come from the calculator only (never from the engine); null = not collected yet.
+# Refresh with `uv run python -m tests.estimate.collect_bmf` (same procedure as tests/tax/golden).
+year: 2025
+source:
+  calculator: "BMF Einkommensteuerrechner"
+  url: "https://www.bmf-steuerrechner.de/ekst/eingabeformekst.xhtml"
+  fetched_at: "2026-10-12"
+  method: script
+cases:
+  - {id: s1_single_41158, input: {zve: "41158", filing: single}, expected: {est: "7693", soli: "0.00"}}
+  - {id: s2_joint_66280, input: {zve: "66280", filing: joint}, expected: {est: "10424", soli: "0.00"}}
+  - {id: s3a_joint_43843, input: {zve: "43843", filing: joint}, expected: {est: "4246", soli: "0.00"}}
+  - {id: s3a_joint_34243, input: {zve: "34243", filing: joint}, expected: {est: "1876", soli: "0.00"}}
+  - {id: s3b_joint_205814, input: {zve: "205814", filing: joint}, expected: {est: "64618", soli: "2941.44"}}
+  - {id: s3b_joint_196214, input: {zve: "196214", filing: joint}, expected: {est: "60586", soli: "2461.63"}}
+  - {id: s3b_joint_186614, input: {zve: "186614", filing: joint}, expected: {est: "56554", soli: "1981.82"}}
+  - {id: s4_single_23100, input: {zve: "23100", filing: single}, expected: {est: "2427", soli: "0.00"}}
+  - {id: s4_single_31100, input: {zve: "31100", filing: single}, expected: {est: "4618", soli: "0.00"}}
+  - {id: s5_single_73838, input: {zve: "73838", filing: single}, expected: {est: "20100", soli: "17.85"}}
+  - {id: s5b_single_13353, input: {zve: "13353", filing: single}, expected: {est: "190", soli: "0.00"}}
+  - {id: s6_single_22676, input: {zve: "22676", filing: single}, expected: {est: "2317", soli: "0.00"}}

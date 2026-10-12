@@ -19,7 +19,8 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, StrictBool
 
 from app.api.deps import Scope, SignedIn
 from app.auth.clock import Clock
-from app.db.models import AppUser, ChildYear, Employment, Person, TaxProfile
+from app.db.models import AppUser, ChildYear, Employment, Lohnersatz, Person, TaxProfile
+from app.db.models.profile import EMPLOYMENT_MONEY_FIELDS
 from app.db.scope import HouseholdScope
 from app.domain.enums import (
     AllowanceShare,
@@ -110,9 +111,23 @@ class EmploymentOut(BaseModel):
     office_days: int
     homeoffice_days: int
     in_return: bool
+    # Manual Lohnsteuer / Vorsorge inputs (#17): dot-decimal strings or null (not entered).
+    gross_wage: str | None
+    lohnsteuer: str | None
+    soli_withheld: str | None
+    kirchensteuer_withheld: str | None
+    rv_employee: str | None
+    rv_employer: str | None
+    basisrente: str | None
+    kv: str | None
+    pv: str | None
+    sonstige_vorsorge: str | None
 
     @classmethod
     def of(cls, e: Employment, in_return: bool) -> EmploymentOut:
+        money = {
+            k: None if (v := getattr(e, k)) is None else f"{v:.2f}" for k in EMPLOYMENT_MONEY_FIELDS
+        }
         return cls(
             id=e.id,
             person_id=e.person_id,
@@ -124,7 +139,18 @@ class EmploymentOut(BaseModel):
             office_days=e.office_days,
             homeoffice_days=e.homeoffice_days,
             in_return=in_return,
+            **money,
         )
+
+
+class LohnersatzOut(BaseModel):
+    person_id: uuid.UUID
+    year: int
+    amount: str
+
+    @classmethod
+    def of(cls, row: Lohnersatz) -> LohnersatzOut:
+        return cls(person_id=row.person_id, year=row.year, amount=f"{row.amount:.2f}")
 
 
 class ChildYearOut(BaseModel):
@@ -158,6 +184,7 @@ class HouseholdOut(BaseModel):
     employments: list[EmploymentOut]
     children: list[ChildEntryOut]
     years_with_profile: list[int]
+    lohnersatz: list[LohnersatzOut]
 
     @classmethod
     def of(cls, h: HouseholdYear, me: uuid.UUID | None) -> HouseholdOut:
@@ -175,6 +202,7 @@ class HouseholdOut(BaseModel):
                 for c in h.children
             ],
             years_with_profile=h.years_with_profile,
+            lohnersatz=[LohnersatzOut.of(r) for r in h.lohnersatz],
         )
 
 
@@ -215,6 +243,17 @@ class EmploymentPatch(_Body):
     commute_km: int | None = None
     office_days: int | None = None
     homeoffice_days: int | None = None
+    # Money is `Any`, checked by the service (`invalid_amount` + field; no JSON number).
+    gross_wage: Any = None
+    lohnsteuer: Any = None
+    soli_withheld: Any = None
+    kirchensteuer_withheld: Any = None
+    rv_employee: Any = None
+    rv_employer: Any = None
+    basisrente: Any = None
+    kv: Any = None
+    pv: Any = None
+    sonstige_vorsorge: Any = None
 
 
 class EmploymentCreate(EmploymentPatch):
@@ -228,6 +267,10 @@ class ChildYearBody(_Body):
     months: int = Field(ge=0, le=12)
     allowance_share: AllowanceShare
     in_household: bool = True
+
+
+class LohnersatzBody(_Body):
+    amount: Any
 
 
 class CopyBody(_Body):
@@ -369,6 +412,28 @@ async def delete_child_year(
 ) -> Response:
     try:
         await service.delete_child_year(scope, user.user_id, year, person_id)
+    except Rejected as exc:
+        return _rejected(exc)
+    return Response(status_code=204)
+
+
+@router.put("/household/{year}/lohnersatz/{person_id}")
+async def put_lohnersatz(
+    user: SignedIn, scope: Scope, year: int, person_id: uuid.UUID, body: LohnersatzBody
+) -> JSONResponse:
+    try:
+        row = await service.put_lohnersatz(scope, user.user_id, year, person_id, body.amount)
+    except Rejected as exc:
+        return _rejected(exc)
+    return JSONResponse(LohnersatzOut.of(row).model_dump(mode="json"))
+
+
+@router.delete("/household/{year}/lohnersatz/{person_id}", status_code=204)
+async def delete_lohnersatz(
+    user: SignedIn, scope: Scope, year: int, person_id: uuid.UUID
+) -> Response:
+    try:
+        await service.delete_lohnersatz(scope, user.user_id, year, person_id)
     except Rejected as exc:
         return _rejected(exc)
     return Response(status_code=204)

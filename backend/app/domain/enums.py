@@ -192,6 +192,15 @@ class DeductionNote(StrEnum):
     CHILD_OVER_25_DISABLED = "child_over_25_disabled"
 
 
+class EstimateMissing(StrEnum):
+    """What the estimate (#17, `app/estimate/`) still lacks. No DB column; codes only."""
+
+    NO_LSTB = "no_lstb"  # employment without gross wage / Lohnsteuer
+    VORSORGE_MISSING = "vorsorge_missing"
+    KAP_V_NOT_SUPPORTED = "kap_v_not_supported"  # #19 / #20
+    PERSON_UNASSIGNED = "person_unassigned"
+
+
 class Bundesland(StrEnum):
     """ISO 3166-2:DE codes, lowercased (#13). `.value.upper()` is the params' `rate_by_state`
     key."""
@@ -531,6 +540,14 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         _N.RIESTER_NOT_SUPPORTED: "Riester-Beitrag noch nicht berücksichtigt",
         _N.CHILD_OVER_25_DISABLED: "Kind über 25 mit Behinderung, Voraussetzungen nicht geprüft",
     },
+    EstimateMissing: {
+        EstimateMissing.NO_LSTB: "Lohnsteuerbescheinigung fehlt (Bruttolohn, Lohnsteuer)",
+        EstimateMissing.VORSORGE_MISSING: "Vorsorgeaufwendungen fehlen (Rente, Kranken-, Pflege)",
+        EstimateMissing.KAP_V_NOT_SUPPORTED: (
+            "Kapitalerträge und Vermietung werden noch nicht berechnet"
+        ),
+        EstimateMissing.PERSON_UNASSIGNED: "Beleg keiner Person zugeordnet",
+    },
     PaymentMethod: {
         PaymentMethod.CASH: "Bar",
         PaymentMethod.BANK_TRANSFER: "Überweisung",
@@ -560,6 +577,7 @@ ALL_ENUMS: tuple[type[StrEnum], ...] = (
     PflichtCheck,
     PflichtDeadlineKind,
     DeductionNote,
+    EstimateMissing,
     AuditAction,
     ActorType,
     CategoryGroup,
