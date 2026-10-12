@@ -115,7 +115,7 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
 - Params: one file per year, `backend/app/tax/params/{year}.yaml`. Top-level sections are
   owned by issues and only their owner edits them: `year`, `mapping` (#9); `tariff`, `soli`,
   `church_tax` (#14); Werbungskosten / Sonderausgaben / agB / § 35a (#15); Vorsorge / Kinder /
-  Progressionsvorbehalt (#16). Every section has a `source` (paragraph + BGBl. or official
+  Progressionsvorbehalt (#16); `filing` (Abgabefristen, #92). Every section has a `source` (paragraph + BGBl. or official
   page); `provisional: true` (+ reason in `source`) marks a value not confirmed against the law.
 - Money and rates are quoted strings in the YAML (`"0.42"`), `Decimal` in code; an unquoted
   number fails to load. Never `float` anywhere in the tax path.

@@ -129,6 +129,41 @@ class FilingStatus(StrEnum):
     JOINT = "joint"
 
 
+class PflichtState(StrEnum):
+    """Result of the Pflichtveranlagung check (#92, `app/tax/pflicht.py`). No DB column."""
+
+    MANDATORY = "mandatory"
+    VOLUNTARY = "voluntary"
+
+
+class PflichtReason(StrEnum):
+    """Why a return is mandatory (§ 46 Abs. 2 EStG)."""
+
+    SIDE_INCOME_OVER_LIMIT = "side_income_over_limit"  # Nr. 1
+    MULTIPLE_EMPLOYERS = "multiple_employers"  # Nr. 2
+    STEUERKLASSE_COMBINATION = "steuerklasse_combination"  # Nr. 3a
+
+
+class PflichtCheck(StrEnum):
+    """A rule the data cannot answer (listed, never treated as "no")."""
+
+    SIDE_INCOME_NOT_CHECKED = "side_income_not_checked"  # Nr. 1, income without Lohnsteuer
+    KV_REFUND = "kv_refund"  # Nr. 3
+    FREIBETRAG_39A = "freibetrag_39a"  # Nr. 4
+    PARENT_ALLOCATION = "parent_allocation"  # Nr. 4a
+    SONSTIGER_BEZUG_39C = "sonstiger_bezug_39c"  # Nr. 5, 5a
+    MARRIAGE_DISSOLVED_REMARRIED = "marriage_dissolved_remarried"  # Nr. 6
+    FOREIGN_SPOUSE_OR_SPECIAL_STATUS = "foreign_spouse_or_special_status"  # Nr. 7
+    INCOME_LIMIT_56_ESTDV = "income_limit_56_estdv"  # § 25 Abs. 3 EStG, § 56 EStDV
+    FINANZAMT_REQUEST = "finanzamt_request"  # § 149 Abs. 1 Satz 2 AO
+
+
+class PflichtDeadlineKind(StrEnum):
+    SELF = "self"  # § 149 Abs. 2 AO
+    ADVISED = "advised"  # § 149 Abs. 3 AO
+    VOLUNTARY = "voluntary"  # Festsetzungsfrist, § 169 / § 170 AO
+
+
 class DeductionNote(StrEnum):
     """Why the deduction engine (#15, `app/tax/deductions/`) excluded, clipped or assumed
     something. No DB column: results carry codes and ids only, never amounts or names."""
@@ -441,6 +476,37 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         AllowanceShare.FULL: "Voller Freibetrag (beide Elternteile)",
         AllowanceShare.HALF: "Halber Freibetrag",
     },
+    PflichtState: {
+        PflichtState.MANDATORY: "Abgabepflicht",
+        PflichtState.VOLUNTARY: "Nach deinen Angaben keine Pflicht (freiwillige Abgabe)",
+    },
+    PflichtReason: {
+        PflichtReason.SIDE_INCOME_OVER_LIMIT: (
+            "Einkünfte ohne Lohnsteuerabzug oder Lohnersatzleistungen über 410 Euro"
+        ),
+        PflichtReason.MULTIPLE_EMPLOYERS: "Mehrere Arbeitgeber gleichzeitig",
+        PflichtReason.STEUERKLASSE_COMBINATION: (
+            "Ehegatten mit Steuerklasse V / VI oder IV mit Faktor"
+        ),
+    },
+    PflichtCheck: {
+        PflichtCheck.SIDE_INCOME_NOT_CHECKED: "Weitere Einkünfte ohne Lohnsteuerabzug",
+        PflichtCheck.KV_REFUND: "Erstattete Kranken- und Pflegeversicherungsbeiträge über 410 Euro",
+        PflichtCheck.FREIBETRAG_39A: "Freibetrag auf der Lohnsteuerkarte (ELStAM)",
+        PflichtCheck.PARENT_ALLOCATION: "Abweichende Aufteilung von Freibeträgen / Pauschbeträgen",
+        PflichtCheck.SONSTIGER_BEZUG_39C: "Lohnsteuer für sonstige Bezüge nach § 39c Abs. 3 EStG",
+        PflichtCheck.MARRIAGE_DISSOLVED_REMARRIED: "Ehe aufgelöst, im selben Jahr neu geheiratet",
+        PflichtCheck.FOREIGN_SPOUSE_OR_SPECIAL_STATUS: (
+            "Ehegatte im EU- / EWR-Ausland oder besondere Steuerpflicht"
+        ),
+        PflichtCheck.INCOME_LIMIT_56_ESTDV: "Einkommensgrenze nach § 56 EStDV",
+        PflichtCheck.FINANZAMT_REQUEST: "Aufforderung des Finanzamts",
+    },
+    PflichtDeadlineKind: {
+        PflichtDeadlineKind.SELF: "Abgabefrist ohne Steuerberater",
+        PflichtDeadlineKind.ADVISED: "Abgabefrist mit Steuerberater",
+        PflichtDeadlineKind.VOLUNTARY: "Frist für die freiwillige Abgabe",
+    },
     DeductionNote: {
         _N.PERSON_NOT_IN_RETURN: "Beleg einer Person außerhalb der Erklärung nicht berücksichtigt",
         _N.PERSON_UNASSIGNED: "Beleg keiner Person zugeordnet, nicht berücksichtigt",
@@ -489,6 +555,10 @@ ALL_ENUMS: tuple[type[StrEnum], ...] = (
     Anlage,
     PaymentMethod,
     FilingStatus,
+    PflichtState,
+    PflichtReason,
+    PflichtCheck,
+    PflichtDeadlineKind,
     DeductionNote,
     AuditAction,
     ActorType,

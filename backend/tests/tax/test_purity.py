@@ -61,6 +61,7 @@ def test_tax_package_has_modules() -> None:
     }
     assert "progression.py" in names  # #86
     assert {"kinder.py", "assessment.py"} <= names  # #87
+    assert "pflicht.py" in names  # #92
 
 
 @pytest.mark.parametrize("path", MODULES, ids=lambda p: p.relative_to(TAX_DIR).as_posix())
