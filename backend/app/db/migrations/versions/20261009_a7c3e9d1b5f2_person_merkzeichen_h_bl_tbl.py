@@ -24,9 +24,7 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.add_column(
         "person",
-        sa.Column(
-            "merkzeichen_h_bl_tbl", sa.Boolean(), server_default=sa.false(), nullable=False
-        ),
+        sa.Column("merkzeichen_h_bl_tbl", sa.Boolean(), server_default=sa.false(), nullable=False),
     )
 
 
