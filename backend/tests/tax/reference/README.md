@@ -64,3 +64,10 @@ The `expected` numbers come from an independent exact-`Fraction` model of the pa
 literals in `test_assessment.py::ISSUE_2025`. `used` lists the children whose Freibetrag is used
 (child by child, larger Freibetrag first, a tie keeps Kindergeld; PROVISIONAL, see
 `kinder.source`). Expected cents are quoted strings.
+
+## § 35a (#77)
+
+`haushaltsnahe_{year}.yaml` (read by `tests/tax/test_haushaltsnahe.py`, not by `test_reference.py`):
+rule `H1` = `haushaltsnahe`; `input` lists labour shares of items paid by transfer (`hw` Handwerker,
+`dl` Dienstleistung, `cash_hw` paid in cash); `expected` = the Ermäßigung (total, cents). The rates
+and caps are the same in 2025 and 2026, so both files hold the same cases.

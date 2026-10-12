@@ -1,5 +1,5 @@
 # Tax parameters for Veranlagungszeitraum 2025. Sections are owned by issues (#14 Decision 2):
-# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; agb: #76; kinder: #87; later sections: #77.
+# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; agb: #76; kinder: #87; haushaltsnahe: #77.
 # Money and rates are quoted strings (Decimal); an unquoted number fails to load.
 year: 2025
 
@@ -99,6 +99,12 @@ kinder: # § 32 Abs. 6, § 31 Satz 4, § 66 Abs. 1 EStG (#87)
   kinderfreibetrag: "3336" # per parent; joint x 2 (Satz 2)
   bea_freibetrag: "1464" # per parent; joint x 2 (Satz 2)
   kindergeld_per_month: "255" # § 66 Abs. 1
+
+haushaltsnahe: # § 35a Abs. 2, 3, 5 EStG (#77)
+  source: "§ 35a Abs. 2 Satz 1 EStG (haushaltsnahe Beschäftigungsverhältnisse und Dienstleistungen: 20 Prozent, höchstens 4.000 Euro), Abs. 3 Satz 1 (Handwerkerleistungen: 20 Prozent, höchstens 1.200 Euro), Abs. 5 Satz 2 und 3 (nur Arbeitskosten; Rechnung und unbare Zahlung auf das Konto des Erbringers), Text i.d.F. Art. 4 JStG 2024 (G. v. 2.12.2024, BGBl. 2024 I Nr. 387) m.W.v. 1.1.2025, in der Neufassung v. 8.10.2009 (BGBl. 2009 I S. 3366, 3862); Betraege und Prozentsatz unveraendert seit dem Steuervereinfachungsgesetz 2011 (BGBl. 2011 I S. 2131). Read 2026-10-12 at buzer.de/35a_EStG.htm; gesetze-im-internet.de was not reachable. The 20 percent are taken off the tarifliche Einkommensteuer (Abs. 2/3: ermaessigt sich die tarifliche Einkommensteuer), not off the income."
+  rate: "0.20"
+  max_dienstleistung: "4000" # Abs. 2 Satz 1
+  max_handwerker: "1200" # Abs. 3 Satz 1
 
 mapping: # #9: Category -> (Anlage, Zeile); every Category except irrelevant exactly once
   # Zeilen checked 2026-10-07 against the published 2025 forms (sample review: user, #9).
