@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, StrictBool
 
 from app.api.deps import Scope, SignedIn
 from app.auth.clock import Clock
@@ -61,6 +61,7 @@ class PersonOut(BaseModel):
     dob: date | None
     religion: Religion
     disability_grade: int | None
+    merkzeichen_h_bl_tbl: bool
     steuer_id_masked: str | None
     is_me: bool
 
@@ -74,6 +75,7 @@ class PersonOut(BaseModel):
             dob=person.dob,
             religion=person.religion,
             disability_grade=person.disability_grade,
+            merkzeichen_h_bl_tbl=person.merkzeichen_h_bl_tbl,
             steuer_id_masked=mask_steuer_id(person.steuer_id),
             is_me=person.id == me,
         )
@@ -191,6 +193,7 @@ class PersonPatch(_Body):
     steuer_id: SecretStr | None = None
     religion: Religion | None = None
     disability_grade: int | None = None
+    merkzeichen_h_bl_tbl: StrictBool | None = None  # null is rejected: the column is NOT NULL
 
 
 class PersonCreate(PersonPatch):

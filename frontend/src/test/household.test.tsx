@@ -77,6 +77,7 @@ function person(patch: Partial<PersonOut> = {}): PersonOut {
     dob: "1985-04-02",
     religion: "none",
     disability_grade: null,
+    merkzeichen_h_bl_tbl: false,
     steuer_id_masked: null,
     is_me: false,
     ...patch,
@@ -295,6 +296,7 @@ describe("Haushalt wizard", () => {
     expect(screen.getByLabelText("Vorname")).toHaveValue("Alex");
 
     failSteuerId = false;
+    fireEvent.click(screen.getByLabelText(/Merkzeichen H, Bl oder TBl/));
     fireEvent.click(screen.getByText("Weiter"));
     expect(await screen.findByText("Schritt 2 von 2")).toBeInTheDocument();
     const post = writes(calls).at(-1)!;
@@ -302,6 +304,7 @@ describe("Haushalt wizard", () => {
     expect(post.headers.get("X-Requested-With")).toBe("belegbot");
     expect(post.body).toMatchObject({ kind: "adult", first_name: "Alex", link_to_me: true });
     expect(post.body).toMatchObject({ steuer_id: typed });
+    expect(post.body).toMatchObject({ merkzeichen_h_bl_tbl: true });
 
     // step 2: Zusammen with a new partner → partner POST, then PUT profile
     fireEvent.change(screen.getByLabelText(/Bundesland/), { target: { value: "be" } });

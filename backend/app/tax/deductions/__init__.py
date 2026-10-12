@@ -1,12 +1,15 @@
 """Deductions without Vorsorge, agB and § 35a (#15): pure functions on frozen DTOs."""
 
+from app.tax.deductions.agb import agb, behinderten_pauschbetrag, zumutbare_belastung
 from app.tax.deductions.models import (
     UNASSIGNED,
+    AgbResult,
     ChildInput,
     ChildLine,
     EmploymentInput,
     ItemInput,
     Note,
+    PersonInput,
     PersonWk,
     ReturnContext,
     SonderausgabenResult,
@@ -23,6 +26,11 @@ from app.tax.deductions.werbungskosten import (
 )
 
 __all__ = [
+    "AgbResult",
+    "PersonInput",
+    "agb",
+    "behinderten_pauschbetrag",
+    "zumutbare_belastung",
     "UNASSIGNED",
     "ChildInput",
     "ChildLine",

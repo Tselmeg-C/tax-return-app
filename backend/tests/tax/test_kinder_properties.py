@@ -148,3 +148,14 @@ def test_two_identical_children_second_benefit_not_better_than_first() -> None:
                 first, second = r.lines
                 assert second.benefit <= first.benefit + 2  # the tariff's floors, at most 2 euros
                 assert not (second.used_freibetrag and not first.used_freibetrag)
+
+
+def test_remaining_zve_is_floored_at_zero_after_a_freibetrag() -> None:
+    p = load_params(2025)
+    kid = ChildInput("p-K0", date(2015, 5, 5), None, 12, False, True)
+    # a Freibetrag larger than the zvE that is left: the Bemessungsgrundlage must not go negative
+    r = guenstigerpruefung(
+        D(1000), [kid], FilingStatus.SINGLE, lambda z: z * 1000, p.kinder, year=2025
+    )
+    assert r.lines[0].used_freibetrag
+    assert r.zve_tariff == 0 and r.zve_bmg == 0
