@@ -51,6 +51,37 @@ export interface EmploymentOut {
   office_days: number;
   homeoffice_days: number;
   in_return: boolean;
+  gross_wage: string | null;
+  lohnsteuer: string | null;
+  soli_withheld: string | null;
+  kirchensteuer_withheld: string | null;
+  rv_employee: string | null;
+  rv_employer: string | null;
+  basisrente: string | null;
+  kv: string | null;
+  pv: string | null;
+  sonstige_vorsorge: string | null;
+}
+
+/** Manual Lohnsteuer / Vorsorge amounts of an employment (#17), with their German labels. */
+export const EMPLOYMENT_MONEY = [
+  ["gross_wage", "Bruttoarbeitslohn"],
+  ["lohnsteuer", "Einbehaltene Lohnsteuer"],
+  ["soli_withheld", "Einbehaltener Solidaritätszuschlag"],
+  ["kirchensteuer_withheld", "Einbehaltene Kirchensteuer"],
+  ["rv_employee", "Rentenversicherung (Arbeitnehmeranteil)"],
+  ["rv_employer", "Rentenversicherung (Arbeitgeberanteil)"],
+  ["basisrente", "Basisrente (Beiträge)"],
+  ["kv", "Krankenversicherung (Beiträge)"],
+  ["pv", "Pflegeversicherung (Beiträge)"],
+  ["sonstige_vorsorge", "Sonstige Vorsorgeaufwendungen"],
+] as const;
+export type EmploymentMoneyField = (typeof EMPLOYMENT_MONEY)[number][0];
+
+export interface LohnersatzOut {
+  person_id: string;
+  year: number;
+  amount: string;
 }
 
 export interface ChildYearOut {
@@ -72,6 +103,7 @@ export interface HouseholdOut {
   profile: ProfileOut | null;
   persons: PersonOut[];
   employments: EmploymentOut[];
+  lohnersatz: LohnersatzOut[];
   children: ChildEntry[];
   years_with_profile: number[];
 }
@@ -94,6 +126,17 @@ export interface EmploymentFields {
   commute_km: number | null;
   office_days: number;
   homeoffice_days: number;
+  /** Dot-decimal strings, `null` = not entered / clear. */
+  gross_wage: string | null;
+  lohnsteuer: string | null;
+  soli_withheld: string | null;
+  kirchensteuer_withheld: string | null;
+  rv_employee: string | null;
+  rv_employer: string | null;
+  basisrente: string | null;
+  kv: string | null;
+  pv: string | null;
+  sonstige_vorsorge: string | null;
 }
 
 const enc = encodeURIComponent;
@@ -124,6 +167,15 @@ export const patchEmployment = (id: string, fields: Partial<EmploymentFields>) =
 
 export const deleteEmployment = (id: string) =>
   apiFetch<void>(`/employments/${enc(id)}`, { method: "DELETE" });
+
+export const putLohnersatz = (jahr: number, personId: string, amount: string) =>
+  apiFetch<LohnersatzOut>(`/household/${jahr}/lohnersatz/${enc(personId)}`, {
+    method: "PUT",
+    json: { amount },
+  });
+
+export const deleteLohnersatz = (jahr: number, personId: string) =>
+  apiFetch<void>(`/household/${jahr}/lohnersatz/${enc(personId)}`, { method: "DELETE" });
 
 export const putChildYear = (
   jahr: number,
@@ -171,6 +223,9 @@ export const TEXT = {
   loading: "Haushalt wird geladen…",
   loadError: "Haushalt konnte nicht geladen werden.",
   retry: "Erneut versuchen",
+  invalidAmount: "Bitte einen Betrag wie 1.234,56 eingeben.",
+  lohnersatzLabel: "Lohnersatzleistungen (z. B. Elterngeld, Arbeitslosengeld I)",
+  lohnsteuerHeading: "Lohnsteuer und Vorsorge (aus der Lohnsteuerbescheinigung)",
   invalidName: "Bitte einen Vornamen eingeben (höchstens 100 Zeichen).",
 } as const;
 
@@ -212,6 +267,7 @@ export function saveError(
     child_not_born: `${name} ist erst nach ${ctx.jahr} geboren.`,
     person_has_tax_items: `${name} ist noch ${body.count ?? ""} Belegen zugeordnet. Ordne diese Belege zuerst einer anderen Person oder dem Haushalt zu (Seite Belege).`,
     person_in_profile: `${name} ist in der Veranlagung ${(body.years ?? []).join(", ")} eingetragen. Ändere zuerst die Veranlagung.`,
+    invalid_amount: TEXT.invalidAmount,
     year_not_empty: `Für ${ctx.jahr} gibt es schon Angaben.`,
   };
   return { field, message: (error.detail && messages[error.detail]) || TEXT.saveFailed };

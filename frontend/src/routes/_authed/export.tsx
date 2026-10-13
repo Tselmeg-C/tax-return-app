@@ -1,10 +1,11 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileArchive, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
-import { belegeSearch } from "@/lib/taxItems";
+import { formatEur } from "@/lib/money";
+import { belegeSearch, label, listTaxItems, TAX_ITEMS_KEY, type TaxItemOut } from "@/lib/taxItems";
 import { useYear } from "@/lib/year";
-import { anlageLabel, eur, items, type Anlage } from "@/lib/mock";
 
 export const Route = createFileRoute("/_authed/export")({
   head: () => ({
@@ -29,16 +30,31 @@ export const Route = createFileRoute("/_authed/export")({
 });
 
 function Export() {
-  const { jahr, select } = useYear();
-  const rel = items.filter((i) => i.relevant);
+  const { jahr, select, labels, isSupported } = useYear();
+  const list = useQuery({
+    queryKey: [...TAX_ITEMS_KEY, "export", jahr],
+    queryFn: () => listTaxItems({ year: jahr, filter: "relevant" }),
+    enabled: isSupported,
+  });
+  const rel = (list.data?.items ?? []).filter((i) => i.anlage);
   const groups = Object.entries(
-    rel.reduce<Record<string, typeof rel>>((a, i) => ((a[i.anlage] ??= []).push(i), a), {}),
+    rel.reduce<Record<string, TaxItemOut[]>>((a, i) => ((a[i.anlage!] ??= []).push(i), a), {}),
   );
+  // Sum in cents (integers): never float math on money.
+  const cents = (v: string) => Math.round(Number(v) * 100);
+  const sum = (l: TaxItemOut[]) =>
+    (l.reduce((s, i) => s + cents(i.deductible_amount), 0) / 100).toFixed(2);
 
   const downloadCsv = () => {
     const rows = [
       ["Anlage", "Zeile", "Beleg", "Datum", "Absetzbar"],
-      ...rel.map((i) => [i.anlage, i.zeile, i.vendor, i.date, i.deductible.toFixed(2)]),
+      ...rel.map((i) => [
+        i.anlage ?? "",
+        i.zeile ?? "",
+        i.vendor ?? "",
+        i.invoice_date ?? "",
+        i.deductible_amount,
+      ]),
     ];
     const blob = new Blob([rows.map((r) => r.join(";")).join("\n")], { type: "text/csv" });
     const a = document.createElement("a");
@@ -84,26 +100,35 @@ function Export() {
 
       <div className="sheet mt-8 p-8">
         <p className="stamp text-muted-foreground">Vorschau · zum Übertragen in ELSTER</p>
-        {groups.map(([a, list]) => (
+        {list.isError ? (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            Belege konnten nicht geladen werden.
+          </p>
+        ) : null}
+        {list.isPending && isSupported ? (
+          <p className="mt-4 text-sm text-muted-foreground">Belege werden geladen…</p>
+        ) : null}
+        {groups.map(([a, group]) => (
           <section key={a} className="mt-6">
-            <h2 className="border-b pb-1 text-xl">{anlageLabel[a as Anlage]}</h2>
+            <h2 className="border-b pb-1 text-xl">{label(labels.data?.anlagen, a)}</h2>
             <table className="mt-2 w-full text-sm">
               <tbody>
-                {list.map((i) => (
+                {group.map((i) => (
                   <tr key={i.id} className="border-b border-dashed">
-                    <td className="num w-20 py-2 text-muted-foreground">{i.zeile}</td>
+                    <td className="num w-20 py-2 text-muted-foreground">{i.zeile ?? ""}</td>
                     <td className="py-2">
-                      {i.category} <span className="text-muted-foreground">· {i.vendor}</span>
+                      {label(labels.data?.categories, i.category)}{" "}
+                      <span className="text-muted-foreground">
+                        {i.vendor ? `· ${i.vendor}` : ""}
+                      </span>
                     </td>
-                    <td className="num py-2 text-right">{eur(i.deductible)}</td>
+                    <td className="num py-2 text-right">{formatEur(i.deductible_amount)}</td>
                   </tr>
                 ))}
                 <tr>
                   <td />
                   <td className="py-2 font-medium">Summe</td>
-                  <td className="num py-2 text-right font-medium">
-                    {eur(list.reduce((s, i) => s + i.deductible, 0))}
-                  </td>
+                  <td className="num py-2 text-right font-medium">{formatEur(sum(group))}</td>
                 </tr>
               </tbody>
             </table>

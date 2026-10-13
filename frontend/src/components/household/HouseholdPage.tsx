@@ -8,6 +8,7 @@ import {
   buttonClass,
   ChildYearForm,
   EmploymentForm,
+  LohnersatzForm,
   PersonForm,
   primaryClass,
   ProfileForm,
@@ -32,6 +33,7 @@ import {
   type HouseholdOut,
   type PersonOut,
 } from "@/lib/household";
+import { formatEur } from "@/lib/money";
 import { label, PERSONS_KEY } from "@/lib/taxItems";
 import { useYear } from "@/lib/year";
 
@@ -249,6 +251,11 @@ function Employments(props: ViewProps & { person: PersonOut; showName?: boolean 
                 {e.commute_km ?? 0} km · {e.office_days} Bürotage · {e.homeoffice_days}{" "}
                 Homeoffice-Tage
               </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {e.gross_wage === null && e.lohnsteuer === null
+                  ? "Lohnsteuerbescheinigung: noch nicht erfasst"
+                  : `Brutto ${formatEur(e.gross_wage ?? "0.00")} · Lohnsteuer ${formatEur(e.lohnsteuer ?? "0.00")}`}
+              </p>
               {e.in_return ? null : <p className="mt-1 text-xs">{notInReturn(jahr)}</p>}
             </li>
           ),
@@ -448,6 +455,15 @@ function PageView(props: ViewProps) {
       ) : null}
       {active || data.employments.some((e) => e.person_id === p.id) ? (
         <Employments person={p} showName={false} {...props} />
+      ) : null}
+      {active ? (
+        <LohnersatzForm
+          key={data.lohnersatz.find((l) => l.person_id === p.id)?.amount ?? "none"}
+          personId={p.id}
+          jahr={jahr}
+          amount={data.lohnersatz.find((l) => l.person_id === p.id)?.amount ?? null}
+          onSaved={() => void refresh()}
+        />
       ) : null}
     </div>
   );
