@@ -338,6 +338,23 @@ async def test_unknown_person_and_no_uploader_person(world: World) -> None:
     assert item.person_id is None
 
 
+async def test_rerun_of_original_keeps_its_amount(world: World) -> None:
+    """#65: B flagged as duplicate of A; re-running A must not zero A."""
+    a = await world.upload(files.jpeg())
+    ctx_a = await _ctx(world, a.id)
+    await world.handler(scripted(classify_out(), extract_out(lines=HANDWERK)).router)(ctx_a)
+    b = await world.upload(files.jpeg())
+    await world.handler(scripted(classify_out(), extract_out(lines=HANDWERK)).router)(
+        await _ctx(world, b.id)
+    )
+    assert (await world.doc(b.id)).attention_reason is AttentionReason.POSSIBLE_DUPLICATE
+    await world.handler(scripted(classify_out(), extract_out(lines=HANDWERK)).router)(ctx_a)
+    assert (await world.doc(a.id)).attention_reason is None
+    (item,) = await world.items(a.id)
+    assert item.is_relevant and item.deductible_amount == Decimal("180.00")
+    assert (await world.doc(b.id)).attention_reason is AttentionReason.POSSIBLE_DUPLICATE
+
+
 async def test_dedupe(
     world: World, committed: Sessions, tmp_path: Path, migrated_database: str
 ) -> None:
@@ -440,8 +457,14 @@ async def test_dev_fake_routing(
     assert await worker.run_once()
     assert (await world.doc(doc.id)).status is DocumentStatus.DONE
     (item,) = await world.items(doc.id)
-    assert item.vendor == "Testmodus Beispiel GmbH" and item.gross_amount == Decimal("12.34")
+    assert item.vendor == "Testmodus Beispiel GmbH"
     assert item.reason is not None and item.reason.startswith("Testmodus")
+    # distinct bytes are not duplicates (#67)
+    other = await world.upload(files.jpeg())
+    assert await worker.run_once()
+    assert (await world.doc(other.id)).status is DocumentStatus.DONE
+    (item2,) = await world.items(other.id)
+    assert item2.gross_amount != item.gross_amount
     # production refuses the fake routing at worker start
     monkeypatch.setenv("APP_ENV", "production")
     get_llm_settings.cache_clear()
