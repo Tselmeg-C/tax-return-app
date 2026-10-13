@@ -25,6 +25,7 @@ dependencies = [
     "pypdfium2>=5.14.0",
     "pyyaml>=6.0.3",
     "pillow-heif>=1.8.0",
+    "webauthn>=3.0.1",
 ]
 
 [dependency-groups]

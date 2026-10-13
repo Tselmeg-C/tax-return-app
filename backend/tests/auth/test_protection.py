@@ -60,6 +60,8 @@ def test_allowlist_is_exactly_the_groomed_one() -> None:
         "/auth/magic-link",
         "/auth/verify",
         "/auth/logout",
+        "/auth/passkey/login/options",
+        "/auth/passkey/login/verify",
     }
 
 

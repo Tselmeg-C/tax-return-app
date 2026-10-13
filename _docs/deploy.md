@@ -90,6 +90,15 @@ processes in that one container, so both see it). A volume attaches to one servi
   (startup and every 6 h) removes stale temp files and orphan directories. Backups of
   `households/`: #24.
 
+## Passkeys and the hostname (#12)
+
+The WebAuthn RP ID is the hostname of `APP_BASE_URL` and the expected origin is its origin; no
+extra variable. Like the `__Host-` cookie, passkeys are bound to that host: moving to another
+domain (e.g. a custom domain, #42) orphans every registered passkey (users fall back to the
+magic link and register again). Fix the production domain before real users register. The
+challenge cookie key is random per api process (`app.state.passkey_key`): a restart only drops
+challenges still open (5 min); with more than one api replica derive it from a shared secret.
+
 ## When a migration fails
 
 The pre-deploy command exits non-zero → the new deployment is marked failed and is **never
