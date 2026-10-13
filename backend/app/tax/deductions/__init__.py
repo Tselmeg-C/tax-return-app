@@ -1,6 +1,7 @@
 """Deductions (#15, #16, #76, #77): pure functions on frozen DTOs."""
 
 from app.tax.deductions.agb import agb, behinderten_pauschbetrag, zumutbare_belastung
+from app.tax.deductions.entlastungsbetrag import entlastungsbetrag
 from app.tax.deductions.haushaltsnahe import haushaltsnahe
 from app.tax.deductions.models import (
     UNASSIGNED,
@@ -8,6 +9,7 @@ from app.tax.deductions.models import (
     ChildInput,
     ChildLine,
     EmploymentInput,
+    EntlastungsbetragResult,
     HaushaltsnaheLine,
     HaushaltsnaheResult,
     ItemInput,
@@ -41,6 +43,8 @@ __all__ = [
     "HaushaltsnaheResult",
     "haushaltsnahe",
     "EmploymentInput",
+    "EntlastungsbetragResult",
+    "entlastungsbetrag",
     "ItemInput",
     "Note",
     "PersonWk",

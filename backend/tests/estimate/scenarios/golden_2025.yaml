@@ -284,3 +284,38 @@ scenarios:
       pflicht: {state: voluntary, reasons: []}
       what_missing: []
       notes: [spenden_over_limit]
+
+  - id: s7_single_parent_entlastungsbetrag
+    title: "Single parent, one child all year: Entlastungsbetrag 4.260 off the GdE, Kindergeld kept"
+    persons:
+      a: {kind: adult}
+      k1: {kind: child, dob: "2018-03-01"}
+    profile: {filing: single, bundesland: nw, taxpayer: a}
+    employments:
+      - {person: a, steuerklasse: "2", gross_wage: "40000.00", lohnsteuer: "4000.00",
+         rv_employee: "3720.00", kv: "3000.00", pv: "700.00"}
+    child_years: [{person: k1, months: 12, share: full}]
+    chain:
+      - "Einkuenfte N = 40.000 - 1.230 = 38.770"
+      - "Entlastungsbetrag 12 Monate: 4.260 (§ 24b Abs. 2 Satz 1); GdE = 38.770 - 4.260 = 34.510 (Abs. 1: von der Summe der Einkuenfte)"
+      - "Sonderausgaben Pauschbetrag 36; Altersvorsorge 3.720 x 2 = 7.440 abzgl. AG-Anteil = 3.720; Basiskranken 3.000 x 0,96 + 700 = 3.580; Vorsorge 7.300"
+      - "zvE vor Kindern = 34.510 - 36 - 7.300 = 27.174 (BMF: ESt 3.514)"
+      - "Freibetraege (3.336 + 1.464) x 2 = 9.600 (allein, volle Uebertragung); Kindergeld 255 x 12 = 3.060 (§ 66)"
+      - "Vorteil = ESt(27.174) - ESt(17.574) = 3.514 - 1.046 = 2.468 < 3.060: Kindergeld bleibt (§ 31 Satz 4), tarifliche ESt 3.514"
+      - "Ergebnis = 4.000 - 3.514 = 486 (Erstattung)"
+    bmf: [s7_single_27174, s7_single_17574]
+    expected:
+      gde: "34510.00"
+      entlastungsbetrag: "4260.00"
+      zve_before_children: "27174.00"
+      zve: "27174.00"
+      tarifliche_est: "3514.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "3514.00"
+      soli: "0.00"
+      kirchensteuer: "0.00"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "4000.00", soli: "0.00", kirchensteuer: "0.00"}
+      refund: "486.00"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []

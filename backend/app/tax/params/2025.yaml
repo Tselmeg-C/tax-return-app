@@ -1,5 +1,5 @@
 # Tax parameters for Veranlagungszeitraum 2025. Sections are owned by issues (#14 Decision 2):
-# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; agb: #76; kinder: #87; filing: #92; haushaltsnahe: #77.
+# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; agb: #76; kinder: #87; filing: #92; haushaltsnahe: #77; entlastungsbetrag: #81.
 # Money and rates are quoted strings (Decimal); an unquoted number fails to load.
 year: 2025
 
@@ -110,6 +110,11 @@ haushaltsnahe: # § 35a Abs. 2, 3, 5 EStG (#77)
   rate: "0.20"
   max_dienstleistung: "4000" # Abs. 2 Satz 1
   max_handwerker: "1200" # Abs. 3 Satz 1
+
+entlastungsbetrag: # § 24b Abs. 2, 4 EStG (#81)
+  source: "§ 24b Abs. 2 Satz 1 EStG (Entlastungsbetrag für Alleinerziehende 4.260 Euro im Kalenderjahr bei einem Kind im Haushalt), Satz 2 (erhöht sich um 240 Euro je weiterem Kind), Abs. 4 (ermäßigt sich für jeden vollen Kalendermonat ohne die Voraussetzungen um ein Zwölftel), Text i.d.F. Art. 4 JStG 2022 (G. v. 16.12.2022, BGBl. 2022 I S. 2294) m.W.v. 1.1.2023, in der Neufassung v. 8.10.2009 (BGBl. 2009 I S. 3366, 3862); Betraege unveraendert seit 2023, buzer.de shows no later version. Read 2026-10-13 at buzer.de/24b_EStG.htm; gesetze-im-internet.de was not reachable. Abgezogen von der Summe der Einkünfte (Abs. 1), also vor Sonderausgaben und agB."
+  base: "4260" # Abs. 2 Satz 1: first child
+  per_further_child: "240" # Abs. 2 Satz 2
 
 mapping: # #9: Category -> (Anlage, Zeile); every Category except irrelevant exactly once
   # Zeilen checked 2026-10-07 against the published 2025 forms (sample review: user, #9).

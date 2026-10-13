@@ -575,3 +575,19 @@ async def test_meta_labels_for_household(t: T) -> None:
     ]:
         assert body[key] == [{"code": m.value, "label": LABELS_DE[enum][m]} for m in enum]
     assert body["steuerklassen"][3] == {"code": "4", "label": "IV"}
+
+
+async def test_profile_shares_household_flag_roundtrip(t: T) -> None:
+    a = await t.home()
+    x = await person(t, a, first_name="X")
+    assert (await profile(t, a, 2025, x["id"])).json()["shares_household_with_adult"] is False
+    body = {
+        "filing_status": "single",
+        "bundesland": "be",
+        "taxpayer_person_id": x["id"],
+        "shares_household_with_adult": True,
+    }
+    assert (await call(t, a, "PUT", "/household/2025/profile", body)).status_code == 200
+    assert (await household(t, a))["profile"]["shares_household_with_adult"] is True
+    r = await call(t, a, "POST", "/household/2026/copy", {"from_year": 2025})
+    assert r.json()["profile"]["shares_household_with_adult"] is True

@@ -29,6 +29,7 @@ TARIFF_CASE = {
     "s5_single_35a_soli_on_reduced_est": "s5_single_73838",
     "s5b_single_35a_capped_by_est": "s5b_single_13353",
     "s6_single_agb_spenden": "s6_single_22676",
+    "s7_single_parent_entlastungsbetrag": "s7_single_27174",
 }
 IDS = [s["id"] for s in SCENARIOS]
 
@@ -61,6 +62,7 @@ async def test_summary_matches_hand_derivation(
         "refund",
     ):
         assert result[key] == expected[key], (scenario["id"], key)
+    assert result["entlastungsbetrag"] == expected.get("entlastungsbetrag", "0.00")
     assert result["pflicht"]["state"] == expected["pflicht"]["state"]
     assert result["pflicht"]["reasons"] == expected["pflicht"]["reasons"]
     missing = [(m["code"], m["person_id"]) for m in result["what_missing"]]
@@ -103,3 +105,8 @@ def test_kindergeld_vs_freibetrag_decision_from_bmf() -> None:
     b1 = int(BMF["s3b_joint_205814"]["est"]) - int(BMF["s3b_joint_196214"]["est"])
     b2 = int(BMF["s3b_joint_196214"]["est"]) - int(BMF["s3b_joint_186614"]["est"])
     assert a < kindergeld < min(b1, b2)
+
+
+def test_single_parent_decision_from_bmf() -> None:
+    """s7: the BMF saving of 2 x 4.800 Freibetrag stays below 12 x 255 Kindergeld."""
+    assert int(BMF["s7_single_27174"]["est"]) - int(BMF["s7_single_17574"]["est"]) < 12 * 255
