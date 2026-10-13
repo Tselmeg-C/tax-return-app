@@ -55,12 +55,12 @@ class VerifyBody(BaseModel):
     token: Any = None
 
 
-def _client_ip(request: Request) -> str:
+def client_ip(request: Request) -> str:
     # uvicorn sets this from X-Forwarded-For, which the web proxy always overwrites.
     return request.client.host if request.client else "unknown"
 
 
-def _rate_limited(endpoint: str, retry_after: int) -> JSONResponse:
+def rate_limited(endpoint: str, retry_after: int) -> JSONResponse:
     logger.warning("auth.rate_limited", endpoint=endpoint)
     return JSONResponse(
         {"detail": RATE_LIMITED}, status_code=429, headers={"Retry-After": str(retry_after)}
@@ -74,9 +74,9 @@ async def request_magic_link(body: MagicLinkBody, request: Request, db: DbSessio
     clock: Clock = state.clock
     limiter: RateLimiter = state.magic_link_limiter
 
-    wait = limiter.hit(_client_ip(request))
+    wait = limiter.hit(client_ip(request))
     if wait is not None:
-        return _rate_limited("magic_link", wait)
+        return rate_limited("magic_link", wait)
 
     email = normalise_email(body.email)
     if email is None:
@@ -116,14 +116,13 @@ async def request_magic_link(body: MagicLinkBody, request: Request, db: DbSessio
 @router.post("/verify")
 async def verify(body: VerifyBody, request: Request, db: DbSession) -> Response:
     state = request.app.state
-    settings: Settings = state.settings
     clock: Clock = state.clock
     failures: RateLimiter = state.verify_failure_limiter
-    ip = _client_ip(request)
+    ip = client_ip(request)
 
     wait = failures.retry_after(ip)
     if wait is not None:
-        return _rate_limited("verify", wait)
+        return rate_limited("verify", wait)
 
     def fail() -> JSONResponse:
         failures.add(ip)
@@ -145,6 +144,15 @@ async def verify(body: VerifyBody, request: Request, db: DbSession) -> Response:
         return fail()
 
     await service.invalidate_unused_tokens(db, user.id, now)
+    response = JSONResponse({"next": safe_next(consumed.redirect_path)})
+    await open_session(request, db, user, response)
+    return response
+
+
+async def open_session(request: Request, db: DbSession, user: AppUser, response: Response) -> None:
+    """Revoke the request's old session, create a new one, commit and set its cookie."""
+    settings: Settings = request.app.state.settings
+    now = request.app.state.clock.now()
     old_cookie = session_cookie_value(request)
     if old_cookie is not None:
         await service.revoke_session_token(db, old_cookie, now)
@@ -153,7 +161,6 @@ async def verify(body: VerifyBody, request: Request, db: DbSession) -> Response:
     await db.commit()
 
     logger.info("auth.login.succeeded", user_id=str(user.id), session_id=str(user_session.id))
-    response = JSONResponse({"next": safe_next(consumed.redirect_path)})
     response.headers.append(
         "Set-Cookie",
         session_cookie(
@@ -162,7 +169,6 @@ async def verify(body: VerifyBody, request: Request, db: DbSession) -> Response:
             secure=settings.secure_cookies,
         ),
     )
-    return response
 
 
 @router.get("/me")

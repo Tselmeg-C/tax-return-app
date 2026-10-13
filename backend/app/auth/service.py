@@ -17,7 +17,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.tokens import hash_token, new_token
-from app.db.models import AppUser, MagicLinkToken, UserSession
+from app.db.models import AppUser, MagicLinkToken, Passkey, UserSession
 
 # Per e-mail: at most 3 links per 15 min and 10 per 24 h (counted from token rows).
 EMAIL_LIMITS: tuple[tuple[int, timedelta], ...] = (
@@ -186,3 +186,18 @@ async def find_valid_session(
         user_session.last_seen_at = now
         await session.flush()
     return user_session, user
+
+
+# --- passkeys (#12): lookup by credential id happens before a household is known ---------
+
+
+async def find_passkey_with_user(
+    session: AsyncSession, credential_id: bytes
+) -> tuple[Passkey, AppUser] | None:
+    result = await session.execute(
+        select(Passkey, AppUser)
+        .join(AppUser, AppUser.id == Passkey.user_id)
+        .where(Passkey.credential_id == credential_id)
+    )
+    row = result.one_or_none()
+    return None if row is None else (row[0], row[1])

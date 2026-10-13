@@ -14,6 +14,8 @@ PUBLIC_PATHS: frozenset[str] = frozenset(
         "/auth/magic-link",
         "/auth/verify",
         "/auth/logout",
+        "/auth/passkey/login/options",
+        "/auth/passkey/login/verify",
     }
 )
 

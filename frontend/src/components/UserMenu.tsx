@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
-import { LogOut, UserRound } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { LogOut, Settings, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { apiFetch } from "@/lib/api";
@@ -67,6 +67,14 @@ export function UserMenu() {
           role="menu"
           className="absolute right-0 z-30 mt-1 w-56 max-w-[calc(100vw-2rem)] rounded-md border bg-card p-1 text-sm shadow"
         >
+          <Link
+            to="/einstellungen"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-secondary"
+          >
+            <Settings className="h-4 w-4" /> Einstellungen
+          </Link>
           <button
             type="button"
             role="menuitem"

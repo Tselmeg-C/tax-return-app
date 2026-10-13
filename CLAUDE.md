@@ -71,6 +71,29 @@ before starting a task.
 
   `disable` never touches documents; there is no `delete` command.
 
+## Passkeys (rules from #12)
+
+- Ceremony logic in `app/auth/passkeys.py` (`webauthn` lib, one dependency), routes in
+  `app/api/passkeys.py`. RP ID = hostname of `APP_BASE_URL`, expected origin = `settings.app_origin`
+  (no new env var; changing the host orphans passkeys, `_docs/deploy.md`).
+- Challenges are stateless: an HMAC-signed 5 min token in an httpOnly `SameSite=Strict` cookie
+  (`__Host-belegbot_passkey`), purpose `register|login` (+ user id for register), cleared after use.
+  The key is per process (`app.state.passkey_key`). No challenge table.
+- Discoverable login (`residentKey=required`, `userVerification=required`, attestation `none`).
+  `/auth/passkey/login/options` and `/login/verify` are in `PUBLIC_PATHS`; register / list /
+  rename / delete need a session. Every login failure (unknown credential, disabled user, bad
+  signature / origin / RP id, expired challenge, sign count not increasing) is the same
+  `400 invalid_passkey`. Success uses `open_session` (`app/api/auth.py`), the same as the magic link.
+- `passkey` table: `credential_id` / `public_key` are plain (public); lookup by credential id is in
+  `app/auth/service.py` (no scope, before a household is known); everything else through
+  `HouseholdScope` + the current user (other user's passkey = 404). Max 10 per user (`409
+  passkey_limit`). Audit rows (`create` / `update` / `delete`) hold ids only: `name`,
+  `credential_id`, `public_key`, `transports` are in `REDACTED_COLUMNS["passkey"]`.
+- Never log or trace credential ids, public keys, challenges, client data, signatures, the challenge
+  cookie, passkey names or `str(exc)` of the lib (`type(exc).__name__` only).
+- Tests use the software authenticator `backend/tests/auth/authenticator.py`. Frontend: only
+  `lib/passkeys.ts` via `apiFetch`; passkey UI is hidden without `PublicKeyCredential`.
+
 ## Files, queue and worker (rules from #6)
 
 - Everything that touches uploaded files goes through a `Storage` (`app/storage/`,
