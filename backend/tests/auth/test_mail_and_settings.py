@@ -149,6 +149,8 @@ def prod_env(monkeypatch: pytest.MonkeyPatch, migrated_database: str) -> pytest.
     monkeypatch.setenv("RESEND_API_KEY", f"re_{SENTINEL_HOST}")
     monkeypatch.setenv("RESEND_FROM_EMAIL", f"belegbot <login@{SENTINEL_HOST}>")
     monkeypatch.setenv("APP_BASE_URL", f"https://{SENTINEL_HOST}")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "1234:test-token-placeholder")  # webhook mode (#11)
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "test_secret_0123456789abcdef")
     return monkeypatch
 
 

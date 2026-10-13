@@ -326,6 +326,52 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   chain per line) + `bmf_inputs_2025.yaml` (BMF values only, refresh with
   `uv run python -m tests.estimate.collect_bmf --year 2025`, needs the `golden` group).
 
+## Bot (rules from #11)
+
+- `app/bot/core.py` is channel-agnostic (no `telegram` import, a static test checks it): adapters map
+  updates to `IncomingMessage` and implement `ChannelAdapter` (`send_text`, `open_file` streaming,
+  `delete_message`). The Telegram adapter (`app/bot/telegram.py`) is plain `httpx`, no bot framework.
+  Texts live in `app/bot/messages.py` (German), `/summary` and `/missing` render `build_summary` only
+  (`app/bot/render.py`); the bot never computes tax.
+- `app/bot/links.py` is the second place (after `app/auth/service.py`) that queries `channel_link`,
+  `channel_link_code` and `app_user.disabled_at` without `HouseholdScope` (lookup by chat hash / code
+  hash before a household is known). Everything after the lookup uses `HouseholdScope(session,
+  link.household_id)`.
+- Never log, trace or meter: message text, file bytes / names, chat ids, Telegram user ids / names,
+  update payloads, link codes (or their hash), tokens, the webhook secret or path, Bot API URLs (the
+  download URL contains the token). Log user / household / document ids, the command name (fixed set),
+  outcome codes and `type(exc).__name__`. `TelegramError` carries the Bot API method name only.
+  Replies to the linked chat may hold amounts and vendors; logs never.
+- Webhook `POST /bot/telegram/{secret}` (public + CSRF-exempt by route template in `app/api/public.py`;
+  `is_csrf_exempt` matches concrete paths): path secret wrong -> 404, header
+  `X-Telegram-Bot-Api-Secret-Token` missing / wrong -> 403 (both `hmac.compare_digest`), then always
+  200; the update is handled in a held task (`app.state.bot_tasks`, tests await it). The request log
+  and spans use the template (`ScrubbingSpanProcessor` masks the secret segment in `url.path` etc.).
+  Registered at `<APP_BASE_URL>/api/bot/telegram/<secret>` through the web proxy (it forwards the
+  header). Secret charset `[A-Za-z0-9_-]{16,256}`; production webhook mode needs `TELEGRAM_BOT_TOKEN`
+  and `TELEGRAM_WEBHOOK_SECRET` (`replace-me` counts as unset).
+- Private chats only; groups, channels, edits and callbacks are dropped in `parse_update`. An unlinked
+  chat gets no reply (only `/link <code>` is processed; `/start` answers the static help), a disabled
+  user or a removed link gets nothing at all.
+- Link codes: 8 digits, 10 min, single use, atomic `UPDATE ... RETURNING`, only `sha256` stored, a
+  new code invalidates the user's open ones. `/link` limits: 5 failures / chat and 30 global per
+  15 min (in memory); over the limit no reply and no check. The `/link` message is deleted (best
+  effort). Relinking replaces the user's row (audit delete + create); `external_id` is encrypted,
+  `external_id_hash` (`sha256("telegram:" + chat id)`) is the lookup key and is redacted in audit rows.
+- One update at a time per chat (`asyncio.Lock` per chat hash, arrival order), `last_update_id` is
+  claimed with a conditional `UPDATE` before handling: a repeated or older `update_id` is ignored, so
+  a Telegram retry never runs `/undo` twice (a crash mid-update loses that update, never repeats it).
+- Files: one `ingest_document(channel=TELEGRAM, original_filename=None, ...)` per file with the adapter
+  stream (albums = separate updates, no cross-update state); `/undo` deletes the user's newest telegram
+  document through `delete_document` and refuses one with an `overridden_by_user` item.
+- Notifications run in the worker (`app/bot/notify.py`, subscribed in `app/worker/__main__.py` when
+  `TELEGRAM_BOT_TOKEN` is set) on `DocumentProcessed`, telegram documents only, to the link of
+  `document.uploaded_by_user_id`; errors are logged by class name and never raised.
+- Local: `uv run python -m app.bot.poll` (polling, `BOT_MODE=polling`, not in the Procfile; deletes a
+  registered webhook first), `uv run python -m app.bot.cli set-webhook|delete-webhook` (prints the
+  host only). Tests use `FakeAdapter` / `httpx.MockTransport` only; chat ids, codes and secrets are
+  generated at runtime.
+
 ## Stack
 
 - Backend (`backend/`): Python 3.12, `uv`, FastAPI, SQLAlchemy 2.0 + Alembic, Postgres 16, Postgres-based job queue

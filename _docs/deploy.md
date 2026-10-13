@@ -289,3 +289,14 @@ merge redeploys only `api`, frontend-only only `web`); the trace in Tempo
 for `belegbot-api` (same `trace_id`) and `belegbot-worker` (`no queue yet`); an HTTP server
 duration metric for `belegbot-api`; no secret, OTLP header, password or cookie value in
 Railway logs or Loki.
+
+## Telegram bot (#11, registration in #42)
+
+- Webhook URL: `https://<web>/api/bot/telegram/<TELEGRAM_WEBHOOK_SECRET>`; the web proxy strips `/api`
+  and forwards `X-Telegram-Bot-Api-Secret-Token` (covered by `api-proxy.test.ts`). Register with
+  `railway ssh --service api` then `uv run python -m app.bot.cli set-webhook` (prints the host only).
+- Variables on `api` (webhook mode: both required in production) and on `worker` side of the same
+  service (notifications need `TELEGRAM_BOT_TOKEN`): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`
+  (`[A-Za-z0-9_-]{16,256}`), `BOT_MODE` (`webhook` default in production).
+- Never paste the secret or the token into logs, tickets or chat; the request log shows the route
+  template `/bot/telegram/{secret}` only.

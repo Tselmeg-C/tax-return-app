@@ -15,7 +15,7 @@ import json
 from starlette.datastructures import Headers, MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.api.public import CSRF_EXEMPT_PATHS
+from app.api.public import is_csrf_exempt
 from app.config import Settings
 
 CSRF_HEADER = "x-requested-with"
@@ -25,7 +25,7 @@ NO_STORE_PREFIX = "/auth/"
 
 
 def csrf_ok(method: str, path: str, headers: Headers, allowed: tuple[str, ...]) -> bool:
-    if method.upper() not in UNSAFE_METHODS or path in CSRF_EXEMPT_PATHS:
+    if method.upper() not in UNSAFE_METHODS or is_csrf_exempt(path):
         return True
     if headers.get(CSRF_HEADER) != CSRF_HEADER_VALUE:
         return False
