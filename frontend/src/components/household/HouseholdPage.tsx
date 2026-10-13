@@ -9,6 +9,7 @@ import {
   ChildYearForm,
   EmploymentForm,
   LohnersatzForm,
+  PersonVorsorgeForm,
   PersonForm,
   primaryClass,
   ProfileForm,
@@ -456,6 +457,15 @@ function PageView(props: ViewProps) {
       ) : null}
       {active || data.employments.some((e) => e.person_id === p.id) ? (
         <Employments person={p} showName={false} {...props} />
+      ) : null}
+      {active && !data.employments.some((e) => e.person_id === p.id) ? (
+        <PersonVorsorgeForm
+          key={JSON.stringify(data.person_vorsorge.find((v) => v.person_id === p.id) ?? null)}
+          personId={p.id}
+          jahr={jahr}
+          row={data.person_vorsorge.find((v) => v.person_id === p.id) ?? null}
+          onSaved={() => void refresh()}
+        />
       ) : null}
       {active ? (
         <LohnersatzForm

@@ -85,6 +85,22 @@ export interface LohnersatzOut {
   amount: string;
 }
 
+/** The Vorsorge fields of a person without employment (#98): the Vorsorge part of the above. */
+export const VORSORGE_FIELDS = [
+  "rv_employee",
+  "rv_employer",
+  "basisrente",
+  "kv",
+  "pv",
+  "sonstige_vorsorge",
+] as const;
+export type VorsorgeField = (typeof VORSORGE_FIELDS)[number];
+export type PersonVorsorgeFields = Record<VorsorgeField, string | null>;
+export interface PersonVorsorgeOut extends PersonVorsorgeFields {
+  person_id: string;
+  year: number;
+}
+
 export interface ChildYearOut {
   person_id: string;
   year: number;
@@ -105,6 +121,7 @@ export interface HouseholdOut {
   persons: PersonOut[];
   employments: EmploymentOut[];
   lohnersatz: LohnersatzOut[];
+  person_vorsorge: PersonVorsorgeOut[];
   children: ChildEntry[];
   years_with_profile: number[];
 }
@@ -178,6 +195,15 @@ export const putLohnersatz = (jahr: number, personId: string, amount: string) =>
 export const deleteLohnersatz = (jahr: number, personId: string) =>
   apiFetch<void>(`/household/${jahr}/lohnersatz/${enc(personId)}`, { method: "DELETE" });
 
+export const putPersonVorsorge = (jahr: number, personId: string, fields: PersonVorsorgeFields) =>
+  apiFetch<PersonVorsorgeOut>(`/household/${jahr}/vorsorge/${enc(personId)}`, {
+    method: "PUT",
+    json: fields,
+  });
+
+export const deletePersonVorsorge = (jahr: number, personId: string) =>
+  apiFetch<void>(`/household/${jahr}/vorsorge/${enc(personId)}`, { method: "DELETE" });
+
 export const putChildYear = (
   jahr: number,
   personId: string,
@@ -226,6 +252,9 @@ export const TEXT = {
   retry: "Erneut versuchen",
   invalidAmount: "Bitte einen Betrag wie 1.234,56 eingeben.",
   lohnersatzLabel: "Lohnersatzleistungen (z. B. Elterngeld, Arbeitslosengeld I)",
+  vorsorgeHeading: "Vorsorgeaufwendungen (ohne Arbeitsverhältnis)",
+  vorsorgeHint:
+    "Beiträge aus dem Jahr, z. B. freiwillige Krankenversicherung. Leer lassen, was nicht zutrifft.",
   lohnsteuerHeading: "Lohnsteuer und Vorsorge (aus der Lohnsteuerbescheinigung)",
   invalidName: "Bitte einen Vornamen eingeben (höchstens 100 Zeichen).",
 } as const;

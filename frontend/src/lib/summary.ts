@@ -10,7 +10,6 @@ export const summaryKey = (jahr: number) => ["summary", jahr] as const;
 export interface SummaryLabels extends Labels {
   deduction_notes: Coded[];
   estimate_missing: Coded[];
-  pflicht_states: Coded[];
   pflicht_reasons: Coded[];
   pflicht_checks: Coded[];
   pflicht_deadline_kinds: Coded[];

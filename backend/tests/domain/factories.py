@@ -30,6 +30,7 @@ from app.db.models import (
     MagicLinkToken,
     Passkey,
     Person,
+    PersonVorsorge,
     TaxItem,
     TaxProfile,
     UserSession,
@@ -189,6 +190,7 @@ class World:
     employment: Employment
     child_year: ChildYear
     lohnersatz: Lohnersatz
+    person_vorsorge: PersonVorsorge
     estimate: Estimate
     channel_link: ChannelLink
     channel_link_code: ChannelLinkCode
@@ -210,6 +212,7 @@ class World:
             Employment: self.employment,
             ChildYear: self.child_year,
             Lohnersatz: self.lohnersatz,
+            PersonVorsorge: self.person_vorsorge,
             Estimate: self.estimate,
             ChannelLink: self.channel_link,
             ChannelLinkCode: self.channel_link_code,
@@ -267,6 +270,9 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
     lohnersatz = Lohnersatz(
         household_id=hh.id, person_id=person.id, year=2025, amount=Decimal("1000.00")
     )
+    person_vorsorge = PersonVorsorge(
+        household_id=hh.id, person_id=person.id, year=2025, kv=Decimal("100.00")
+    )
     estimate = Estimate(
         household_id=hh.id, year=2025, params_version="2025-test", inputs_hash="0" * 64, result={}
     )
@@ -297,6 +303,7 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
             employment,
             child_year,
             lohnersatz,
+            person_vorsorge,
             estimate,
             channel_link,
             channel_link_code,
@@ -319,6 +326,7 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
         employment,
         child_year,
         lohnersatz,
+        person_vorsorge,
         estimate,
         channel_link,
         channel_link_code,

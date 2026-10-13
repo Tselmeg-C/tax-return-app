@@ -25,10 +25,11 @@ from app.db.models import (
     Employment,
     Lohnersatz,
     Person,
+    PersonVorsorge,
     TaxItem,
     TaxProfile,
 )
-from app.db.models.profile import EMPLOYMENT_MONEY_FIELDS
+from app.db.models.profile import EMPLOYMENT_MONEY_FIELDS, PERSON_VORSORGE_FIELDS
 from app.db.scope import HouseholdScope
 from app.domain.enums import (
     AllowanceShare,
@@ -290,7 +291,7 @@ async def delete_person(scope: HouseholdScope, user_id: uuid.UUID, person_id: uu
         )
         if profiles:
             raise Rejected(409, "person_in_profile", years=sorted(p.year for p in profiles))
-        for model in (Employment, ChildYear, Lohnersatz):
+        for model in (Employment, ChildYear, Lohnersatz, PersonVorsorge):
             rows = await _all(scope, model, model.person_id == person.id)
             removed[model.__tablename__] = len(rows)
             for row in rows:
@@ -556,6 +557,73 @@ async def delete_lohnersatz(
     log.info("household.lohnersatz_deleted", person_id=str(person_id), year=year)
 
 
+# --- Vorsorge of a person without employment (#98) ------------------------------------------
+
+
+async def put_person_vorsorge(
+    scope: HouseholdScope, user_id: uuid.UUID, year: int, person_id: uuid.UUID, sent: dict[str, Any]
+) -> PersonVorsorge:
+    """Create or replace the manual Vorsorge amounts of a person (whole row, absent = NULL)."""
+    actor = Actor.user(user_id)
+
+    async def work() -> PersonVorsorge:
+        check_year(year)
+        values = {k: clean_amount(sent.get(k), k) for k in PERSON_VORSORGE_FIELDS}
+        if all(v is None for v in values.values()):
+            raise invalid("empty_vorsorge", "body")
+        profile = await _profile(scope, year)
+        if profile is None:
+            raise invalid("profile_required", "year")
+        if person_id not in _in_return(profile):
+            raise invalid("person_not_in_return", "person_id")
+        rows = await _all(
+            scope,
+            PersonVorsorge,
+            PersonVorsorge.person_id == person_id,
+            PersonVorsorge.year == year,
+        )
+        if not rows:
+            row = PersonVorsorge(person_id=person_id, year=year, **values)
+            scope.add(row)
+            await scope.session.flush()
+            await _audit(scope, actor, row, AuditAction.CREATE)
+            return row
+        row = rows[0]
+        before = snapshot(row)
+        for key, value in values.items():
+            setattr(row, key, value)
+        await scope.session.flush()
+        await _audit(scope, actor, row, AuditAction.UPDATE, before)
+        return row
+
+    row = await _transaction(scope, work)
+    log.info("household.person_vorsorge_saved", person_vorsorge_id=str(row.id), year=year)
+    return row
+
+
+async def delete_person_vorsorge(
+    scope: HouseholdScope, user_id: uuid.UUID, year: int, person_id: uuid.UUID
+) -> None:
+    actor = Actor.user(user_id)
+
+    async def work() -> None:
+        check_year(year)
+        rows = await _all(
+            scope,
+            PersonVorsorge,
+            PersonVorsorge.person_id == person_id,
+            PersonVorsorge.year == year,
+        )
+        if not rows:
+            raise Rejected(404, NOT_FOUND)
+        await _audit(scope, actor, rows[0], AuditAction.DELETE)
+        await scope.session.delete(rows[0])
+        await scope.session.flush()
+
+    await _transaction(scope, work)
+    log.info("household.person_vorsorge_deleted", person_id=str(person_id), year=year)
+
+
 # --- children ------------------------------------------------------------------------------
 
 
@@ -733,6 +801,7 @@ class HouseholdYear:
     children: list[ChildEntry]
     years_with_profile: list[int]
     lohnersatz: list[Lohnersatz]
+    person_vorsorge: list[PersonVorsorge]
 
 
 async def list_persons(scope: HouseholdScope) -> list[Person]:
@@ -767,4 +836,5 @@ async def read_year(scope: HouseholdScope, year: int) -> HouseholdYear:
         children=children,
         years_with_profile=sorted(p.year for p in profiles),
         lohnersatz=await _all(scope, Lohnersatz, Lohnersatz.year == year),
+        person_vorsorge=await _all(scope, PersonVorsorge, PersonVorsorge.year == year),
     )

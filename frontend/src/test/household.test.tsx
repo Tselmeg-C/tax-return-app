@@ -21,6 +21,7 @@ import {
   type HouseholdLabels,
   type HouseholdOut,
   type PersonOut,
+  type PersonVorsorgeOut,
   type ProfileOut,
 } from "@/lib/household";
 import { belegeSearch } from "@/lib/taxItems";
@@ -103,6 +104,7 @@ class FakeApi {
   profiles = new Map<number, ProfileOut>();
   employments: EmploymentOut[] = [];
   childYears: ChildYearOut[] = [];
+  vorsorge: PersonVorsorgeOut[] = [];
   maxMonths = 12;
   /** Overrides for single calls (return undefined to fall through). */
   other: (call: Call) => Response | Promise<Response> | undefined = () => undefined;
@@ -115,6 +117,7 @@ class FakeApi {
       profile,
       persons: this.persons,
       lohnersatz: [],
+      person_vorsorge: this.vorsorge,
       employments: this.employments
         .filter((e) => e.year === year)
         .map((e) => ({ ...e, in_return: inReturn.includes(e.person_id) })),
@@ -174,6 +177,17 @@ class FakeApi {
         const from = this.profiles.get(body["from_year"] as number)!;
         this.profiles.set(year, { ...from, year });
         return json(200, this.household(year));
+      }
+      if ((m = path.match(/^\/api\/household\/(\d+)\/vorsorge\/(.+)$/))) {
+        this.vorsorge = this.vorsorge.filter((v) => v.person_id !== m![2]);
+        if (call.method === "DELETE") return new Response(null, { status: 204 });
+        const row = {
+          person_id: m[2]!,
+          year: Number(m[1]),
+          ...body,
+        } as unknown as PersonVorsorgeOut;
+        this.vorsorge.push(row);
+        return json(200, row);
       }
       if ((m = path.match(/^\/api\/household\/(\d+)\/children\/(.+)$/))) {
         const row = { person_id: m[2]!, year: Number(m[1]), ...body } as unknown as ChildYearOut;
@@ -292,6 +306,65 @@ describe("Lohnsteuer und Vorsorge", () => {
       lohnsteuer: "7000.00",
       kv: null,
     });
+  });
+});
+
+describe("Vorsorge ohne Arbeitsverhältnis (#98)", () => {
+  const joint = () => {
+    const api = new FakeApi();
+    const me = person({ is_me: true });
+    const spouse = person({ first_name: "Sam" });
+    api.persons = [me, spouse];
+    api.profiles.set(2025, {
+      year: 2025,
+      filing_status: "joint",
+      bundesland: "by",
+      taxpayer_person_id: me.id,
+      spouse_person_id: spouse.id,
+      shares_household_with_adult: false,
+    });
+    api.employments = [
+      {
+        id: nextId(),
+        ...NO_MONEY,
+        person_id: me.id,
+        year: 2025,
+        employer_name: "Muster GmbH",
+        steuerklasse: "3",
+        has_factor: false,
+        commute_km: null,
+        office_days: 0,
+        homeoffice_days: 0,
+        in_return: true,
+      },
+    ];
+    return { api, spouse };
+  };
+
+  it("shows the card only for the person without employment; saves and deletes", async () => {
+    const { api, spouse } = joint();
+    const { calls } = api.serve();
+    renderPage("/haushalt?jahr=2025");
+    const kv = await screen.findByLabelText(/Krankenversicherung/);
+    expect(screen.getAllByText(TEXT.vorsorgeHeading)).toHaveLength(1);
+    fireEvent.change(kv, { target: { value: "abc" } });
+    fireEvent.click(screen.getByRole("button", { name: "Vorsorge speichern" }));
+    expect(await screen.findByText(TEXT.invalidAmount)).toBeInTheDocument();
+    expect(writes(calls)).toHaveLength(0);
+    fireEvent.change(kv, { target: { value: "1.200" } });
+    fireEvent.click(screen.getByRole("button", { name: "Vorsorge speichern" }));
+    await waitFor(() => expect(writes(calls)).toHaveLength(1));
+    expect(writes(calls)[0]!.url).toBe(`/api/household/2025/vorsorge/${spouse.id}`);
+    expect(writes(calls)[0]!.body).toMatchObject({ kv: "1200.00", pv: null });
+    await waitFor(() =>
+      expect((screen.getByLabelText(/Krankenversicherung/) as HTMLInputElement).value).toBe(
+        "1200,00",
+      ),
+    );
+    fireEvent.change(screen.getByLabelText(/Krankenversicherung/), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Vorsorge speichern" }));
+    await waitFor(() => expect(writes(calls)).toHaveLength(2));
+    expect(writes(calls)[1]!.method).toBe("DELETE");
   });
 });
 

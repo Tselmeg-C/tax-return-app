@@ -285,6 +285,39 @@ scenarios:
       what_missing: []
       notes: [spenden_over_limit]
 
+  # #98: the spouse has no employment; her Vorsorge comes from `person_vorsorge`. Wage and
+  # contributions of A are chosen so that the zvE equals the BMF case s2_joint_66280.
+  - id: s7_joint_spouse_person_vorsorge
+    title: "Joint, spouse without employment, KV / PV entered on the person (#98)"
+    persons: {a: {kind: adult}, b: {kind: adult}}
+    profile: {filing: joint, bundesland: nw, taxpayer: a, spouse: b}
+    employments:
+      - {person: a, steuerklasse: "3", gross_wage: "80000.00", lohnsteuer: "14000.00",
+         rv_employee: "7440.00", kv: "3000.00", pv: "598.00"}
+    person_vorsorge:
+      - {person: b, kv: "1200.00", pv: "300.00"}
+    chain:
+      - "Einkuenfte N: 80.000 - 1.230 = 78.770 = GdE (B ohne Arbeitslohn); Sonderausgaben Pauschbetrag 72 (Splitting)"
+      - "Altersvorsorge A: 7.440 x 2 = 14.880 (<= 58.688), abzgl. AG-Anteil = 7.440"
+      - "Basiskranken A: 3.000 x 0,96 + 598 = 3.478; B (nicht angestellt, kein Kuerzungsfaktor): 1.200 + 300 = 1.500; Nr. 3 voll"
+      - "Vorsorge 7.440 + 3.478 + 1.500 = 12.418; zvE = 78.770 - 72 - 12.418 = 66.280 (BMF Splitting: ESt 10.424, Soli 0)"
+      - "Erstattung = 14.000 - 10.424 = 3.576; B hat Vorsorgeangaben, kein vorsorge_missing"
+    bmf: [s2_joint_66280]
+    expected:
+      gde: "78770.00"
+      zve_before_children: "66280.00"
+      zve: "66280.00"
+      tarifliche_est: "10424.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "10424.00"
+      soli: "0.00"
+      kirchensteuer: "0.00"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "14000.00", soli: "0.00", kirchensteuer: "0.00"}
+      refund: "3576.00"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []
+
   - id: s7_single_parent_entlastungsbetrag
     title: "Single parent, one child all year: Entlastungsbetrag 4.260 off the GdE, Kindergeld kept"
     persons:

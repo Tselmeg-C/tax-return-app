@@ -339,6 +339,11 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
 - Only the Arbeitnehmer-Pauschbetrag is limited by the wage (§ 9a); real Werbungskosten may
   exceed it. Pass a real `FilingStatus` member; `state = bundesland.value.upper()`, `None` when
   nobody in the return is a church member. Persons outside the return are ignored.
+- `person_vorsorge` (#98, `PUT|DELETE /household/{year}/vorsorge/{person_id}`, whole row, at least one
+  field else `empty_vorsorge`) holds the Vorsorge fields of a person in the return, meant for one
+  without employment (the UI card shows only then). Per group (RV, KV/PV, Basisrente, Sonstige)
+  the precedence is person row > employment fields > items; sources are never summed. `employed`
+  stays derived from employments. `copy_year` does not copy it.
 - Pflichtveranlagung gets employment rows only for persons whose wage is not 0 (an entered
   wage of 0 means no wage; a wage not entered yet counts as a wage). The § 108 Abs. 3 AO shift
   (`app/estimate/deadlines.py`) and `overdue` are applied at display time only: the stored

@@ -7,7 +7,9 @@ import {
   createEmployment,
   createPerson,
   deleteLohnersatz,
+  deletePersonVorsorge,
   putLohnersatz,
+  putPersonVorsorge,
   DISABILITY_GRADES,
   EMPLOYMENT_MONEY,
   putProfile,
@@ -16,6 +18,7 @@ import {
   putChildYear,
   saveError,
   STEUER_ID_RE,
+  VORSORGE_FIELDS,
   TEXT,
   type ChildEntry,
   type EmploymentFields,
@@ -24,6 +27,7 @@ import {
   type HouseholdOut,
   type ProfileOut,
   type PersonFields,
+  type PersonVorsorgeOut,
   type PersonOut,
   type SaveError,
 } from "@/lib/household";
@@ -525,6 +529,75 @@ export function LohnersatzForm(props: {
       </div>
       <button type="submit" className={buttonClass} disabled={busy}>
         Betrag speichern
+      </button>
+    </form>
+  );
+}
+
+export function PersonVorsorgeForm(props: {
+  personId: string;
+  jahr: number;
+  row: PersonVorsorgeOut | null;
+  onSaved: () => void;
+}) {
+  const [money, setMoney] = useState<Record<string, string>>(() =>
+    Object.fromEntries(VORSORGE_FIELDS.map((k) => [k, toEuroInput(props.row?.[k] ?? null)])),
+  );
+  const [error, setError] = useState<SaveError | null>(null);
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    const fields = {} as Record<string, string | null>;
+    for (const k of VORSORGE_FIELDS) {
+      const raw = money[k] ?? "";
+      const parsed = raw.trim() === "" ? null : parseEuroInput(raw);
+      if (raw.trim() !== "" && parsed === null) {
+        setError({ field: k, message: TEXT.invalidAmount });
+        return;
+      }
+      fields[k] = parsed;
+    }
+    setBusy(true);
+    try {
+      if (Object.values(fields).every((v) => v === null)) {
+        if (props.row) await deletePersonVorsorge(props.jahr, props.personId);
+      } else {
+        await putPersonVorsorge(props.jahr, props.personId, fields as never);
+      }
+      setError(null);
+      toast.success(TEXT.saved);
+      props.onSaved();
+    } catch (caught) {
+      setError(saveError(caught, { jahr: props.jahr }));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const labels = new Map<string, string>(EMPLOYMENT_MONEY);
+  return (
+    <form
+      className="space-y-4 rounded-md border border-dashed p-4"
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        void submit();
+      }}
+    >
+      <p className="text-sm font-medium">{TEXT.vorsorgeHeading}</p>
+      <p className="text-xs text-muted-foreground">{TEXT.vorsorgeHint}</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {VORSORGE_FIELDS.map((k) => (
+          <Field key={k} label={`${labels.get(k)} (€)`} error={errorAt(error, k)}>
+            <input
+              inputMode="decimal"
+              className={`${inputClass} num`}
+              value={money[k] ?? ""}
+              onChange={(ev) => setMoney((m) => ({ ...m, [k]: ev.target.value }))}
+            />
+          </Field>
+        ))}
+      </div>
+      <FormError error={error} />
+      <button type="submit" className={buttonClass} disabled={busy}>
+        Vorsorge speichern
       </button>
     </form>
   );

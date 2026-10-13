@@ -327,6 +327,51 @@ async def test_church_state_only_when_a_member_is_in_the_return(
     assert (await b.summary())["kirchensteuer"] == "692.37"  # 9 % Berlin of 7.693
 
 
+async def test_person_vorsorge_wins_per_group_and_is_never_summed(
+    db_session: AsyncSession,
+) -> None:
+    # Reference: the employment holds KV 3000 and no PV; the person row must give the same.
+    ref = copy.deepcopy(SINGLE)
+    ref["employments"][0].update(kv="3000.00")
+    del ref["employments"][0]["pv"]
+    base = pick(await (await build(db_session, ref)).summary())
+
+    spec = copy.deepcopy(SINGLE)  # employment: rv 4836, kv 4000, pv 900
+    spec["person_vorsorge"] = [{"person": "a", "kv": "3000.00"}]
+    b = await build(db_session, spec)
+    await add_item(b, {"category": "vorsorge_kv_pv", "deductible": "4900.00", "person": "a"})
+    result = await b.summary()
+    assert pick(result) == base  # person KV replaces employment KV + PV and the item
+    assert "kv_pv_unsplit" not in {n["code"] for n in result["notes"]}
+
+
+async def test_person_vorsorge_leaves_other_groups_to_employment(
+    db_session: AsyncSession,
+) -> None:
+    spec = copy.deepcopy(SINGLE)
+    base = await (await build(db_session, spec)).summary()
+    spec["person_vorsorge"] = [{"person": "a", "basisrente": "1000.00"}]
+    result = await (await build(db_session, spec)).summary()
+    # rv / kv / pv still from the employment; the Basisrente is added on top (group-wise)
+    assert Decimal(result["zve"]) < Decimal(base["zve"])
+
+
+async def test_person_vorsorge_zero_counts_as_entered_but_stays_missing(
+    db_session: AsyncSession,
+) -> None:
+    spec = copy.deepcopy(JOINT)
+    spec["employments"] = spec["employments"][:1]  # b has no employment
+    missing = await (await build(db_session, spec)).summary()
+    assert [m["code"] for m in missing["what_missing"]] == ["vorsorge_missing"]
+    spec["person_vorsorge"] = [{"person": "b", "kv": "0.00"}]
+    zero = await (await build(db_session, spec)).summary()
+    assert [m["code"] for m in zero["what_missing"]] == ["vorsorge_missing"]
+    spec["person_vorsorge"] = [{"person": "b", "kv": "1200.00"}]
+    entered = await (await build(db_session, spec)).summary()
+    assert entered["what_missing"] == []
+    assert Decimal(entered["zve"]) < Decimal(missing["zve"])
+
+
 async def test_shares_household_removes_the_entlastungsbetrag(db_session: AsyncSession) -> None:
     from app.db.models import TaxProfile
 

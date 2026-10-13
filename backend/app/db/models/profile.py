@@ -174,3 +174,41 @@ class Lohnersatz(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
     )
     year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+
+
+# The manual Vorsorge amounts of a person without employment (#98); same fields as `employment`.
+PERSON_VORSORGE_FIELDS = (
+    "rv_employee",
+    "rv_employer",
+    "basisrente",
+    "kv",
+    "pv",
+    "sonstige_vorsorge",
+)
+
+
+class PersonVorsorge(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
+    """Vorsorge amounts of a person and year, beside employments (#98). NULL = not entered.
+    A group set here replaces the same group on the person's employments and items."""
+
+    __tablename__ = "person_vorsorge"
+    __table_args__ = (
+        UniqueConstraint("person_id", "year"),
+        CheckConstraint(YEAR_RANGE, name="year_range"),
+        *(
+            CheckConstraint(f"{c} IS NULL OR {c} >= 0", name=f"{c}_nonnegative")
+            for c in PERSON_VORSORGE_FIELDS
+        ),
+        Index(None, "household_id"),
+    )
+
+    person_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("person.id", ondelete="CASCADE"), nullable=False
+    )
+    year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    rv_employee: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    rv_employer: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    basisrente: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    kv: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    pv: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    sonstige_vorsorge: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
