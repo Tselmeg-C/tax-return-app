@@ -96,6 +96,24 @@ describe("uploads through the proxy", () => {
     expect(Buffer.compare(received[0]!.body, payload)).toBe(0);
   });
 
+  it("drops Expect: 100-continue and delivers a 2 MB body byte-identical (#57)", async () => {
+    const payload = randomBytes(2 * 1024 * 1024);
+    handler = (_req, res) => {
+      res.statusCode = 201;
+      res.end("ok");
+    };
+    const res = await makeProxy()(
+      req("/api/documents", {
+        method: "POST",
+        body: payload,
+        headers: { "content-type": "image/jpeg", expect: "100-continue" },
+      }),
+    );
+    expect(res.status).toBe(201);
+    expect(received[0]!.headers["expect"]).toBeUndefined();
+    expect(Buffer.compare(received[0]!.body, payload)).toBe(0);
+  });
+
   it("still answers 504 when the upstream never answers a request with a body", async () => {
     handler = () => {
       /* never respond */

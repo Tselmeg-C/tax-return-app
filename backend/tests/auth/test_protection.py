@@ -12,9 +12,12 @@ import pytest
 from fastapi import FastAPI
 from fastapi.routing import APIRoute, iter_route_contexts
 from sqlalchemy.ext.asyncio import AsyncConnection
+from starlette.datastructures import Headers
 
 from app.api.main import create_app
 from app.api.public import PUBLIC_PATHS
+from app.api.security import csrf_ok
+from app.config import Settings
 from tests.auth.conftest import Api, Family, auth_settings, running_app
 
 CSRF = {"detail": "csrf"}
@@ -159,3 +162,33 @@ async def test_get_is_not_affected(api: Api) -> None:
     response = await api.get("/auth/me", csrf=False, headers={"Origin": "https://evil.example"})
     assert response.status_code == 401
     assert (await api.get("/health", csrf=False)).status_code == 200
+
+
+# --- CSRF origins (#51) -------------------------------------------------------------
+
+
+def _origin_ok(settings: Settings, origin: str) -> bool:
+    headers = Headers({"x-requested-with": "belegbot", "origin": origin})
+    return csrf_ok("POST", "/auth/logout", headers, settings.csrf_origins)
+
+
+def test_csrf_accepts_localhost_origins_outside_production() -> None:
+    s = Settings(app_env="development", app_base_url="https://cs-3000.app.github.dev")
+    assert _origin_ok(s, "https://cs-3000.app.github.dev")
+    assert _origin_ok(s, "http://localhost:3000")
+    assert _origin_ok(s, "http://127.0.0.1:3000")
+    assert not _origin_ok(s, "http://localhost:4000")
+    assert not _origin_ok(s, "https://evil.example")
+
+
+def test_csrf_production_accepts_only_the_app_origin() -> None:
+    s = Settings(app_env="production", app_base_url="https://app.example.org")
+    assert _origin_ok(s, "https://app.example.org")
+    assert not _origin_ok(s, "http://localhost:3000")
+
+
+def test_codespaces_default_base_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("APP_BASE_URL", raising=False)
+    monkeypatch.setenv("CODESPACE_NAME", "cs")
+    monkeypatch.setenv("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN", "app.github.dev")
+    assert Settings(_env_file=None).app_base_url == "https://cs-3000.app.github.dev"

@@ -59,7 +59,8 @@ before starting a task.
 - Times come from the injectable clock (`app.auth.clock`, `create_app(clock=...)`).
 - Local login: `uv run python -m app.db.seed`, start the api (`MAIL_BACKEND` defaults to
   `file` outside production) and `npm run dev`, request a link on `/login` for
-  `owner@example.com`, then open the newest file in `backend/.dev-mail/` and paste its link.
+  `owner@example.com`, then open the newest file in `backend/.dev-mail/` and paste its link. In Codespaces nothing extra is needed (#51): `APP_BASE_URL` defaults to the
+  forwarded https URL, dev CSRF also accepts localhost origins (production: `APP_BASE_URL` only).
 - Users (also in production, via `railway ssh --service api`; output shows masked e-mails):
 
   ```bash
