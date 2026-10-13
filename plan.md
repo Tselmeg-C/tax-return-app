@@ -170,7 +170,7 @@ Tables added later, each by the issue that first uses it, in its own migration a
 | `channel_link(user_id, channel, external_id)`, one-time link codes | #11 |
 | `passkey` | #12 |
 | ~~`tax_profile`, `employment`, `child_year`~~ → above; `property` (+ `tax_item.property_id`, owners) | #20 |
-| `estimate(household_id, year, params_version, inputs_hash, result jsonb, created_at)` | #17 |
+| `estimate(household_id, year, params_version, inputs_hash, result jsonb, created_at)`, unique `(household_id, year, inputs_hash)`; `lohnersatz(person_id, year, amount)` and the manual Lohnsteuer / Vorsorge columns on `employment` (until #18) | #17 |
 | `official_record(person_id, year, kind, fields)`, kinds `lstb`, `elterngeld`, `alg`, `kindergeld` (`jstb` #19, Nebenkosten #20; encrypted where it holds a Steuer-ID) | #18 |
 | read-only Grafana role + PII-free views | #22 |
 
@@ -268,6 +268,8 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
 **Validation**: golden tests against the official **BMF Einkommensteuerrechner** for ~20 synthetic household scenarios per year; golden values are collected from the BMF calculator via **browser automation** (scripted, reproducible) and committed as fixtures; CI fails on deviation > 1 €.
 
 ---
+
+**Estimate (#17).** The plan's "debounced estimate job" is dropped (YAGNI): `GET /summary` runs `app.estimate.service.build_summary` synchronously (the engine is pure and fast) and writes one `estimate` snapshot row per inputs hash (`ON CONFLICT DO NOTHING`, so reopening the page adds nothing). The row is never served; the result is always computed from the current code. Revisit a job if a call exceeds about 200 ms. The Telegram `/summary` command (#11) calls the same function.
 
 ## 9. Clients
 

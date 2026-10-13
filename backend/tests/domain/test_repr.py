@@ -47,7 +47,7 @@ def _fill(model: type[Any]) -> tuple[Any, list[str]]:
 def test_repr_shows_only_class_and_id(model: type[Any]) -> None:
     obj, sentinels = _fill(model)
     # #13: these hold only numbers, booleans, ids and enums
-    assert sentinels or model.__name__ in {"ChildYear", "TaxProfile"}
+    assert sentinels or model.__name__ in {"ChildYear", "TaxProfile", "Lohnersatz", "Estimate"}
     assert isinstance(obj.id, uuid.UUID)  # assigned at construction
     expected = f"<{model.__name__} id={obj.id}>"
     assert repr(obj) == expected

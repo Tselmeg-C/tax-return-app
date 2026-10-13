@@ -20,9 +20,11 @@ from app.db.models import (
     ChildYear,
     Document,
     Employment,
+    Estimate,
     Extraction,
     Household,
     Job,
+    Lohnersatz,
     MagicLinkToken,
     Person,
     TaxItem,
@@ -183,6 +185,8 @@ class World:
     tax_profile: TaxProfile
     employment: Employment
     child_year: ChildYear
+    lohnersatz: Lohnersatz
+    estimate: Estimate
 
     def by_model(self) -> dict[type[Any], Any]:
         return {
@@ -199,6 +203,8 @@ class World:
             TaxProfile: self.tax_profile,
             Employment: self.employment,
             ChildYear: self.child_year,
+            Lohnersatz: self.lohnersatz,
+            Estimate: self.estimate,
         }
 
 
@@ -249,7 +255,13 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
         months=12,
         allowance_share=AllowanceShare.FULL,
     )
-    session.add_all([profile, employment, child_year])
+    lohnersatz = Lohnersatz(
+        household_id=hh.id, person_id=person.id, year=2025, amount=Decimal("1000.00")
+    )
+    estimate = Estimate(
+        household_id=hh.id, year=2025, params_version="2025-test", inputs_hash="0" * 64, result={}
+    )
+    session.add_all([profile, employment, child_year, lohnersatz, estimate])
     await session.flush()
     return World(
         hh,
@@ -265,4 +277,6 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
         profile,
         employment,
         child_year,
+        lohnersatz,
+        estimate,
     )

@@ -1,0 +1,284 @@
+# Golden service scenarios (#17), VZ 2025. Each `chain` is derived by hand from the law (the
+# paragraph is on the line); the tariff values come ONLY from the BMF Einkommensteuerrechner
+# (`bmf_inputs_2025.yaml`, key = `bmf`), never from the engine. `expected` is compared to
+# `GET /summary` to the cent. Money in `setup` is a dot-decimal string. Persons are fictional.
+#
+# Rates used by hand (params 2025): Arbeitnehmer-Pauschbetrag 1.230 (§ 9a), Sonderausgaben-
+# Pauschbetrag 36 / 72 (§ 10c), Entfernungspauschale 0,30 EUR/km (§ 9 Abs. 1 Nr. 4),
+# Homeoffice 6 EUR/Tag (§ 4 Abs. 5 Nr. 6c), Basiskranken-Deckel 1.900 / 2.800 (§ 10 Abs. 4),
+# Kindergeld 255 EUR/Monat (§ 66), Kinderfreibetrag + BEA 4.800 EUR je Elternteil (§ 32 Abs. 6).
+scenarios:
+  - id: s1_single_wage_commute
+    title: "Single, Steuerklasse I, commute + Homeoffice below the Pauschbetrag, Vorsorge from the LStB"
+    persons: {a: {kind: adult}}
+    profile: {filing: single, bundesland: be, taxpayer: a}
+    employments:
+      - {person: a, steuerklasse: "1", commute_km: 10, office_days: 100, homeoffice_days: 40,
+         gross_wage: "52000.00", lohnsteuer: "9800.00", rv_employee: "4836.00", kv: "4000.00", pv: "900.00"}
+    chain:
+      - "Entfernungspauschale 10 km x 100 Tage x 0,30 = 300; Homeoffice 40 x 6 = 240; Summe 540 < 1.230, also Pauschbetrag 1.230 (§ 9a Nr. 1a)"
+      - "Einkuenfte N = 52.000 - 1.230 = 50.770 = GdE (§ 2 Abs. 3)"
+      - "Sonderausgaben: Pauschbetrag 36 (§ 10c)"
+      - "Altersvorsorge: 4.836 + AG-Anteil 4.836 = 9.672 (<= 29.344), abzgl. AG-Anteil = 4.836 (§ 10 Abs. 1 Nr. 2, Abs. 3 Satz 5)"
+      - "Basiskranken: KV 4.000 x 0,96 = 3.840 + PV 900 = 4.740; Nr. 3 voll abziehbar auch ueber 1.900 (§ 10 Abs. 4 Satz 4)"
+      - "Vorsorge gesamt 4.836 + 4.740 = 9.576; zvE = 50.770 - 36 - 9.576 = 41.158 (BMF: ESt 7.693, Soli 0)"
+      - "Erstattung = 9.800 - 7.693 - 0 = 2.107"
+    bmf: [s1_single_41158]
+    expected:
+      gde: "50770.00"
+      zve_before_children: "41158.00"
+      zve: "41158.00"
+      tarifliche_est: "7693.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "7693.00"
+      soli: "0.00"
+      kirchensteuer: "0.00"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "9800.00", soli: "0.00", kirchensteuer: "0.00"}
+      refund: "2107.00"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []
+
+  - id: s2_joint_iii_v_church
+    title: "Joint, Steuerklasse III / V, one church member in Bayern (8 %), Splitting, Nachzahlung"
+    persons: {a: {kind: adult, religion: ev}, b: {kind: adult}}
+    profile: {filing: joint, bundesland: by, taxpayer: a, spouse: b}
+    employments:
+      - {person: a, steuerklasse: "3", gross_wage: "60000.00", lohnsteuer: "4800.00",
+         kirchensteuer_withheld: "384.00", rv_employee: "5580.00", kv: "4200.00", pv: "1000.00"}
+      - {person: b, steuerklasse: "5", gross_wage: "24000.00", lohnsteuer: "5600.00",
+         rv_employee: "2232.00", kv: "1700.00", pv: "400.00"}
+    chain:
+      - "Einkuenfte N: A 60.000 - 1.230 = 58.770; B 24.000 - 1.230 = 22.770; GdE = 81.540"
+      - "Sonderausgaben: Kirchensteuer laut LStB 384 > Pauschbetrag 72, also 384 (§ 10 Abs. 1 Nr. 4)"
+      - "Altersvorsorge: (5.580 + 2.232) x 2 = 15.624 (<= 58.688), abzgl. AG-Anteil 7.812 = 7.812"
+      - "Basiskranken: A 4.200 x 0,96 + 1.000 = 5.032; B 1.700 x 0,96 + 400 = 2.032; Summe 7.064 (> Deckel 3.800, Nr. 3 voll)"
+      - "Vorsorge 7.812 + 7.064 = 14.876; zvE = 81.540 - 384 - 14.876 = 66.280 (BMF Splitting: ESt 10.424, Soli 0)"
+      - "KiSt 8 % Bayern: 10.424 x 0,08 = 833,92 (§ 51a Abs. 2)"
+      - "Einbehalten 4.800 + 5.600 + KiSt 384 = 10.784; Ergebnis = 10.784 - 10.424 - 833,92 = -473,92 (Nachzahlung)"
+      - "Pflicht: Steuerklasse V bei Ehegatten mit Arbeitslohn (§ 46 Abs. 2 Nr. 3a)"
+    bmf: [s2_joint_66280]
+    expected:
+      gde: "81540.00"
+      zve_before_children: "66280.00"
+      zve: "66280.00"
+      tarifliche_est: "10424.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "10424.00"
+      soli: "0.00"
+      kirchensteuer: "833.92"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "10400.00", soli: "0.00", kirchensteuer: "384.00"}
+      refund: "-473.92"
+      pflicht: {state: mandatory, reasons: [steuerklasse_combination]}
+      what_missing: []
+
+  - id: s3a_joint_two_children_kindergeld
+    title: "Joint + 2 children, Guenstigerpruefung keeps the Kindergeld (low zvE)"
+    persons:
+      a: {kind: adult}
+      b: {kind: adult}
+      k1: {kind: child, dob: "2015-03-01"}
+      k2: {kind: child, dob: "2018-07-15"}
+    profile: {filing: joint, bundesland: nw, taxpayer: a, spouse: b}
+    employments:
+      - {person: a, steuerklasse: "3", gross_wage: "55000.00", lohnsteuer: "5500.00",
+         rv_employee: "5115.00", kv: "4000.00", pv: "900.00"}
+    child_years: [{person: k1, months: 12, share: full}, {person: k2, months: 12, share: full}]
+    chain:
+      - "Einkuenfte N: 55.000 - 1.230 = 53.770 = GdE; Sonderausgaben Pauschbetrag 72 (Splitting)"
+      - "Altersvorsorge: 5.115 x 2 = 10.230, abzgl. AG-Anteil = 5.115"
+      - "Basiskranken: 4.000 x 0,96 + 900 = 4.740 (Ehegatte ohne Arbeitslohn: 0), Nr. 3 voll"
+      - "Vorsorge 5.115 + 4.740 = 9.855; zvE vor Kindern = 53.770 - 72 - 9.855 = 43.843"
+      - "Freibetraege je Kind (3.336 + 1.464) x 2 = 9.600; Kindergeld je Kind 255 x 12 = 3.060 (§ 66)"
+      - "Vorteil 1. Kind = ESt(43.843) - ESt(34.243) = 4.246 - 1.876 = 2.370 < 3.060: Kindergeld bleibt (§ 31 Satz 4)"
+      - "2. Kind: gleicher Vorteil, Kindergeld; tarifliche ESt = 4.246, kein Zuschlag"
+      - "Erstattung = 5.500 - 4.246 = 1.254; Ehegatte ohne Vorsorgeangaben: vorsorge_missing"
+    bmf: [s3a_joint_43843, s3a_joint_34243]
+    expected:
+      gde: "53770.00"
+      zve_before_children: "43843.00"
+      zve: "43843.00"
+      tarifliche_est: "4246.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "4246.00"
+      soli: "0.00"
+      kirchensteuer: "0.00"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "5500.00", soli: "0.00", kirchensteuer: "0.00"}
+      refund: "1254.00"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: [{code: vorsorge_missing, person: b}]
+
+  - id: s3b_joint_two_children_freibetraege
+    title: "Joint + 2 children, Guenstigerpruefung picks the Freibetraege (high zvE); Soli on the BMG"
+    persons:
+      a: {kind: adult}
+      b: {kind: adult}
+      k1: {kind: child, dob: "2015-03-01"}
+      k2: {kind: child, dob: "2018-07-15"}
+    profile: {filing: joint, bundesland: nw, taxpayer: a, spouse: b}
+    employments:
+      - {person: a, steuerklasse: "4", gross_wage: "150000.00", lohnsteuer: "40000.00", soli_withheld: "2000.00",
+         rv_employee: "8983.80", kv: "7000.00", pv: "1300.00"}
+      - {person: b, steuerklasse: "4", gross_wage: "90000.00", lohnsteuer: "30000.00", soli_withheld: "1500.00",
+         rv_employee: "8370.00", kv: "5500.00", pv: "1000.00"}
+    child_years: [{person: k1, months: 12, share: full}, {person: k2, months: 12, share: full}]
+    chain:
+      - "Einkuenfte N: 150.000 - 1.230 + 90.000 - 1.230 = 237.540 = GdE; Sonderausgaben Pauschbetrag 72"
+      - "Altersvorsorge: (8.983,80 + 8.370) x 2 = 34.707,60 (<= 58.688), abzgl. AG-Anteil 17.353,80 = 17.353,80"
+      - "Basiskranken: A 7.000 x 0,96 + 1.300 = 8.020; B 5.500 x 0,96 + 1.000 = 6.280; Summe 14.300"
+      - "Vorsorge 31.653,80; zvE vor Kindern = 237.540 - 72 - 31.653,80 = 205.814,20"
+      - "Vorteil 1. Kind = ESt(205.814) - ESt(196.214) = 64.618 - 60.586 = 4.032 > Kindergeld 3.060: Freibetrag 9.600"
+      - "Vorteil 2. Kind = ESt(196.214) - ESt(186.614) = 60.586 - 56.554 = 4.032 > 3.060: Freibetrag 9.600"
+      - "zvE fuer den Tarif 186.614,20: ESt 56.554 + Kindergeld 2 x 3.060 = 6.120 (§ 31 Satz 4) = 62.674"
+      - "Soli auf ESt mit allen Freibetraegen ohne Kindergeld-Zuschlag: BMG 56.554 -> Soli 1.981,82 (BMF)"
+      - "Einbehalten 70.000 + Soli 3.500 = 73.500; Ergebnis = 73.500 - 62.674 - 1.981,82 = 8.844,18"
+      - "Pflicht: IV / IV ohne Faktor loest Nr. 3a nicht aus; kein anderer Grund"
+    bmf: [s3b_joint_205814, s3b_joint_196214, s3b_joint_186614]
+    expected:
+      gde: "237540.00"
+      zve_before_children: "205814.20"
+      zve: "186614.20"
+      tarifliche_est: "62674.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "62674.00"
+      soli: "1981.82"
+      kirchensteuer: "0.00"
+      kindergeld_added: "6120.00"
+      withheld: {lohnsteuer: "70000.00", soli: "3500.00", kirchensteuer: "0.00"}
+      refund: "8844.18"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []
+
+  - id: s4_single_elterngeld
+    title: "Single + Elterngeld: Progressionsvorbehalt raises the ESt, side_income_over_limit"
+    persons: {a: {kind: adult}}
+    profile: {filing: single, bundesland: be, taxpayer: a}
+    employments:
+      - {person: a, steuerklasse: "1", gross_wage: "30000.00", lohnsteuer: "3800.00",
+         rv_employee: "2790.00", kv: "2400.00", pv: "540.00"}
+    lohnersatz: [{person: a, amount: "8000.00"}]
+    chain:
+      - "Einkuenfte N = 30.000 - 1.230 = 28.770 = GdE; Sonderausgaben Pauschbetrag 36"
+      - "Altersvorsorge 2.790 x 2 = 5.580 abzgl. AG-Anteil = 2.790; Basiskranken 2.400 x 0,96 + 540 = 2.844; Vorsorge 5.634"
+      - "zvE = 28.770 - 36 - 5.634 = 23.100 (ohne Progression ESt 2.427, BMF)"
+      - "Pauschbetrag auf den Lohn voll verbraucht (1.230): Elterngeld 8.000 voll im Vorbehalt (§ 32b Abs. 2 Nr. 1)"
+      - "besonderer Steuersatz = ESt(23.100 + 8.000 = 31.100) / 31.100 = 4.618 / 31.100 (BMF); ESt = floor(23.100 x 4.618 / 31.100) = 3.430"
+      - "Erstattung = 3.800 - 3.430 = 370"
+      - "Pflicht: Lohnersatz 8.000 > 410 (§ 46 Abs. 2 Nr. 1)"
+    bmf: [s4_single_23100, s4_single_31100]
+    expected:
+      gde: "28770.00"
+      zve_before_children: "23100.00"
+      zve: "23100.00"
+      tarifliche_est: "3430.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "3430.00"
+      soli: "0.00"
+      kirchensteuer: "0.00"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "3800.00", soli: "0.00", kirchensteuer: "0.00"}
+      refund: "370.00"
+      pflicht: {state: mandatory, reasons: [side_income_over_limit]}
+      what_missing: []
+
+  - id: s5_single_35a_soli_on_reduced_est
+    title: "Handwerker + Haushaltshilfe: § 35a reduces the ESt; Soli / KiSt on the ESt after it"
+    persons: {a: {kind: adult, religion: ev}}
+    profile: {filing: single, bundesland: nw, taxpayer: a}
+    employments:
+      - {person: a, steuerklasse: "1", gross_wage: "92000.00", lohnsteuer: "20500.00", soli_withheld: "1000.00",
+         kirchensteuer_withheld: "1800.00", rv_employee: "8556.00", kv: "5600.00", pv: "1200.00"}
+    items:
+      - {category: handwerkerleistung, deductible: "3000.00", labour_35a: "2000.00", payment_method: bank_transfer}
+      - {category: haushaltsnahe_dienstleistung, deductible: "6000.00", labour_35a: "5500.00", payment_method: bank_transfer}
+    chain:
+      - "Einkuenfte N = 92.000 - 1.230 = 90.770 = GdE; Sonderausgaben: KiSt laut LStB 1.800 (> 36)"
+      - "Altersvorsorge 8.556 x 2 = 17.112 abzgl. AG-Anteil = 8.556; Basiskranken 5.600 x 0,96 + 1.200 = 6.576; Vorsorge 15.132"
+      - "zvE = 90.770 - 1.800 - 15.132 = 73.838 (BMF: ESt 20.100, Soli 17,85 ohne § 35a)"
+      - "§ 35a Abs. 3: Handwerker 20 % x 2.000 = 400 (<= 1.200); Abs. 2: Dienstleistung 20 % x 5.500 = 1.100 (<= 4.000); Summe 1.500"
+      - "festzusetzende ESt = 20.100 - 1.500 = 18.600; Soli / KiSt auf 18.600 (§ 51a Abs. 2 EStG, § 3 SolzG)"
+      - "Soli: 18.600 < Freigrenze 19.950 = 0 (ohne § 35a waere er 17,85); KiSt 9 % NRW = 1.674,00"
+      - "Einbehalten 20.500 + 1.000 + 1.800 = 23.300; Ergebnis = 23.300 - 18.600 - 0 - 1.674 = 3.026"
+    bmf: [s5_single_73838]
+    expected:
+      gde: "90770.00"
+      zve_before_children: "73838.00"
+      zve: "73838.00"
+      tarifliche_est: "20100.00"
+      ermaessigung_35a: "1500.00"
+      festzusetzende_est: "18600.00"
+      soli: "0.00"
+      kirchensteuer: "1674.00"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "20500.00", soli: "1000.00", kirchensteuer: "1800.00"}
+      refund: "3026.00"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []
+
+  - id: s5b_single_35a_capped_by_est
+    title: "§ 35a never takes the ESt below 0"
+    persons: {a: {kind: adult}}
+    profile: {filing: single, bundesland: be, taxpayer: a}
+    employments:
+      - {person: a, steuerklasse: "1", gross_wage: "18000.00", lohnsteuer: "400.00",
+         rv_employee: "1674.00", kv: "1440.00", pv: "324.00"}
+    items:
+      - {category: handwerkerleistung, deductible: "6000.00", labour_35a: "5000.00", payment_method: bank_transfer}
+    chain:
+      - "Einkuenfte N = 18.000 - 1.230 = 16.770 = GdE; Sonderausgaben Pauschbetrag 36"
+      - "Altersvorsorge 1.674 x 2 = 3.348 abzgl. AG-Anteil = 1.674; Basiskranken 1.440 x 0,96 + 324 = 1.706,40; Vorsorge 3.380,40"
+      - "zvE = 16.770 - 36 - 3.380,40 = 13.353,60 -> 13.353 (BMF: ESt 190)"
+      - "§ 35a Abs. 3: 20 % x 5.000 = 1.000 (<= 1.200), aber hoechstens die ESt: angesetzt 190; festzusetzende ESt 0"
+      - "Erstattung = 400 - 0 = 400"
+    bmf: [s5b_single_13353]
+    expected:
+      gde: "16770.00"
+      zve_before_children: "13353.60"
+      zve: "13353.60"
+      tarifliche_est: "190.00"
+      ermaessigung_35a: "190.00"
+      festzusetzende_est: "0.00"
+      soli: "0.00"
+      kirchensteuer: "0.00"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "400.00", soli: "0.00", kirchensteuer: "0.00"}
+      refund: "400.00"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []
+
+  - id: s6_single_agb_spenden
+    title: "agB above the zumutbare Belastung, Spenden above the 20 % limit"
+    persons: {a: {kind: adult}}
+    profile: {filing: single, bundesland: be, taxpayer: a}
+    employments:
+      - {person: a, steuerklasse: "1", gross_wage: "40000.00", lohnsteuer: "3500.00",
+         rv_employee: "3720.00", kv: "3200.00", pv: "720.00"}
+    items:
+      - {category: krankheitskosten, deductible: "3000.00"}
+      - {category: spenden, deductible: "10000.00"}
+    chain:
+      - "Einkuenfte N = 40.000 - 1.230 = 38.770 = GdE"
+      - "Spenden: Grenze 20 % x 38.770 = 7.754 < 10.000, abziehbar 7.754 (§ 10b Abs. 1 Nr. 1), Rest nicht (spenden_over_limit)"
+      - "Altersvorsorge 3.720 x 2 = 7.440 abzgl. AG-Anteil = 3.720; Basiskranken 3.200 x 0,96 + 720 = 3.792; Vorsorge 7.512"
+      - "zumutbare Belastung (ledig, keine Kinder): 5 % x 15.340 + 6 % x (38.770 - 15.340) = 767 + 1.405,80 = 2.172,80 (§ 33 Abs. 3)"
+      - "agB = 3.000 - 2.172,80 = 827,20"
+      - "zvE = 38.770 - 7.754 - 7.512 - 827,20 = 22.676,80 -> 22.676 (BMF: ESt 2.317)"
+      - "Erstattung = 3.500 - 2.317 = 1.183"
+    bmf: [s6_single_22676]
+    expected:
+      gde: "38770.00"
+      zve_before_children: "22676.80"
+      zve: "22676.80"
+      tarifliche_est: "2317.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "2317.00"
+      soli: "0.00"
+      kirchensteuer: "0.00"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "3500.00", soli: "0.00", kirchensteuer: "0.00"}
+      refund: "1183.00"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []
+      notes: [spenden_over_limit]

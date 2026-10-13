@@ -6,6 +6,7 @@ Callers do `load_params(year)` and pass the `TaxParams` into the pure functions.
 from __future__ import annotations
 
 import functools
+import hashlib
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -57,6 +58,14 @@ def load_params(year: int) -> TaxParams:
         listed = ", ".join(str(y) for y in years)
         raise UnsupportedTaxYear(f"tax year {year} is not supported (supported: {listed})")
     return parse_params_file(PARAMS_DIR / f"{year}.yaml")
+
+
+@functools.cache
+def params_version(year: int) -> str:
+    """`"{year}-{first 12 hex of the file's SHA-256}"`: changes whenever the params file does."""
+    load_params(year)  # UnsupportedTaxYear for a year without a file
+    digest = hashlib.sha256((PARAMS_DIR / f"{year}.yaml").read_bytes()).hexdigest()
+    return f"{year}-{digest[:12]}"
 
 
 def parse_params_file(path: Path) -> TaxParams:

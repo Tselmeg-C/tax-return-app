@@ -9,12 +9,14 @@ params' `church_tax.rate_by_state`.
 from __future__ import annotations
 
 import uuid
+from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
     ForeignKey,
     Index,
+    Numeric,
     SmallInteger,
     String,
     UniqueConstraint,
@@ -30,6 +32,21 @@ from app.db.types import enum_type
 from app.domain.enums import AllowanceShare, Bundesland, FilingStatus, Steuerklasse
 
 YEAR_RANGE = "year BETWEEN 2000 AND 2100"
+
+# Manual Lohnsteuer / Vorsorge inputs of an employment (#17, until #18 reads the LStB). NULL =
+# not entered. Amounts are never logged.
+EMPLOYMENT_MONEY_FIELDS = (
+    "gross_wage",
+    "lohnsteuer",
+    "soli_withheld",
+    "kirchensteuer_withheld",
+    "rv_employee",
+    "rv_employer",
+    "basisrente",
+    "kv",
+    "pv",
+    "sonstige_vorsorge",
+)
 
 
 class TaxProfile(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
@@ -75,6 +92,10 @@ class Employment(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
         CheckConstraint("commute_km IS NULL OR commute_km BETWEEN 0 AND 999", name="commute_km"),
         CheckConstraint("office_days BETWEEN 0 AND 366", name="office_days"),
         CheckConstraint("homeoffice_days BETWEEN 0 AND 366", name="homeoffice_days"),
+        *(
+            CheckConstraint(f"{c} IS NULL OR {c} >= 0", name=f"{c}_nonnegative")
+            for c in EMPLOYMENT_MONEY_FIELDS
+        ),
         Index(None, "household_id"),
         Index(None, "person_id", "year"),
     )
@@ -97,6 +118,16 @@ class Employment(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
     homeoffice_days: Mapped[int] = mapped_column(
         SmallInteger, nullable=False, default=0, server_default=text("0")
     )
+    gross_wage: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    lohnsteuer: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    soli_withheld: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    kirchensteuer_withheld: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    rv_employee: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    rv_employer: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    basisrente: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    kv: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    pv: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    sonstige_vorsorge: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
 
 
 class ChildYear(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
@@ -121,3 +152,21 @@ class ChildYear(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
     in_household: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=true()
     )
+
+
+class Lohnersatz(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
+    """Elterngeld / ALG I / Kurzarbeitergeld of a person in a year (manual input, #17)."""
+
+    __tablename__ = "lohnersatz"
+    __table_args__ = (
+        UniqueConstraint("person_id", "year"),
+        CheckConstraint(YEAR_RANGE, name="year_range"),
+        CheckConstraint("amount >= 0", name="amount_nonnegative"),
+        Index(None, "household_id"),
+    )
+
+    person_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("person.id", ondelete="CASCADE"), nullable=False
+    )
+    year: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
