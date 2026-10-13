@@ -45,6 +45,8 @@ export interface Summary {
   withheld: { lohnsteuer: string; soli: string; kirchensteuer: string } | null;
   by_anlage: { anlage: string; amount: string }[];
   pflicht: Pflicht | null;
+  /** Persons whose Vorsorge is estimated from the gross wage (#85). */
+  vorsorge_estimated: string[];
   what_missing: { code: string; person_id: string | null }[];
   notes: { code: string; item_id: string | null; person_id: string | null }[];
   attention_count: number;
@@ -70,6 +72,7 @@ export const SUMMARY_TEXT = {
   unsupportedYear: (jahr: number) => `Steuerjahr nicht unterstützt (${jahr})`,
   noProfile: "Für dieses Steuerjahr fehlt noch das Steuerprofil.",
   toHaushalt: "Zum Haushalt",
+  enterRealValues: "echte Werte eintragen",
   refund: "Voraussichtliche Erstattung",
   nachzahlung: "Voraussichtliche Nachzahlung",
   provisional: "vorläufig",

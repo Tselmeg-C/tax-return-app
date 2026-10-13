@@ -31,7 +31,10 @@ const LABELS: SummaryLabels = {
   payment_methods: [],
   doc_types: [],
   supported_years: [2025, 2026],
-  deduction_notes: coded([["included_unreviewed", "Ungeprüfte Belege sind enthalten"]]),
+  deduction_notes: coded([
+    ["included_unreviewed", "Ungeprüfte Belege sind enthalten"],
+    ["vorsorge_estimated", "Vorsorge aus dem Bruttolohn geschätzt (vorläufig)"],
+  ]),
   estimate_missing: coded([
     ["no_lstb", "Lohnsteuerbescheinigung fehlt"],
     ["vorsorge_missing", "Vorsorgeaufwendungen fehlen"],
@@ -72,6 +75,7 @@ const SUMMARY: Summary = {
     deadline_kind: "self",
     overdue: false,
   },
+  vorsorge_estimated: [],
   what_missing: [],
   notes: [],
   attention_count: 0,
@@ -190,6 +194,22 @@ describe("Übersicht", () => {
     expect(screen.getByText("Vorsorgeaufwendungen fehlen")).toBeInTheDocument();
     const link = screen.getByText("3 Belege brauchen deine Aufmerksamkeit");
     expect(link.closest("a")?.getAttribute("href")).toBe("/belege?jahr=2025");
+  });
+
+  it("marks an estimated Vorsorge as geschätzt and links to Haushalt", async () => {
+    renderDashboard(
+      serve(() =>
+        json(200, {
+          ...SUMMARY,
+          vorsorge_estimated: ["p1"],
+          notes: [{ code: "vorsorge_estimated", item_id: null, person_id: "p1" }],
+        }),
+      ),
+    );
+    const text = await screen.findByText(/Vorsorge aus dem Bruttolohn geschätzt/);
+    expect(text).toBeInTheDocument();
+    const link = screen.getByText("echte Werte eintragen");
+    expect(link.closest("a")?.getAttribute("href")).toBe("/haushalt?jahr=2025");
   });
 
   it("links to Haushalt when there is no profile", async () => {

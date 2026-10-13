@@ -1,5 +1,5 @@
 # Tax parameters for Veranlagungszeitraum 2026. Sections are owned by issues (#14 Decision 2):
-# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; agb: #76; kinder: #87; filing: #92; haushaltsnahe: #77; entlastungsbetrag: #81.
+# year + mapping: #9; tariff, soli, church_tax: #14; werbungskosten, sonderausgaben: #15; vorsorge: #16; progressionsvorbehalt: #86; agb: #76; kinder: #87; filing: #92; haushaltsnahe: #77; entlastungsbetrag: #81; sozialversicherung: #85.
 # Money and rates are quoted strings (Decimal); an unquoted number fails to load.
 year: 2026
 
@@ -116,6 +116,21 @@ entlastungsbetrag: # § 24b Abs. 2, 4 EStG (#81)
   source: "§ 24b Abs. 2 Satz 1 EStG (Entlastungsbetrag für Alleinerziehende 4.260 Euro im Kalenderjahr bei einem Kind im Haushalt), Satz 2 (erhöht sich um 240 Euro je weiterem Kind), Abs. 4 (ermäßigt sich für jeden vollen Kalendermonat ohne die Voraussetzungen um ein Zwölftel), Text i.d.F. Art. 4 JStG 2022 (G. v. 16.12.2022, BGBl. 2022 I S. 2294) m.W.v. 1.1.2023, in der Neufassung v. 8.10.2009 (BGBl. 2009 I S. 3366, 3862); Betraege unveraendert seit 2023, buzer.de shows no later version. Read 2026-10-13 at buzer.de/24b_EStG.htm; gesetze-im-internet.de was not reachable. Abgezogen von der Summe der Einkünfte (Abs. 1), also vor Sonderausgaben und agB. UNCONFIRMED (hence provisional): Abs. 4 reduces per full month in which the Abs. 1 conditions (no qualifying child at all) were not met; for several children the law does not prorate the 240 Euro per child, the engine prorates it by the child's own months (a child with the most months carries the 4.260); no R 24b EStR / H 24b EStH read."
   base: "4260" # Abs. 2 Satz 1: first child
   per_further_child: "240" # Abs. 2 Satz 2
+
+sozialversicherung: # §§ 158 SGB VI, 341 SGB III, 241, 242a SGB V, 55 SGB XI, SVBezGrV 2026 (#85, Vorsorge estimate from the gross wage)
+  provisional: true # every value was read only in secondary sources (buzer.de, lxgesetze.de, search-result excerpts of the official pages); the Zusatzbeitrag is an assumption (Bundesdurchschnitt), not the person's Kasse
+  source: "BBG: Sozialversicherungs-Rechengrößenverordnung 2026 (V. v. 24.11.2025, BGBl. 2025 I Nr. 278) § 4 Abs. 1 Nr. 1 (101.400 Euro, allgemeine RV; ALV gleich) und § 2 Abs. 2 (69.750 Euro, = § 6 Abs. 7 SGB V; KV/PV), read 2026-10-13 at buzer.de/SVRechGrV_2026.htm. Rates: RV 18,6 % (Bekanntmachung der Beitragssätze 2026, BGBl. 2025 I Nr. 291, seen only as a search excerpt, the page was not reachable); ALV 2,6 % (§ 341 Abs. 2 SGB III) and KV 14,6 % (§ 241 SGB V), read 2026-10-13 at lxgesetze.de (version 24.7.2026); PV 3,6 % (Verordnung der Bundesregierung zum 1.1.2025, unchanged for 2026 as far as seen in search results, no 2026 change in § 55 found; the Verordnung text was NOT read), Zuschlag 0,6 und Abschlag 0,25 je Kind ab dem 2. bis zum 5. Kind unter 25 (§ 55 Abs. 3 SGB XI, excerpts; buzer.de shows only a Bürgergeld/Grundsicherungsgeld wording change on 1.7.2026), Zuschlag allein vom Mitglied (§ 58 Abs. 1 SGB XI). Halbteilung wie 2025 (not read), Sachsen NOT applied. Durchschnittlicher Zusatzbeitragssatz 2,9 % (BMG-Bekanntmachung nach § 242a Abs. 2 SGB V v. 7.11.2025, Bundesanzeiger 10.11.2025; PDF not readable, figure from search excerpts). Übergangsbereich 2.000 Euro (§ 20 Abs. 2 SGB IV, lxgesetze.de). gesetze-im-internet.de was not reachable."
+  bbg_rv: "101400" # also the ALV limit (§ 341 Abs. 4 SGB III)
+  bbg_kv: "69750" # KV and PV (§ 223 Abs. 3, § 6 Abs. 7 SGB V; § 55 Abs. 2 SGB XI)
+  rv_rate: "0.186" # employee 9,3 %
+  alv_rate: "0.026" # employee 1,3 %
+  kv_rate: "0.146" # employee 7,3 %
+  kv_zusatz_average: "0.029" # employee half
+  pv_rate: "0.036" # employee 1,8 %
+  pv_childless_surcharge: "0.006" # § 55 Abs. 3 Satz 1: from the end of the month of the 23rd birthday, employee alone (§ 58 Abs. 1 Satz 2)
+  pv_child_abschlag: "0.0025" # § 55 Abs. 3 Satz 3: per child from the 2nd to the 5th, until the child is 25
+  pv_abschlag_max_steps: 4
+  uebergangsbereich_upper_monthly: "2000" # § 20 Abs. 2 SGB IV; the estimate assumes 12 months, so wages up to 24 000 get none
 
 mapping: # #9: Category -> (Anlage, Zeile); every Category except irrelevant exactly once
   # 2026 forms not published yet: Zeilen copied from 2025, provisional (#54 verifies).
