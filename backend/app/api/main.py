@@ -18,12 +18,14 @@ from opentelemetry.metrics import MeterProvider
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.api import auth, documents, household, meta, passkeys, summary, tax_items
+from app.api import auth, bot, documents, household, meta, passkeys, summary, tax_items
 from app.api.deps import require_session
 from app.api.security import CsrfMiddleware, NoStoreMiddleware
 from app.auth.clock import Clock, SystemClock
 from app.auth.mail import MailBackend, MailDispatcher, backend_from_settings
 from app.auth.ratelimit import RateLimiter
+from app.bot.core import BotDeps, ChannelAdapter
+from app.bot.telegram import TelegramAdapter
 from app.config import Settings, check_api_settings, get_settings
 from app.db.session import create_engine, create_sessionmaker
 from app.observability import API_SERVICE_NAME, setup_observability
@@ -48,12 +50,13 @@ def create_app(
     clock: Clock | None = None,
     mail_backend: MailBackend | None = None,
     meter_provider: MeterProvider | None = None,
+    bot_adapter: ChannelAdapter | None = None,
 ) -> FastAPI:
     """Build the app. Settings are resolved at startup (not import); no DB connection is opened.
 
     Observability (JSON logging, OTel) is set up here, at import time of `app.api.main`, so
     uvicorn's own startup lines are already JSON. It never connects anywhere by itself.
-    `clock`, `mail_backend` and `meter_provider` are injectable for tests.
+    `clock`, `mail_backend`, `meter_provider` and `bot_adapter` are injectable for tests.
     """
     observability = setup_observability(API_SERVICE_NAME)
     the_clock: Clock = clock or SystemClock()
@@ -82,6 +85,12 @@ def create_app(
         app.state.verify_failure_limiter = RateLimiter(
             VERIFY_FAILURES_PER_IP, RATE_WINDOW, the_clock
         )
+        own_adapter: TelegramAdapter | None = None
+        if bot_adapter is None and resolved.telegram_bot_token is not None:
+            own_adapter = TelegramAdapter(resolved.telegram_bot_token.get_secret_value())
+        app.state.bot_adapter = bot_adapter or own_adapter
+        app.state.bot_deps = BotDeps(app.state.sessionmaker, storage, resolved, the_clock)
+        app.state.bot_tasks = set()  # held webhook tasks (#11)
         app.state.passkey_options_limiter = RateLimiter(
             VERIFY_FAILURES_PER_IP, RATE_WINDOW, the_clock
         )
@@ -89,6 +98,10 @@ def create_app(
         try:
             yield
         finally:
+            if app.state.bot_tasks:  # let running updates finish, bounded
+                await asyncio.wait(set(app.state.bot_tasks), timeout=MAIL_DRAIN_TIMEOUT_SECONDS)
+            if own_adapter is not None:
+                await own_adapter.aclose()
             await app.state.mailer.drain(timeout=MAIL_DRAIN_TIMEOUT_SECONDS)
             await engine.dispose()
             # Bounded flush; the providers are shut down (also bounded) at process exit.
@@ -155,6 +168,7 @@ def create_app(
         return get_redoc_html(openapi_url="openapi.json", title="belegbot api")
 
     app.include_router(auth.router)
+    app.include_router(bot.router)
     app.include_router(passkeys.router)
     app.include_router(documents.router)
     app.include_router(tax_items.router)

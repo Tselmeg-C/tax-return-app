@@ -23,6 +23,14 @@ from tests.auth.conftest import Api, Family, auth_settings, running_app
 CSRF = {"detail": "csrf"}
 
 
+def _concrete(path: str) -> str:
+    return re.sub(r"\{[^}]+\}", "00000000-0000-4000-8000-000000000000", path)
+
+
+# `PUBLIC_PATHS` holds route templates; probes use concrete paths.
+PUBLIC_CONCRETE = {_concrete(p) for p in PUBLIC_PATHS}
+
+
 def _probes(app: FastAPI) -> list[tuple[str, str]]:
     """(method, concrete path) for every route in `app.routes`."""
     found: list[tuple[str, str]] = []
@@ -31,20 +39,20 @@ def _probes(app: FastAPI) -> list[tuple[str, str]]:
         path = route.path
         assert isinstance(path, str), f"unexpected route type {type(route.original_route)}"
         methods = sorted(route.methods or {"GET"})
-        concrete = re.sub(r"\{[^}]+\}", "00000000-0000-4000-8000-000000000000", path)
+        concrete = _concrete(path)
         found.extend((m, concrete) for m in methods if m != "HEAD")
     return found
 
 
 ALL_ROUTES = _probes(create_app())
-ROUTES = [(m, p) for m, p in ALL_ROUTES if p not in PUBLIC_PATHS]
+ROUTES = [(m, p) for m, p in ALL_ROUTES if p not in PUBLIC_CONCRETE]
 
 
 async def unprotected_routes(api: Api) -> list[str]:
     """Routes outside the allowlist that answer anything but 401 without a cookie."""
     offenders: list[str] = []
     for method, path in _probes(api.app):
-        if path in PUBLIC_PATHS:
+        if path in PUBLIC_CONCRETE:
             continue
         response = await api.request(method, path, json={})
         if response.status_code != 401:
@@ -53,13 +61,14 @@ async def unprotected_routes(api: Api) -> list[str]:
 
 
 def test_allowlist_is_exactly_the_groomed_one() -> None:
-    assert PUBLIC_PATHS <= {p for _, p in ALL_ROUTES}
+    assert PUBLIC_CONCRETE <= {p for _, p in ALL_ROUTES}
     assert PUBLIC_PATHS == {
         "/health",
         "/version",
         "/auth/magic-link",
         "/auth/verify",
         "/auth/logout",
+        "/bot/telegram/{secret}",  # #11
         "/auth/passkey/login/options",
         "/auth/passkey/login/verify",
     }

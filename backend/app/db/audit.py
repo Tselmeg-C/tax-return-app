@@ -40,6 +40,7 @@ REDACTED_COLUMNS: dict[str, frozenset[str]] = {
     "passkey": frozenset({"name", "credential_id", "public_key", "transports"}),
     "person": frozenset({"first_name", "last_name", "dob"}),
     "employment": frozenset({"employer_name"}),
+    "channel_link": frozenset({"external_id_hash"}),
     "tax_item": frozenset({"vendor", "reason"}),
 }
 

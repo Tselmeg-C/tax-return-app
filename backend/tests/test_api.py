@@ -71,6 +71,8 @@ async def test_version_with_git_sha(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("RESEND_API_KEY", "re_test_placeholder")
     monkeypatch.setenv("RESEND_FROM_EMAIL", "belegbot <login@example.com>")
     monkeypatch.setenv("APP_BASE_URL", "https://app.test")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "1234:test-token-placeholder")  # webhook mode (#11)
+    monkeypatch.setenv("TELEGRAM_WEBHOOK_SECRET", "test_secret_0123456789abcdef")
     async with client_for(_settings(DOWN_URL)) as client:
         response = await client.get("/version")
     assert response.status_code == 200

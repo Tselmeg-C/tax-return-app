@@ -13,6 +13,7 @@ import {
   primaryClass,
   ProfileForm,
 } from "@/components/household/forms";
+import { TelegramCard } from "@/components/household/TelegramCard";
 import {
   adultChildHint,
   copied,
@@ -550,6 +551,8 @@ function PageView(props: ViewProps) {
           Person hinzufügen
         </button>
       )}
+
+      <TelegramCard />
     </div>
   );
 }

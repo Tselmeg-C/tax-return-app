@@ -21,6 +21,8 @@ CORE_TABLES = {
     "alembic_version",
     "app_user",
     "audit_log",
+    "channel_link",  # #11
+    "channel_link_code",  # #11
     "child_year",  # #13
     "document",
     "employment",  # #13

@@ -6,6 +6,7 @@ Only the settings the skeleton needs live here; later features add their own.
 from __future__ import annotations
 
 import os
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -19,6 +20,7 @@ _PLAIN_SCHEMES = ("postgres://", "postgresql://")
 # `backend/.dev-mail/` (git-ignored): the `file` mail backend's outbox.
 DEFAULT_DEV_MAIL_DIR = Path(__file__).resolve().parent.parent / ".dev-mail"
 DEFAULT_STORAGE_PATH = Path("data") / "storage"
+WEBHOOK_SECRET_RE = re.compile(r"[A-Za-z0-9_-]{16,256}")  # Telegram's limit for secret_token
 
 
 def normalise_database_url(url: str) -> str:
@@ -166,6 +168,26 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("PIPELINE_CLASSIFY_MAX_CHARS", "pipeline_classify_max_chars"),
     )
 
+    # --- bot (#11) -----------------------------------------------------------------------
+    # Never echoed, logged or put in a span. `replace-me` (.env.example) counts as unset.
+    telegram_bot_token: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("TELEGRAM_BOT_TOKEN", "telegram_bot_token")
+    )
+    telegram_webhook_secret: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("TELEGRAM_WEBHOOK_SECRET", "telegram_webhook_secret"),
+    )
+    # Unset: `webhook` in production, else `polling` (`python -m app.bot.poll`).
+    bot_mode: Literal["webhook", "polling"] | None = Field(
+        default=None, validation_alias=AliasChoices("BOT_MODE", "bot_mode")
+    )
+
+    @property
+    def resolved_bot_mode(self) -> str:
+        if self.bot_mode is not None:
+            return self.bot_mode
+        return "webhook" if self.is_production else "polling"
+
     @property
     def resolved_storage_path(self) -> Path:
         """`STORAGE_PATH` as an absolute path (default `./data/storage` in the working dir)."""
@@ -211,6 +233,25 @@ class Settings(BaseSettings):
             value = value.get_secret_value()
         if isinstance(value, str) and not value.strip():
             return None
+        return value
+
+    @field_validator("telegram_bot_token", "telegram_webhook_secret", "bot_mode", mode="before")
+    @classmethod
+    def _empty_bot_value_is_unset(cls, value: object) -> object:
+        if isinstance(value, SecretStr):
+            value = value.get_secret_value()
+        if isinstance(value, str):
+            value = value.strip()
+            if not value or value == "replace-me":
+                return None
+        return value
+
+    @field_validator("telegram_webhook_secret", mode="after")
+    @classmethod
+    def _valid_webhook_secret(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is not None and not WEBHOOK_SECRET_RE.fullmatch(value.get_secret_value()):
+            # No value in the message: it would end up in the startup error.
+            raise ValueError("must match [A-Za-z0-9_-]{16,256}")
         return value
 
     @field_validator("storage_path", mode="before")
@@ -319,6 +360,11 @@ def production_problems(settings: Settings) -> list[str]:
             problems.append("RESEND_FROM_EMAIL: required when MAIL_BACKEND=resend")
     if not settings.secure_cookies:
         problems.append("APP_BASE_URL: must start with https:// in production")
+    if settings.resolved_bot_mode == "webhook":
+        if settings.telegram_bot_token is None:
+            problems.append("TELEGRAM_BOT_TOKEN: required in production webhook mode")
+        if settings.telegram_webhook_secret is None:
+            problems.append("TELEGRAM_WEBHOOK_SECRET: required in production webhook mode")
     return problems
 
 

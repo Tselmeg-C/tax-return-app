@@ -17,6 +17,8 @@ from app.db.audit import Actor, record, snapshot
 from app.db.models import (
     AppUser,
     AuditLog,
+    ChannelLink,
+    ChannelLinkCode,
     ChildYear,
     Document,
     Employment,
@@ -188,6 +190,8 @@ class World:
     child_year: ChildYear
     lohnersatz: Lohnersatz
     estimate: Estimate
+    channel_link: ChannelLink
+    channel_link_code: ChannelLinkCode
     passkey: Passkey
 
     def by_model(self) -> dict[type[Any], Any]:
@@ -207,6 +211,8 @@ class World:
             ChildYear: self.child_year,
             Lohnersatz: self.lohnersatz,
             Estimate: self.estimate,
+            ChannelLink: self.channel_link,
+            ChannelLinkCode: self.channel_link_code,
             Passkey: self.passkey,
         }
 
@@ -264,6 +270,19 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
     estimate = Estimate(
         household_id=hh.id, year=2025, params_version="2025-test", inputs_hash="0" * 64, result={}
     )
+    channel_link = ChannelLink(
+        household_id=hh.id,
+        user_id=user.id,
+        channel=Channel.TELEGRAM,
+        external_id=str(secrets.randbelow(10**9) + 10**9),
+        external_id_hash=random_sha256(),
+    )
+    channel_link_code = ChannelLinkCode(
+        household_id=hh.id,
+        user_id=user.id,
+        code_hash=random_sha256(),
+        expires_at=datetime.now(UTC) + timedelta(minutes=10),
+    )
     passkey = Passkey(
         household_id=hh.id,
         user_id=user.id,
@@ -272,7 +291,18 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
         sign_count=0,
         name="Passkey 1",
     )
-    session.add_all([profile, employment, child_year, lohnersatz, estimate, passkey])
+    session.add_all(
+        [
+            profile,
+            employment,
+            child_year,
+            lohnersatz,
+            estimate,
+            channel_link,
+            channel_link_code,
+            passkey,
+        ]
+    )
     await session.flush()
     return World(
         hh,
@@ -290,5 +320,7 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
         child_year,
         lohnersatz,
         estimate,
+        channel_link,
+        channel_link_code,
         passkey,
     )

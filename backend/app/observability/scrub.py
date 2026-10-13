@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -25,13 +26,17 @@ _DROP_PREFIXES = ("http.request.header.", "http.response.header.", "db.query.par
 _EXCEPTION_EVENT = "exception"
 
 
+# The Telegram webhook path carries its secret (#11): spans keep the route template only.
+_WEBHOOK_SECRET = re.compile(r"(/bot/telegram/)[^/?#\s]+")
+
+
 def _strip_query(value: str) -> str:
     return value.split("?", 1)[0].split("#", 1)[0]
 
 
 def _clean_value(value: Any) -> Any:
     if isinstance(value, str):
-        return mask_url_credentials(value)
+        return _WEBHOOK_SECRET.sub(r"\1{secret}", mask_url_credentials(value))
     return value
 
 
@@ -60,7 +65,7 @@ def _scrub_event(event: Event) -> Event:
 
 def scrub_span(span: ReadableSpan) -> ReadableSpan:
     return ReadableSpan(
-        name=_strip_query(mask_url_credentials(span.name)),
+        name=_strip_query(_clean_value(span.name)),
         context=span.context,
         parent=span.parent,
         resource=span.resource,

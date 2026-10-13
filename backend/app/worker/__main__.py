@@ -15,11 +15,14 @@ import signal
 
 import structlog
 
+from app.bot.notify import make_subscriber
+from app.bot.telegram import TelegramAdapter
 from app.config import SettingsError, check_worker_settings, load_llm_settings, load_settings
 from app.db.session import create_engine, create_sessionmaker
 from app.domain.enums import JobKind
 from app.observability import WORKER_SERVICE_NAME, setup_observability
 from app.observability.logs import set_level
+from app.pipeline.events import subscribe
 from app.queue.handlers import Handler, JobContext, default_handlers
 from app.storage import StorageUnavailable, storage_from_settings
 from app.worker.loop import Worker
@@ -61,8 +64,13 @@ async def amain() -> int:
         return 1
 
     engine = create_engine(settings)
+    sessionmaker = create_sessionmaker(engine)
+    adapter: TelegramAdapter | None = None
+    if settings.telegram_bot_token is not None:  # #11: tell the uploader's chat what happened
+        adapter = TelegramAdapter(settings.telegram_bot_token.get_secret_value())
+        subscribe(make_subscriber(adapter, sessionmaker, settings.app_base_url))
     worker = Worker(
-        sessionmaker=create_sessionmaker(engine),
+        sessionmaker=sessionmaker,
         storage=storage,
         settings=settings,
         handlers=_test_handlers(settings.app_env),
@@ -77,6 +85,8 @@ async def amain() -> int:
             log.warning("worker.loop_error", error_kind=type(exc).__name__)
         await worker.run()
     finally:
+        if adapter is not None:
+            await adapter.aclose()
         await engine.dispose()
     return 0
 

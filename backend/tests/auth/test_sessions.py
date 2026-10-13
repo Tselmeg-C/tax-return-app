@@ -12,6 +12,7 @@ from app.auth.tokens import hash_token
 from app.db.models import AppUser, MagicLinkToken, Person, UserSession
 from app.db.scope import HouseholdScope
 from tests.auth.conftest import Api, Family, cookie_attributes, set_cookies
+from tests.domain.conftest import keys  # noqa: F401 (autouse: make_world holds an encrypted column)
 from tests.domain.factories import make_world
 
 NOT_AUTH = {"detail": "not_authenticated"}

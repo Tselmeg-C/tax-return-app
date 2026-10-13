@@ -55,6 +55,9 @@ def auth_settings(database_url: str, **overrides: Any) -> Settings:
         "mail_backend": "memory",
     }
     values.update(overrides)
+    if values["app_env"] == "production":  # webhook mode needs both (#11)
+        values.setdefault("telegram_bot_token", "123456:test-token-placeholder")
+        values.setdefault("telegram_webhook_secret", "test_secret_0123456789abcdef")
     return Settings(_env_file=None, **values)  # type: ignore[call-arg]
 
 
@@ -181,11 +184,16 @@ async def running_app(
     backend: MailBackend | None = None,
     conn: AsyncConnection | None = None,
     meter_provider: Any = None,
+    bot_adapter: Any = None,
 ) -> AsyncIterator[Api]:
     the_clock = clock or FakeClock()
     the_backend = backend if backend is not None else MemoryBackend()
     app = create_app(
-        settings, clock=the_clock, mail_backend=the_backend, meter_provider=meter_provider
+        settings,
+        clock=the_clock,
+        mail_backend=the_backend,
+        meter_provider=meter_provider,
+        bot_adapter=bot_adapter,
     )
     if conn is not None:
         app.dependency_overrides[get_db] = connection_sessions(conn)

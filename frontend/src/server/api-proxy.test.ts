@@ -196,6 +196,19 @@ describe("api proxy against a stub upstream", () => {
     expect(res.headers.get("x-trace-id")).toBe("0123456789abcdef0123456789abcdef");
   });
 
+  it("forwards the Telegram webhook path and secret-token header (#11)", async () => {
+    const secret = randomBytes(12).toString("hex");
+    await makeProxy()(
+      req(`/api/bot/telegram/${secret}`, {
+        method: "POST",
+        body: "{}",
+        headers: { "content-type": "application/json", "x-telegram-bot-api-secret-token": secret },
+      }),
+    );
+    expect(received[0]?.url).toBe(`/bot/telegram/${secret}`);
+    expect(received[0]?.headers["x-telegram-bot-api-secret-token"]).toBe(secret);
+  });
+
   it("returns an upstream 302 with Location instead of following it", async () => {
     handler = (_req, res) => {
       res.statusCode = 302;

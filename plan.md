@@ -70,7 +70,7 @@
 
 | Service | Start cmd | Health check | Notes |
 |---|---|---|---|
-| `api` | `honcho start --no-prefix -f Procfile` (`backend/Procfile`: uvicorn `app.api.main:app` + `python -m app.worker`) | `/health` (DB) | no public domain; pre-deploy `alembic upgrade head`; Telegram webhook route decided in #11 |
+| `api` | `honcho start --no-prefix -f Procfile` (`backend/Procfile`: uvicorn `app.api.main:app` + `python -m app.worker`) | `/health` (DB) | no public domain; pre-deploy `alembic upgrade head`; Telegram webhook `POST /bot/telegram/{secret}` reached via the web proxy at `/api/bot/telegram/{secret}` (#11); polling bot is a dev-only process (`python -m app.bot.poll`), not in the Procfile |
 | `web` | `node .output/server/index.mjs` (TanStack Start built with the Nitro node-server preset) | `/healthz` (no upstream) | React/TanStack app from `frontend/`; serves the UI and a **same-origin `/api` proxy to `api`** over the Railway private network (no CORS, cookies stay first-party) |
 | `worker` | process inside `api` in v1 (`python -m app.worker` via honcho) | – | queue consumer (#6); a process in the `api` container, owns no volume of its own: the volume mounts on `api` and both processes see it |
 | `postgres` | Railway plugin | – | daily backups enabled |
@@ -276,7 +276,7 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
 **Web (React + TanStack, `frontend/`)**: own Railway `web` service; the browser only talks to its own origin and `/api/*` is proxied to the `api` service (same-origin, so session cookies stay httpOnly/first-party and no CORS is needed). Dashboard per year (refund estimate, per-Anlage totals, missing-docs hints), document list (#10, `/belege?jahr=`): upload area, "Hochgeladene Belege" (documents without a tax item: in flight, failed, needs attention without item, with "Manuell erfassen" for unreadable / failed / multi-receipt files), then "Belege {jahr}" with filter chips (Alle, Relevant, Unsicher, Prüfen, Manuell) and inline edit of category, relevance, gross / deductible / §35a labour amounts, tax year and person (Anlage / Zeile follow the mapping, vendor / dates / payment method are read-only until #61); every save is an override (`version`-checked, audited, counted); thumbnails come with #35; Haushalt (#13, `/haushalt?jahr=`): a first-time wizard while the year has no profile ("Aus {Jahr} übernehmen" when another year has one, else Du → Veranlagung, each step saved, resumed from the data); a saved profile counts as set up, so employers and children are added on the page view, which shows the Veranlagung card, a card per adult (greyed when not in the return), children with months / Freibetrag and "Person hinzufügen"; every nav link keeps `?jahr=`; export button. Mobile-friendly upload via `<input capture>`.
 
 **Bot core** (`app/bot/core.py`) is channel-agnostic: `IncomingMessage(user, files, text)` → commands. Adapters:
-- **Telegram** (v1, `python-telegram-bot` or `aiogram`, webhook mode): send photo/PDF/album, `/summary 2025`, `/missing`, `/undo`, `/year 2025`, `/link <code>`
+- **Telegram** (v1, plain `httpx` adapter in `app/bot/telegram.py`, no bot framework; webhook mode, polling for dev): send photo/PDF/album, `/summary 2025`, `/missing`, `/undo`, `/year 2025`, `/link <code>`
 - **WhatsApp** (v2, Meta Cloud API) — same core, new adapter only.
 
 ---
@@ -292,8 +292,8 @@ Also tariff zone formulas (§32a Abs. 1), Soli Freigrenze, Sonderausgaben-Pausch
   - **No enumeration:** identical `202` for known/unknown/disabled/limited addresses, mail sent after the response; identical `400 invalid_or_expired` for every verify failure; a `422` never echoes input.
   - **Rate limits:** per e-mail 3 / 15 min and 10 / 24 h (DB, silent); per IP 10 link requests and 20 failed verifies / 15 min (in memory, `429` + `Retry-After`). The web proxy replaces `X-Forwarded-For` (`TRUSTED_PROXY_HOPS`).
   - **Protected by default:** every api route needs a session except `/health`, `/version`, `/auth/magic-link`, `/auth/verify`, `/auth/logout` (meta-test); docs are off in production. Every app page sits under the `_authed` layout (SSR-safe redirect to `/login?next=…`).
-- Telegram linking: web shows one-time code → `/link 123456` → `channel_link` row; unknown chat IDs are ignored.
-- Webhook secret path + `X-Telegram-Bot-Api-Secret-Token` check.
+- Telegram linking: web shows one-time 8-digit code (10 min, single use, attempt limits) → `/link 12345678` → `channel_link` row (chat id encrypted, lookup by hash); unknown chat IDs are ignored.
+- Webhook secret path + `X-Telegram-Bot-Api-Secret-Token` check (both constant-time; wrong path 404, wrong header 403, then always 200); the route is on the public / CSRF-exempt lists by template and never logged with its concrete path.
 - Steuer-ID & documents are sensitive: encrypt sensitive columns (app-level Fernet key in Railway env), volume on Railway (note: Railway region choice — pick **EU West (Amsterdam)**).
 - Uploaded files and their original file names (#6): the name is stored in plain text as display metadata and never logged, traced, put in metrics, job rows or error bodies, or used as a path. Files (mode 0600) and file names are **not encrypted** at this stage (user decision 2026-10-05); encryption at rest (#33) is deferred and revisited with #24's hardening.
 - LLM data processing: use providers' zero/limited-retention options; document which provider sees what. Prefer EU endpoints where available (Vertex europe-west3, OpenAI EU data residency if on eligible plan). What OpenAI receives, `store: false`, retention / ZDR and EU residency: [`_docs/llm.md`](_docs/llm.md#data-handling-openai).
