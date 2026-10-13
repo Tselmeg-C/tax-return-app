@@ -55,6 +55,8 @@ OFFICIAL_DOC_TYPES: frozenset[DocType] = frozenset(
 )
 LABOUR_KINDS = frozenset({CostKind35a.LABOUR, CostKind35a.TRAVEL, CostKind35a.MACHINE})
 ASSET_CATEGORIES = frozenset({Category.WK_ARBEITSMITTEL, Category.WK_ARBEITSZIMMER})
+# Kita / Schulgeld refunds are real credit notes, so KIND is not here
+NEVER_NEGATIVE_GROUPS = frozenset({CategoryGroup.VORSORGE})
 RECURRING: frozenset[Category] = frozenset(
     {
         Category.KINDERBETREUUNG,
@@ -196,11 +198,11 @@ def evaluate(
     if c.confidence is Confidence.LOW or (e is not None and e.confidence is Confidence.LOW):
         reasons.add(R.LOW_CONFIDENCE)
     if not c.readable:
-        return RulesResult(None, [R.UNREADABLE])
+        return RulesResult(None, ordered(reasons | {R.UNREADABLE}))
     if c.multiple_documents:
-        return RulesResult(None, [R.MULTIPLE_DOCUMENTS])
+        return RulesResult(None, ordered(reasons | {R.MULTIPLE_DOCUMENTS}))
     if c.doc_type in OFFICIAL_DOC_TYPES:
-        return RulesResult(None, [R.DOC_TYPE_NOT_SUPPORTED])
+        return RulesResult(None, ordered(reasons | {R.DOC_TYPE_NOT_SUPPORTED}))
     if e is None or not needs_extract(c):
         return _irrelevant(c, None, fallback_year, reasons)
 
@@ -259,7 +261,9 @@ def evaluate(
 
     if abs(_sum(list(e.line_items)) - gross) > SUM_TOLERANCE:
         reasons.add(R.SUM_MISMATCH)
-    if e.is_credit_note != (gross < 0):
+    # a negative Spende / Vorsorge / Kind amount is never right (e.g. a bank-statement debit)
+    never_negative = primary is Category.SPENDEN or CATEGORY_GROUP[primary] in NEVER_NEGATIVE_GROUPS
+    if e.is_credit_note != (gross < 0) or (never_negative and (gross < 0 or deductible < 0)):
         reasons.add(R.SIGN_MISMATCH)
     if abs(gross) > MAX_PLAUSIBLE:
         reasons.add(R.IMPLAUSIBLE_AMOUNT)

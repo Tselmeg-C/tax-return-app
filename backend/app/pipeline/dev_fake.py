@@ -70,8 +70,16 @@ def scripted_router(
     return base.with_providers({"fake": FakeProvider(items, app_env=base.settings.app_env)})
 
 
-def dev_router(base: LLMRouter) -> LLMRouter:
-    return scripted_router(base, [DEV_CLASSIFY, DEV_EXTRACT])
+def dev_router(base: LLMRouter, sha256: str | None = None) -> LLMRouter:
+    """With `sha256` the amount (1.00 to 400.99, below the GWG limit) comes from it (#67)."""
+    if sha256 is None:
+        return scripted_router(base, [DEV_CLASSIFY, DEV_EXTRACT])
+    amount = f"{int(sha256[:8], 16) % 40000 / 100 + 1:.2f}"
+    classify = DEV_CLASSIFY.model_copy(update={"total_gross": amount})
+    data = DEV_EXTRACT.model_dump(mode="json")
+    data["total_gross"] = data["line_items"][0]["gross_amount"] = amount
+    extract = GenericBillExtraction.model_validate(data)
+    return scripted_router(base, [classify, extract])
 
 
 def fake_base_router() -> LLMRouter:

@@ -269,6 +269,27 @@ CASES = [
          [R.MULTIPLE_DOCUMENTS]),
     Case("unreadable", classify(readable=False), None, None, [R.UNREADABLE]),
     Case(
+        "unreadable-keeps-low-confidence",
+        classify(readable=False, confidence="low"),
+        None,
+        None,
+        [R.UNREADABLE, R.LOW_CONFIDENCE],
+    ),
+    Case(
+        "negative-donation-debit",  # b020: bank-statement debit booked as -150.00
+        classify(),
+        extraction([line("-150.00", "spenden")], is_credit_note=True),
+        {"gross_amount": D("-150.00")},
+        [R.SIGN_MISMATCH],
+    ),
+    Case(
+        "negative-donation-not-credit-note",
+        classify(),
+        extraction([line("-150.00", "spenden")]),
+        {"gross_amount": D("-150.00")},
+        [R.SIGN_MISMATCH],
+    ),
+    Case(
         "foreign-and-low-confidence",
         classify(confidence="low"),
         extraction([line("249.00", "wk_fortbildung")], currency="USD"),

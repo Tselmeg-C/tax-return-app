@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -37,13 +37,15 @@ async def find_duplicate(
     session: AsyncSession,
     household_id: uuid.UUID,
     document_id: uuid.UUID,
+    created_at: datetime,
     *,
     vendor: str | None,
     gross_amount: Decimal,
     invoice_date: date | None,
     payment_date: date | None,
 ) -> date | None:
-    """The other document's upload date (Europe/Berlin date of `created_at`), or None."""
+    """The upload date of an EARLIER document (a re-run of the original must not match the
+    duplicate that was flagged against it, #65), or None. Europe/Berlin date of `created_at`."""
     key = normalise_vendor(vendor)
     if not key:
         return None
@@ -53,6 +55,7 @@ async def find_duplicate(
         .where(
             TaxItem.document_id.is_not(None),
             TaxItem.document_id != document_id,
+            Document.created_at < created_at,
             TaxItem.gross_amount == gross_amount,
         )
         .add_columns(Document.created_at)
