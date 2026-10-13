@@ -370,3 +370,16 @@ async def test_person_vorsorge_zero_counts_as_entered_but_stays_missing(
     entered = await (await build(db_session, spec)).summary()
     assert entered["what_missing"] == []
     assert Decimal(entered["zve"]) < Decimal(missing["zve"])
+
+
+async def test_shares_household_removes_the_entlastungsbetrag(db_session: AsyncSession) -> None:
+    from app.db.models import TaxProfile
+
+    b = await build(db_session, SCENARIOS["s7_single_parent_entlastungsbetrag"])
+    assert (await b.summary())["entlastungsbetrag"] == "4260.00"
+    profile = (await db_session.execute(b.scope.select(TaxProfile))).scalar_one()
+    profile.shares_household_with_adult = True
+    await db_session.flush()
+    result = await b.summary()
+    assert (result["entlastungsbetrag"], result["gde"]) == ("0.00", "38770.00")
+    assert "entlastung_household_shared" in {n["code"] for n in result["notes"]}

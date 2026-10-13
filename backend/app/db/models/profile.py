@@ -80,6 +80,10 @@ class TaxProfile(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
     spouse_person_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("person.id", ondelete="RESTRICT"), nullable=True
     )
+    # § 24b Abs. 3 EStG (#81): lives with another adult (no Entlastungsbetrag for single parents).
+    shares_household_with_adult: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
 
 
 class Employment(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):

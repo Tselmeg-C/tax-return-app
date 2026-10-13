@@ -38,6 +38,7 @@ export interface ProfileOut {
   bundesland: string;
   taxpayer_person_id: string;
   spouse_person_id: string | null;
+  shares_household_with_adult: boolean;
 }
 
 export interface EmploymentOut {

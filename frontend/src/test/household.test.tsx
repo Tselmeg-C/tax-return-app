@@ -269,6 +269,7 @@ describe("Lohnsteuer und Vorsorge", () => {
       bundesland: "by",
       taxpayer_person_id: me.id,
       spouse_person_id: null,
+      shares_household_with_adult: false,
     });
     api.employments = [
       {
@@ -530,6 +531,7 @@ describe("Haushalt wizard", () => {
       bundesland: "be",
       taxpayer_person_id: me.id,
       spouse_person_id: null,
+      shares_household_with_adult: false,
     });
     api.serve();
     renderPage("/haushalt?jahr=2025");
@@ -565,6 +567,7 @@ describe("Haushalt wizard", () => {
       bundesland: "be",
       taxpayer_person_id: me.id,
       spouse_person_id: null,
+      shares_household_with_adult: false,
     });
     api.other = (call) => {
       if (call.url === "/api/household/2026/copy") {
@@ -603,6 +606,7 @@ describe("Haushalt page view", () => {
       bundesland: "by",
       taxpayer_person_id: me.id,
       spouse_person_id: partner.id,
+      shares_household_with_adult: false,
     });
     api.employments = [
       {

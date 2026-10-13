@@ -5,7 +5,7 @@ year: 2025
 source:
   calculator: "BMF Einkommensteuerrechner"
   url: "https://www.bmf-steuerrechner.de/ekst/eingabeformekst.xhtml"
-  fetched_at: "2026-10-12"
+  fetched_at: "2026-10-13"
   method: script
 cases:
   - {id: s1_single_41158, input: {zve: "41158", filing: single}, expected: {est: "7693", soli: "0.00"}}
@@ -20,3 +20,5 @@ cases:
   - {id: s5_single_73838, input: {zve: "73838", filing: single}, expected: {est: "20100", soli: "17.85"}}
   - {id: s5b_single_13353, input: {zve: "13353", filing: single}, expected: {est: "190", soli: "0.00"}}
   - {id: s6_single_22676, input: {zve: "22676", filing: single}, expected: {est: "2317", soli: "0.00"}}
+  - {id: s7_single_27174, input: {zve: "27174", filing: single}, expected: {est: "3514", soli: "0.00"}}
+  - {id: s7_single_17574, input: {zve: "17574", filing: single}, expected: {est: "1046", soli: "0.00"}}

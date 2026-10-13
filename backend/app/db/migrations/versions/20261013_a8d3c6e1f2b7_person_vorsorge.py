@@ -3,7 +3,7 @@
 Self-contained on purpose: no imports from `app.*`. New table only.
 
 Revision ID: a8d3c6e1f2b7
-Revises: 9c2e5b8d1f47
+Revises: a8d2f5c7e3b1
 Create Date: 2026-10-13 12:00:00.000000
 
 """
@@ -15,7 +15,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "a8d3c6e1f2b7"
-down_revision: str | None = "9c2e5b8d1f47"
+down_revision: str | None = "a8d2f5c7e3b1"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

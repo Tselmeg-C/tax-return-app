@@ -275,3 +275,10 @@ class HaushaltsnaheResult:
     handwerker: HaushaltsnaheLine
     total: Decimal  # what #17 subtracts from the tarifliche Einkommensteuer (min with that tax)
     notes: tuple[Note, ...] = field(default=())
+
+
+@dataclass(frozen=True, slots=True)
+class EntlastungsbetragResult:
+    total: Decimal  # what #17 takes off the Summe der Einkünfte (§ 24b Abs. 1)
+    child_ids: tuple[str, ...]  # counted children, longest membership first (first = Satz 1)
+    notes: tuple[Note, ...] = field(default=())

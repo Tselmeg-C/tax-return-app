@@ -348,7 +348,7 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   wage of 0 means no wage; a wage not entered yet counts as a wage). The § 108 Abs. 3 AO shift
   (`app/estimate/deadlines.py`) and `overdue` are applied at display time only: the stored
   `estimate.result` holds the statutory `deadline_statutory`.
-- KAP / Anlage V (#19 / #20) and Entlastungsbetrag (#81) are 0; items of those groups only
+- KAP / Anlage V (#19 / #20) are 0 (Entlastungsbetrag: see #81); items of those groups only
   produce `kap_v_not_supported` in `what_missing`.
 - Golden service scenarios: `backend/tests/estimate/scenarios/golden_2025.yaml` (hand-derived
   chain per line) + `bmf_inputs_2025.yaml` (BMF values only, refresh with
@@ -399,6 +399,24 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   registered webhook first), `uv run python -m app.bot.cli set-webhook|delete-webhook` (prints the
   host only). Tests use `FakeAdapter` / `httpx.MockTransport` only; chat ids, codes and secrets are
   generated at runtime.
+
+## Entlastungsbetrag (rules from #81)
+
+- `app/tax/deductions/entlastungsbetrag.py`: `entlastungsbetrag(ctx, children, shares_household, p)`
+  (pure, `ChildInput` list as in #87). Taken off the Summe der Einkünfte (§ 24b Abs. 1), i.e. between
+  Einkünfte and `sonderausgaben(gde=...)` / `agb(gde=...)`: `gde = einkuenfte - result.total`.
+- Rules: only `single` filers (joint = 0); a child counts with `in_household` and `months > 0`;
+  `tax_profile.shares_household_with_adult` (Haushaltsgemeinschaft with another adult, § 24b Abs. 3,
+  a checkbox for `single` on the Haushalt page, audited, copied by `copy_year`) gives 0 + note
+  `entlastung_household_shared`. 4.260 + 240 per further child (params section `entlastungsbetrag`,
+  `provisional: true` because of the OPEN reading below, amounts same 2025 / 2026), Abs. 4: 1/12 per full month without the conditions.
+- OPEN reading: the child with the most months carries the 4.260, each further child adds
+  `240 x months / 12`. `in_household` is a year flag; `months` is the entitlement months, so a child
+  that lived with the parent only part of the year is not modelled (enter `months` accordingly).
+  Widowed Splitting (§ 32a Abs. 6) is #53; Steuerklasse II is not checked against the profile.
+- Reference cases: `tests/tax/reference/entlastungsbetrag_{year}.yaml` (hand-computed, read by
+  `tests/tax/test_entlastungsbetrag.py`); service scenario `s7_single_parent_entlastungsbetrag`
+  (tariff from the BMF calculator). `GET /summary` carries `entlastungsbetrag`.
 
 ## Stack
 

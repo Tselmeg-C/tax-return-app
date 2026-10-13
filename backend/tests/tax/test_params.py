@@ -91,6 +91,7 @@ def test_sections_cite_sources() -> None:
             "church_tax",
             "progressionsvorbehalt",
             "kinder",
+            "entlastungsbetrag",
         )
 
 
@@ -179,6 +180,7 @@ def test_provisional_sections_listed(tmp_path: Path) -> None:
         "church_tax",
         "progressionsvorbehalt",
         "kinder",
+        "entlastungsbetrag",
     )
 
 
