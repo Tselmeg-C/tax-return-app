@@ -321,6 +321,7 @@ describe("Vorsorge ohne Arbeitsverhältnis (#98)", () => {
       bundesland: "by",
       taxpayer_person_id: me.id,
       spouse_person_id: spouse.id,
+      shares_household_with_adult: false,
     });
     api.employments = [
       {
