@@ -56,8 +56,8 @@ def test_params(year: int) -> None:
     e = load_params(year).entlastungsbetrag
     assert (e.base, e.per_further_child) == (D(4260), D(240))
     assert "§ 24b Abs. 2" in e.source and "BGBl" in e.source
-    assert not e.provisional  # read in the law text (buzer.de), see the PR table
-    assert "entlastungsbetrag" not in load_params(year).provisional_sections
+    assert e.provisional  # amounts read in the law text; the several-children proration is OPEN
+    assert "entlastungsbetrag" in load_params(year).provisional_sections
 
 
 def test_shares_household_note() -> None:

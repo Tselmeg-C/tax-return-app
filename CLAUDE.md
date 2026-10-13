@@ -404,7 +404,7 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   `tax_profile.shares_household_with_adult` (Haushaltsgemeinschaft with another adult, § 24b Abs. 3,
   a checkbox for `single` on the Haushalt page, audited, copied by `copy_year`) gives 0 + note
   `entlastung_household_shared`. 4.260 + 240 per further child (params section `entlastungsbetrag`,
-  not provisional, same 2025 / 2026), Abs. 4: 1/12 per full month without the conditions.
+  `provisional: true` because of the OPEN reading below, amounts same 2025 / 2026), Abs. 4: 1/12 per full month without the conditions.
 - OPEN reading: the child with the most months carries the 4.260, each further child adds
   `240 x months / 12`. `in_household` is a year flag; `months` is the entitlement months, so a child
   that lived with the parent only part of the year is not modelled (enter `months` accordingly).
