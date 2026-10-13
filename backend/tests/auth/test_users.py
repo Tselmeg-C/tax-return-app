@@ -370,6 +370,8 @@ async def test_email_change_applies_only_after_confirmation(
     assert confirmed.status_code == 200 and confirmed.json() == {"status": "confirmed"}
     assert (await _fresh(db_session, family.member)).email == new
     assert (await api.get("/auth/me", cookie=member_cookie)).status_code == 401
+    # confirming burns the user's other unused links
+    assert (await api.post("/auth/verify", json={"token": login_token})).status_code == 400
     # single use; old address is gone, new one logs in
     assert (await api.post("/auth/confirm-email", json={"token": token})).status_code == 400
     api.clock.advance(timedelta(minutes=16))  # clear the per-address link limit
