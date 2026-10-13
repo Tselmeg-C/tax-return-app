@@ -44,6 +44,14 @@ export interface Summary {
   kindergeld_added: string | null;
   withheld: { lohnsteuer: string; soli: string; kirchensteuer: string } | null;
   by_anlage: { anlage: string; amount: string }[];
+  /** Receipt sums per category line (#21); the lines of an Anlage add up to its `by_anlage`. */
+  by_line: {
+    anlage: string;
+    zeile: string | null;
+    category: string;
+    amount: string;
+    item_ids: string[];
+  }[];
   pflicht: Pflicht | null;
   /** Persons whose Vorsorge is estimated from the gross wage (#85). */
   vorsorge_estimated: string[];

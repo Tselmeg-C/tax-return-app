@@ -66,6 +66,7 @@ const SUMMARY: Summary = {
     { anlage: "n", amount: "1000.00" },
     { anlage: "sonderausgaben", amount: "500.00" },
   ],
+  by_line: [],
   pflicht: {
     state: "voluntary",
     reasons: [],
@@ -222,6 +223,7 @@ describe("Übersicht", () => {
           zve: null,
           pflicht: null,
           by_anlage: [],
+          by_line: [],
           withheld: null,
         }),
       ),

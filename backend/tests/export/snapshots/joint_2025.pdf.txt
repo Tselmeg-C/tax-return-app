@@ -1,0 +1,153 @@
+Steuerübersicht 2025 – belegbot
+Zusammenveranlagung (Splittingtarif) · erstellt am 15.01.2026 · Parameter 2025-HASH
+Dies ist eine unverbindliche Schätzung und Belegübersicht, keine Steuerberatung und keine Steuererklärung. Alle Werte
+müssen vor der Abgabe geprüft werden; maßgeblich ist der Bescheid des Finanzamts. Werte mit 'vorläufig' sind nicht
+vollständig gegen den Gesetzestext bestätigt.
+Schätzung
+Gesamtbetrag der Einkünfte
+ 81.540,00 €
+Zu versteuerndes Einkommen
+ 66.255,00 €
+Tarifliche Einkommensteuer
+ 10.418,00 €
+Ermäßigung nach § 35a
+ 80,00 €
+Festzusetzende Einkommensteuer
+ 10.338,00 €
+Solidaritätszuschlag
+ 0,00 €
+Kirchensteuer
+ 437,40 €
+Einbehaltene Lohnsteuer
+ 10.400,00 €
+Einbehaltener Solidaritätszuschlag
+ 0,00 €
+Einbehaltene Kirchensteuer
+ 384,00 €
+Erstattung
+ 8,60 €
+Kindergeld (zusätzlich zur Steuer, nicht in der Erstattung)
+ 0,00 €
+vorläufig (nicht vollständig gegen den Gesetzestext bestätigt): Kirchensteuer, Progressionsvorbehalt, Kinder,
+Entlastungsbetrag, Sozialversicherung
+Vorsorge geschätzt
+Abgabe
+Abgabepflicht
+Ehegatten mit Steuerklasse V / VI oder IV mit Faktor
+Abgabefrist ohne Steuerberater: 31.07.2026
+Nicht berücksichtigt
+ Kapitalerträge und Vermietung (Anlage KAP / V) sind in dieser Version nicht berechnet; Belege dazu stehen in der
+Liste, fließen aber nicht in die Schätzung.
+Hinweise
+ Arbeitgeberanteil RV gleich Arbeitnehmeranteil angenommen (Ehepartner/in (Person 2))
+ Arbeitgeberanteil RV gleich Arbeitnehmeranteil angenommen (Steuerpflichtige/r (Person 1))
+ Beleg einer Person außerhalb der Erklärung nicht berücksichtigt (Beleg-Nr. 00000007)
+ Beleg mit auffälligem Betrag nicht berücksichtigt (Beleg-Nr. 00000008, Steuerpflichtige/r (Person 1))
+ Beleg noch ungeprüft, mitgerechnet (Beleg-Nr. 00000009, Steuerpflichtige/r (Person 1))
+ Doppelte Haushaltsführung ohne Prüfung der Höchstgrenzen (Steuerpflichtige/r (Person 1))
+ Kirchensteuer-Anteil des Mitglieds nach Einkünften geschätzt
+ Vorsorge aus dem Bruttolohn geschätzt (vorläufig) (Steuerpflichtige/r (Person 1))
+ 2 Belege noch zu prüfen
+ Nicht geprüft: Weitere Einkünfte ohne Lohnsteuerabzug
+ Nicht geprüft: Erstattete Kranken- und Pflegeversicherungsbeiträge über 410 Euro
+ Nicht geprüft: Freibetrag auf der Lohnsteuerkarte (ELStAM)
+ Nicht geprüft: Abweichende Aufteilung von Freibeträgen / Pauschbeträgen
+ Nicht geprüft: Lohnsteuer für sonstige Bezüge nach § 39c Abs. 3 EStG
+ Nicht geprüft: Ehe aufgelöst, im selben Jahr neu geheiratet
+ Nicht geprüft: Ehegatte im EU- / EWR-Ausland oder besondere Steuerpflicht
+ Nicht geprüft: Einkommensgrenze nach § 56 EStDV
+ Nicht geprüft: Aufforderung des Finanzamts
+belegbot · Steuerjahr 2025 · Seite 1 von 2
+Unverbindliche Schätzung, keine Steuerberatung. Maßgeblich ist der Bescheid.
+
+Anlagen und Zeilen
+Anlage N
+54
+Arbeitsmittel
+Anlage N 2025, Aufwendungen für Arbeitsmittel (Zeilen 54-56)
+ 120,50 €
+ 1 Beleg
+Müller & Söhne; "Büro"
+Beleg-Nr. 00000001 · 04.03.2025 · Unbekannt
+ 120,50 €
+60
+Fortbildung
+Anlage N 2025, Fortbildungskosten
+ 80,00 €
+ 1 Beleg
+Muster Verlag
+Beleg-Nr. 00000002 · 04.03.2025 · Unbekannt
+ 80,00 €
+62
+Bewerbungskosten
+Anlage N 2025, Weitere Werbungskosten, Sonstiges (z. B. Bewerbungskosten)
+ 15,00 €
+ 1 Beleg
+Muster Karriere
+Beleg-Nr. 00000009 · 02.02.2025 · Unbekannt
+ 15,00 €
+ungeprüft
+–
+Doppelte Haushaltsführung
+Anlage N-Doppelte Haushaltsführung 2025 (eigene Anlage; Zeile not mapped in v1) – Zeile nicht
+zugeordnet
+ 100,00 €
+ 1 Beleg
+Muster Zweitwohnung
+Beleg-Nr. 0000000a · 15.01.2025 · Unbekannt
+ 100,00 €
+Summe Anlage N
+ 315,50 €
+Anlage Sonderausgaben
+5
+Spenden
+Anlage Sonderausgaben 2025, Zuwendungen an Empfänger im Inland
+ 25,00 €
+ 1 Beleg
+Muster Verein
+Beleg-Nr. 00000005 · 02.11.2025 · Unbekannt
+ 25,00 €
+Summe Anlage Sonderausgaben
+ 25,00 €
+Anlage Außergewöhnliche Belastungen
+24
+Krankheitskosten
+Anlage Außergewöhnliche Belastungen 2025, Krankheitskosten (Summe der Aufwendungen)
+ 60,00 €
+ 1 Beleg
+Muster Apotheke
+Beleg-Nr. 0000000b · 01.04.2025 · Karte
+ 60,00 €
+Summe Anlage Außergewöhnliche Belastungen
+ 60,00 €
+Anlage Haushaltsnahe Aufwendungen
+6
+Handwerkerleistung
+Anlage Haushaltsnahe Aufwendungen 2025, Handwerkerleistungen
+ 500,00 €
+ 1 Beleg
+=HYPERLINK("http://x")
+Beleg-Nr. 00000003 · 01.06.2025 ·
+Überweisung
+ 500,00 €
+Lohnanteil
+400,00 €
+Summe Anlage Haushaltsnahe Aufwendungen
+ 500,00 €
+Nicht in der Schätzung
+Diese Belege sind in keiner Summe der Schätzung enthalten.
+Anlage KAP
+–
+Kapitalerträge (Bescheinigung)
+Anlage KAP 2025 (from the Jahressteuerbescheinigung, #19; Zeile not mapped in v1) – Zeile nicht
+zugeordnet
+ 40,00 €
+ 1 Beleg
+Muster Bank
+Beleg-Nr. 00000004 · 31.12.2025 · Unbekannt
+ 40,00 €
+Summe Anlage KAP
+ 40,00 €
+belegbot · Steuerjahr 2025 · Seite 2 von 2
+Unverbindliche Schätzung, keine Steuerberatung. Maßgeblich ist der Bescheid.
+

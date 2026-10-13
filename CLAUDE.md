@@ -480,6 +480,26 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   `tests/tax/test_church.py` (Stufe boundaries for SN / NW / NI). The Kirchenlohnsteuer already
   withheld is part of the refund sum, never netted inside the engine.
 
+## Export (rules from #21)
+
+- `GET /export/{year}.pdf|csv|zip` (`app/api/export.py`, `app/export/`) only renders
+  `build_summary`; it never calls `app/tax/` and never computes a figure. `by_line`
+  (`anlage, zeile, category, amount, item_ids`) is built in the same loop and by the same
+  selection helper (`_counted`) as `by_anlage`, so the lines of an Anlage add up to its sum.
+- No Steuer-ID, no person or employer name, no `original_filename` in any export: persons are role
+  labels ("Steuerpflichtige/r (Person 1)", "Kind 1", "Haushalt"), a receipt is its "Beleg-Nr."
+  (first 8 characters of the item id). Vendor text is the only free text (PDF: cut at 60
+  characters, cp1252-safe, XML-escaped; CSV: leading `'` before `= + - @ TAB CR`).
+- ZIP: entry names `<anlage>_<zeile>_<date>_<vendor>.<ext>` (ASCII, vendor slug, ext from the sniffed
+  mime type, collisions `_2`), one file per document, originals only through `Storage.open`, a
+  missing one is listed in `FEHLT.txt` + `X-Export-Missing` and never aborts. Cap
+  `EXPORT_ZIP_MAX_MB` (default 500) -> `413 export_too_large` before any byte.
+- Kapitalerträge / Vermietung items are listed under "Nicht in der Schätzung" (CSV hint
+  `nicht_berechnet`), never in the estimate. Fixed download names, `Cache-Control: no-store`.
+- Logs: `export.built` with `year, format, items, bytes, missing` only. PDF / CSV changes need
+  `UPDATE_SNAPSHOTS=1 uv run pytest tests/export/test_snapshots.py` reviewed in the diff.
+- `reportlab` is a runtime dependency (pure wheel, built-in Helvetica); do not add system packages.
+
 ## Stack
 
 - Backend (`backend/`): Python 3.12, `uv`, FastAPI, SQLAlchemy 2.0 + Alembic, Postgres 16, Postgres-based job queue

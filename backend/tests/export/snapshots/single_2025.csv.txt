@@ -1,0 +1,3 @@
+Anlage;Zeile;Kategorie;Person;Beleg-Nr;Datum;Lieferant;Zahlungsart;Brutto;Absetzbar;Lohnanteil §35a;Hinweis;Datei im ZIP
+Anlage N;53;Gewerkschaft / Berufsverband;Steuerpflichtige/r (Person 1);00000002;31.01.2025;Muster Gewerkschaft;Unbekannt;60,00;60,00;;;
+Anlage N;66;Fahrtkosten / Entfernungspauschale;Steuerpflichtige/r (Person 1);00000001;05.05.2025;Muster Bahn;Unbekannt;100,00;100,00;;;

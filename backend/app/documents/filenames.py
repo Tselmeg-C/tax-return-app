@@ -82,7 +82,7 @@ def download_name(original_filename: str | None, mime_type: str, document_id: uu
     return f"{original_filename}.{ext}"
 
 
-def content_disposition(name: str, *, extended: bool = True) -> str:
+def content_disposition(name: str, *, extended: bool = True, kind: str = "inline") -> str:
     """`inline; filename="<ASCII fallback>"; filename*=UTF-8''<percent-encoded>` (RFC 6266).
 
     The fallback replaces every non-ASCII character, `"`, `\\` and `;` with `_`; neither
@@ -91,6 +91,6 @@ def content_disposition(name: str, *, extended: bool = True) -> str:
     clean = "".join(ch for ch in name if unicodedata.category(ch) not in ("Cc", "Cf"))
     fallback = _ASCII_FALLBACK_UNSAFE.sub("_", clean)
     if not extended:
-        return f'inline; filename="{fallback}"'
+        return f'{kind}; filename="{fallback}"'
     encoded = quote(clean, safe="")
-    return f"inline; filename=\"{fallback}\"; filename*=UTF-8''{encoded}"
+    return f"{kind}; filename=\"{fallback}\"; filename*=UTF-8''{encoded}"

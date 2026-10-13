@@ -1,0 +1,78 @@
+Steuerübersicht 2025 – belegbot
+Einzelveranlagung (Grundtarif) · erstellt am 01.01.2030 · Parameter 2025-HASH
+Dies ist eine unverbindliche Schätzung und Belegübersicht, keine Steuerberatung und keine Steuererklärung. Alle Werte
+müssen vor der Abgabe geprüft werden; maßgeblich ist der Bescheid des Finanzamts. Werte mit 'vorläufig' sind nicht
+vollständig gegen den Gesetzestext bestätigt.
+Schätzung
+Gesamtbetrag der Einkünfte
+ 50.770,00 €
+Zu versteuerndes Einkommen
+ 41.158,00 €
+Tarifliche Einkommensteuer
+ 7.693,00 €
+Ermäßigung nach § 35a
+ 0,00 €
+Festzusetzende Einkommensteuer
+ 7.693,00 €
+Solidaritätszuschlag
+ 0,00 €
+Kirchensteuer
+ 0,00 €
+Einbehaltene Lohnsteuer
+ 9.800,00 €
+Einbehaltener Solidaritätszuschlag
+ 0,00 €
+Einbehaltene Kirchensteuer
+ 0,00 €
+Erstattung
+ 2.107,00 €
+Kindergeld (zusätzlich zur Steuer, nicht in der Erstattung)
+ 0,00 €
+vorläufig (nicht vollständig gegen den Gesetzestext bestätigt): Kirchensteuer, Progressionsvorbehalt, Kinder,
+Entlastungsbetrag, Sozialversicherung
+Vorsorge geschätzt
+Abgabe
+Nach deinen Angaben keine Pflicht (freiwillige Abgabe)
+Frist für die freiwillige Abgabe: 31.12.2029 (Frist abgelaufen)
+Nicht berücksichtigt
+–
+Hinweise
+ Arbeitgeberanteil RV gleich Arbeitnehmeranteil angenommen (Steuerpflichtige/r (Person 1))
+ Arbeitsweg mit eigenem Pkw angenommen (Steuerpflichtige/r (Person 1))
+ Fahrtkosten neben Entfernungspauschale prüfen (Steuerpflichtige/r (Person 1))
+ Vorsorge aus dem Bruttolohn geschätzt (vorläufig) (Steuerpflichtige/r (Person 1))
+ Nicht geprüft: Weitere Einkünfte ohne Lohnsteuerabzug
+ Nicht geprüft: Erstattete Kranken- und Pflegeversicherungsbeiträge über 410 Euro
+ Nicht geprüft: Freibetrag auf der Lohnsteuerkarte (ELStAM)
+ Nicht geprüft: Abweichende Aufteilung von Freibeträgen / Pauschbeträgen
+ Nicht geprüft: Lohnsteuer für sonstige Bezüge nach § 39c Abs. 3 EStG
+ Nicht geprüft: Ehe aufgelöst, im selben Jahr neu geheiratet
+ Nicht geprüft: Ehegatte im EU- / EWR-Ausland oder besondere Steuerpflicht
+ Nicht geprüft: Einkommensgrenze nach § 56 EStDV
+ Nicht geprüft: Aufforderung des Finanzamts
+belegbot · Steuerjahr 2025 · Seite 1 von 2
+Unverbindliche Schätzung, keine Steuerberatung. Maßgeblich ist der Bescheid.
+
+Anlagen und Zeilen
+Anlage N
+53
+Gewerkschaft / Berufsverband
+Anlage N 2025, Beiträge zu Berufsverbänden
+ 60,00 €
+ 1 Beleg
+Muster Gewerkschaft
+Beleg-Nr. 00000002 · 31.01.2025 · Unbekannt
+ 60,00 €
+66
+Fahrtkosten / Entfernungspauschale
+Anlage N 2025, Reisekosten bei beruflich veranlassten Auswärtstätigkeiten, Fahrtkosten
+ 100,00 €
+ 1 Beleg
+Muster Bahn
+Beleg-Nr. 00000001 · 05.05.2025 · Unbekannt
+ 100,00 €
+Summe Anlage N
+ 160,00 €
+belegbot · Steuerjahr 2025 · Seite 2 von 2
+Unverbindliche Schätzung, keine Steuerberatung. Maßgeblich ist der Bescheid.
+

@@ -1,0 +1,9 @@
+Anlage;Zeile;Kategorie;Person;Beleg-Nr;Datum;Lieferant;Zahlungsart;Brutto;Absetzbar;Lohnanteil §35a;Hinweis;Datei im ZIP
+Anlage N;54;Arbeitsmittel;Steuerpflichtige/r (Person 1);00000001;04.03.2025;"Müller & Söhne; ""Büro""";Unbekannt;150,50;120,50;;;
+Anlage N;60;Fortbildung;Steuerpflichtige/r (Person 1);00000002;04.03.2025;Muster Verlag;Unbekannt;80,00;80,00;;;
+Anlage N;62;Bewerbungskosten;Steuerpflichtige/r (Person 1);00000009;02.02.2025;Muster Karriere;Unbekannt;15,00;15,00;;ungeprüft;
+Anlage N;;Doppelte Haushaltsführung;Steuerpflichtige/r (Person 1);0000000a;15.01.2025;Muster Zweitwohnung;Unbekannt;100,00;100,00;;Zeile nicht zugeordnet;
+Anlage Sonderausgaben;5;Spenden;Ehepartner/in (Person 2);00000005;02.11.2025;Muster Verein;Unbekannt;25,00;25,00;;;
+Anlage Außergewöhnliche Belastungen;24;Krankheitskosten;Kind 1;0000000b;01.04.2025;Muster Apotheke;Karte;60,00;60,00;;;
+Anlage Haushaltsnahe Aufwendungen;6;Handwerkerleistung;Haushalt;00000003;01.06.2025;"'=HYPERLINK(""http://x"")";Überweisung;500,00;500,00;400,00;;
+Anlage KAP;;Kapitalerträge (Bescheinigung);Steuerpflichtige/r (Person 1);00000004;31.12.2025;Muster Bank;Unbekannt;40,00;40,00;;nicht_berechnet, Zeile nicht zugeordnet;

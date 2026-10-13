@@ -253,7 +253,9 @@ in your password manager and Railway only.
   domain**.
 - Variables: `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `PORT=8000`, `APP_ENV=production`,
   `LOG_LEVEL=INFO`, references to the three shared `OTEL_*` variables. Do not set
-  `OTEL_SERVICE_NAME`. `STORAGE_PATH=/data/storage`.
+  `OTEL_SERVICE_NAME`. `STORAGE_PATH=/data/storage`. Optional `EXPORT_ZIP_MAX_MB` (default 500): cap
+  of the receipts ZIP (#21), `413 export_too_large` above it; the ZIP is built in a temp file
+  (16 MiB in memory, then disk), so size it for the container's temp space.
 - Volume (#6): *Settings → Volumes → New volume*, mount path `/data`, region EU West, size as
   the plan allows (5 GB is plenty; about 2–5 MB per photo). Keep one replica.
 
