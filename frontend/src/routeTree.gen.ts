@@ -18,6 +18,7 @@ import { Route as AuthedExportRouteImport } from './routes/_authed/export'
 import { Route as AuthedHaushaltRouteImport } from './routes/_authed/haushalt'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as LoginConfirmEmailRouteImport } from './routes/login/confirm-email'
 import { Route as LoginSentRouteImport } from './routes/login/sent'
 import { Route as LoginVerifyRouteImport } from './routes/login/verify'
 
@@ -65,6 +66,11 @@ const LoginIndexRoute = LoginIndexRouteImport.update({
   path: '/login/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginConfirmEmailRoute = LoginConfirmEmailRouteImport.update({
+  id: '/login/confirm-email',
+  path: '/login/confirm-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginSentRoute = LoginSentRouteImport.update({
   id: '/login/sent',
   path: '/login/sent',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/export': typeof AuthedExportRoute
   '/haushalt': typeof AuthedHaushaltRoute
   '/api/$': typeof ApiSplatRoute
+  '/login/confirm-email': typeof LoginConfirmEmailRoute
   '/login/sent': typeof LoginSentRoute
   '/login/verify': typeof LoginVerifyRoute
   '/login/': typeof LoginIndexRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/export': typeof AuthedExportRoute
   '/haushalt': typeof AuthedHaushaltRoute
   '/api/$': typeof ApiSplatRoute
+  '/login/confirm-email': typeof LoginConfirmEmailRoute
   '/login/sent': typeof LoginSentRoute
   '/login/verify': typeof LoginVerifyRoute
   '/': typeof AuthedIndexRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/_authed/export': typeof AuthedExportRoute
   '/_authed/haushalt': typeof AuthedHaushaltRoute
   '/api/$': typeof ApiSplatRoute
+  '/login/confirm-email': typeof LoginConfirmEmailRoute
   '/login/sent': typeof LoginSentRoute
   '/login/verify': typeof LoginVerifyRoute
   '/_authed/': typeof AuthedIndexRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/export'
     | '/haushalt'
     | '/api/$'
+    | '/login/confirm-email'
     | '/login/sent'
     | '/login/verify'
     | '/login/'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/export'
     | '/haushalt'
     | '/api/$'
+    | '/login/confirm-email'
     | '/login/sent'
     | '/login/verify'
     | '/'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/_authed/export'
     | '/_authed/haushalt'
     | '/api/$'
+    | '/login/confirm-email'
     | '/login/sent'
     | '/login/verify'
     | '/_authed/'
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   AuthedRoute: typeof AuthedRouteWithChildren
   HealthzRoute: typeof HealthzRoute
   ApiSplatRoute: typeof ApiSplatRoute
+  LoginConfirmEmailRoute: typeof LoginConfirmEmailRoute
   LoginSentRoute: typeof LoginSentRoute
   LoginVerifyRoute: typeof LoginVerifyRoute
   LoginIndexRoute: typeof LoginIndexRoute
@@ -228,6 +241,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login/confirm-email': {
+      id: '/login/confirm-email'
+      path: '/login/confirm-email'
+      fullPath: '/login/confirm-email'
+      preLoaderRoute: typeof LoginConfirmEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login/sent': {
       id: '/login/sent'
       path: '/login/sent'
@@ -268,6 +288,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthedRoute: AuthedRouteWithChildren,
   HealthzRoute: HealthzRoute,
   ApiSplatRoute: ApiSplatRoute,
+  LoginConfirmEmailRoute: LoginConfirmEmailRoute,
   LoginSentRoute: LoginSentRoute,
   LoginVerifyRoute: LoginVerifyRoute,
   LoginIndexRoute: LoginIndexRoute,

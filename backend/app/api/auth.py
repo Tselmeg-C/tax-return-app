@@ -12,6 +12,7 @@ import structlog
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import (
     NOT_AUTHENTICATED,
@@ -32,7 +33,9 @@ from app.auth.tokens import (
     session_cookie,
 )
 from app.config import Settings
+from app.db.audit import Actor, record, snapshot
 from app.db.models import AppUser, Household
+from app.domain.enums import AuditAction
 
 logger = structlog.stdlib.get_logger("app.auth")
 
@@ -143,10 +146,66 @@ async def verify(body: VerifyBody, request: Request, db: DbSession) -> Response:
         await db.commit()  # the link stays used
         return fail()
 
-    await service.invalidate_unused_tokens(db, user.id, now)
+    await service.invalidate_unused_tokens(db, user.id, now, kind="login")
     response = JSONResponse({"next": safe_next(consumed.redirect_path)})
     await open_session(request, db, user, response)
     return response
+
+
+@router.post("/confirm-email")
+async def confirm_email(body: VerifyBody, request: Request, db: DbSession) -> Response:
+    """Applies an e-mail change (#34) with the one-time token sent to the NEW address.
+
+    Needs no session (the token is the proof). Ends all sessions of the user and burns their
+    other links; the user signs in again with the new address.
+    """
+    clock: Clock = request.app.state.clock
+    failures: RateLimiter = request.app.state.verify_failure_limiter
+    ip = client_ip(request)
+    wait = failures.retry_after(ip)
+    if wait is not None:
+        return rate_limited("confirm_email", wait)
+
+    def fail() -> JSONResponse:
+        failures.add(ip)
+        logger.info("auth.email_change.failed", reason=INVALID_OR_EXPIRED)
+        return JSONResponse({"detail": INVALID_OR_EXPIRED}, status_code=400)
+
+    token = body.token
+    if not isinstance(token, str) or not token or len(token) > MAX_TOKEN_LENGTH:
+        return fail()
+    now = clock.now()
+    consumed = await service.consume_link_token(db, token, now, email_change=True)
+    if consumed is None or consumed.new_email is None:
+        await db.rollback()
+        return fail()
+    user = await db.get(AppUser, consumed.user_id)
+    existing = await service.find_user_by_email(db, consumed.new_email)
+    if user is None or (existing is not None and existing.id != user.id):
+        await db.commit()  # the link stays used
+        return fail()
+    before = snapshot(user)
+    user.email = consumed.new_email
+    try:
+        await db.flush()
+    except IntegrityError:
+        await db.rollback()
+        return fail()
+    await record(
+        db,
+        household_id=user.household_id,
+        entity="app_user",
+        entity_id=user.id,
+        action=AuditAction.UPDATE,
+        before=before,
+        after=snapshot(user),
+        actor=Actor.user(user.id),
+    )
+    ended = await service.revoke_user_sessions(db, user.id, now)
+    await service.invalidate_unused_tokens(db, user.id, now)
+    await db.commit()
+    logger.info("auth.email_changed", user_id=str(user.id), sessions_ended=ended)
+    return JSONResponse({"status": "confirmed"})
 
 
 async def open_session(request: Request, db: DbSession, user: AppUser, response: Response) -> None:

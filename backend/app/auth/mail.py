@@ -69,6 +69,41 @@ def login_mail(to: str, link: str, ttl_minutes: int) -> Mail:
     return Mail(to=to, subject=LOGIN_SUBJECT, text=text, html=body)
 
 
+INVITE_SUBJECT = "Du wurdest zu belegbot eingeladen"
+EMAIL_CHANGE_SUBJECT = "Bestätige deine neue E-Mail-Adresse für belegbot"
+
+
+def _link_mail(subject: str, intro: str, button: str, to: str, link: str, ttl: int) -> Mail:
+    text = (
+        f"Hallo,\n\n{intro}\n\n{link}\n\n"
+        f"Der Link ist {ttl} Minuten gültig, nur einmal verwendbar.\n\n"
+        "Falls du das nicht erwartet hast, ignoriere diese E-Mail.\n"
+    )
+    safe_link = html.escape(link, quote=True)
+    body = (
+        '<!doctype html><html lang="de"><body style="font-family:sans-serif">'
+        f"<p>Hallo,</p><p>{html.escape(intro)}</p>"
+        f'<p><a href="{safe_link}">{html.escape(button)}</a></p>'
+        f"<p>Der Link ist {ttl} Minuten gültig, nur einmal verwendbar.</p>"
+        f'<p style="font-size:small">Falls der Knopf nicht geht: {safe_link}</p>'
+        "<p>Falls du das nicht erwartet hast, ignoriere diese E-Mail.</p>"
+        "</body></html>"
+    )
+    return Mail(to=to, subject=subject, text=text, html=body)
+
+
+def invite_mail(to: str, link: str, ttl_minutes: int) -> Mail:
+    """Invitation (#34): the same one-time login link as a normal login."""
+    intro = "du wurdest zu belegbot eingeladen. Mit diesem Link meldest du dich zum ersten Mal an:"
+    return _link_mail(INVITE_SUBJECT, intro, "Bei belegbot anmelden", to, link, ttl_minutes)
+
+
+def email_change_mail(to: str, link: str, ttl_minutes: int) -> Mail:
+    """Confirmation for a new login address (#34); the change applies only after the click."""
+    intro = "bitte bestätige, dass diese Adresse künftig für deine Anmeldung bei belegbot gilt:"
+    return _link_mail(EMAIL_CHANGE_SUBJECT, intro, "Adresse bestätigen", to, link, ttl_minutes)
+
+
 class MemoryBackend:
     """Keeps mails in `outbox` (tests)."""
 

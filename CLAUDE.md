@@ -94,6 +94,23 @@ before starting a task.
 - Tests use the software authenticator `backend/tests/auth/authenticator.py`. Frontend: only
   `lib/passkeys.ts` via `apiFetch`; passkey UI is hidden without `PublicKeyCredential`.
 
+## Member management (rules from #34)
+
+- `app/api/users.py`: `/users*` (owner only, `403 forbidden` for members) and own sessions
+  `GET /auth/sessions`, `DELETE /auth/sessions/{id}` (every user). All queries via `HouseholdScope`
+  (another household's id = `404 not_found`). Web and CLI share `app.auth.service`
+  (`create_user`, `set_disabled`, `revoke_user_sessions`, `invalidate_unused_tokens`); add new
+  behaviour there, not in both places.
+- Guard: demoting or disabling the last active owner is `409 last_owner` (other active owners are
+  locked `FOR UPDATE` for the check). Disabling never touches documents; there is no delete.
+- E-mail change: `PATCH /users/{id}` `{email}` stores a `magic_link_token` with `new_email` and mails
+  the NEW address; `POST /auth/confirm-email` (public, token = proof) applies it, ends all sessions
+  of the user and burns their links. Login links (`new_email IS NULL`) and change links are not
+  interchangeable; a login burns only login links (`invalidate_unused_tokens(kind="login")`).
+- Every change = audit row with actor = the owner (`app_user.email` is redacted in audit rows).
+  Logs / spans carry user and session ids and codes only, never e-mail addresses or tokens.
+- Frontend: `AccessCard` (owner only, Haushalt page) and "Angemeldete Geräte" (Einstellungen).
+
 ## Files, queue and worker (rules from #6)
 
 - Everything that touches uploaded files goes through a `Storage` (`app/storage/`,

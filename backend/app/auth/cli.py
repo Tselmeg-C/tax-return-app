@@ -118,18 +118,8 @@ async def _invite(session: AsyncSession, args: argparse.Namespace, out: TextIO) 
                 else "several households: pass --household-id"
             )
         household = households[0]
-    user = AppUser(household_id=household.id, email=email, role=UserRole(args.role))
-    session.add(user)
-    await session.flush()
-    await record(
-        session,
-        household_id=household.id,
-        entity="app_user",
-        entity_id=user.id,
-        action=AuditAction.CREATE,
-        before=None,
-        after=snapshot(user),
-        actor=Actor.system(),
+    user = await service.create_user(
+        session, household.id, email, UserRole(args.role), Actor.system()
     )
     print(f"invited {user.role.value} {user.id} ({mask_email(email)})", file=out)
 
@@ -140,22 +130,10 @@ async def _set_disabled(
     email = _email(args.email)
     user = await _user(session, email)
     now = clock.now()
-    before = snapshot(user)
-    user.disabled_at = now if disabled else None
-    await session.flush()
-    await record(
-        session,
-        household_id=user.household_id,
-        entity="app_user",
-        entity_id=user.id,
-        action=AuditAction.UPDATE,
-        before=before,
-        after=snapshot(user),
-        actor=Actor.system(),
+    sessions, links = await service.set_disabled(
+        session, user, disabled=disabled, now=now, actor=Actor.system()
     )
     if disabled:
-        sessions = await service.revoke_user_sessions(session, user.id, now)
-        links = await service.invalidate_unused_tokens(session, user.id, now)
         print(
             f"disabled {user.id} ({mask_email(email)}): "
             f"{sessions} session(s) ended, {links} link(s) invalidated",

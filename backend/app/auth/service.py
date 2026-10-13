@@ -17,7 +17,9 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.tokens import hash_token, new_token
+from app.db.audit import Actor, record, snapshot
 from app.db.models import AppUser, MagicLinkToken, Passkey, UserSession
+from app.domain.enums import AuditAction, UserRole
 
 # Per e-mail: at most 3 links per 15 min and 10 per 24 h (counted from token rows).
 EMAIL_LIMITS: tuple[tuple[int, timedelta], ...] = (
@@ -53,7 +55,13 @@ async def email_limit_reached(session: AsyncSession, user_id: uuid.UUID, now: da
 
 
 async def create_link_token(
-    session: AsyncSession, user: AppUser, *, redirect_path: str, now: datetime, ttl: timedelta
+    session: AsyncSession,
+    user: AppUser,
+    *,
+    redirect_path: str | None,
+    now: datetime,
+    ttl: timedelta,
+    new_email: str | None = None,
 ) -> str:
     """Insert a token row (hash only) and return the raw token for the link."""
     token = new_token()
@@ -63,6 +71,7 @@ async def create_link_token(
             user_id=user.id,
             token_hash=hash_token(token),
             redirect_path=redirect_path,
+            new_email=new_email,
             created_at=now,
             expires_at=now + ttl,
         )
@@ -77,18 +86,25 @@ class ConsumedToken:
     user_id: uuid.UUID
     household_id: uuid.UUID
     redirect_path: str | None
+    new_email: str | None = None
 
 
 async def consume_link_token(
-    session: AsyncSession, token: str, now: datetime
+    session: AsyncSession, token: str, now: datetime, *, email_change: bool = False
 ) -> ConsumedToken | None:
-    """Mark the token used in one atomic UPDATE; concurrent calls have exactly one winner."""
+    """Mark the token used in one atomic UPDATE; concurrent calls have exactly one winner.
+
+    Login links (`email_change=False`) and e-mail change links (`True`) are not interchangeable.
+    """
     result = await session.execute(
         update(MagicLinkToken)
         .where(
             MagicLinkToken.token_hash == hash_token(token),
             MagicLinkToken.used_at.is_(None),
             MagicLinkToken.expires_at > now,
+            MagicLinkToken.new_email.is_not(None)
+            if email_change
+            else MagicLinkToken.new_email.is_(None),
         )
         .values(used_at=now)
         .returning(
@@ -96,19 +112,28 @@ async def consume_link_token(
             MagicLinkToken.user_id,
             MagicLinkToken.household_id,
             MagicLinkToken.redirect_path,
+            MagicLinkToken.new_email,
         )
         .execution_options(synchronize_session=False)
     )
     row = result.one_or_none()
     if row is None:
         return None
-    return ConsumedToken(row.id, row.user_id, row.household_id, row.redirect_path)
+    return ConsumedToken(row.id, row.user_id, row.household_id, row.redirect_path, row.new_email)
 
 
-async def invalidate_unused_tokens(session: AsyncSession, user_id: uuid.UUID, now: datetime) -> int:
+async def invalidate_unused_tokens(
+    session: AsyncSession, user_id: uuid.UUID, now: datetime, *, kind: str = "all"
+) -> int:
+    """Burn unused links; `kind` = `all`, `login` (no e-mail change links) or `email_change`."""
+    conditions = [MagicLinkToken.user_id == user_id, MagicLinkToken.used_at.is_(None)]
+    if kind == "login":
+        conditions.append(MagicLinkToken.new_email.is_(None))
+    elif kind == "email_change":
+        conditions.append(MagicLinkToken.new_email.is_not(None))
     result = await session.execute(
         update(MagicLinkToken)
-        .where(MagicLinkToken.user_id == user_id, MagicLinkToken.used_at.is_(None))
+        .where(*conditions)
         .values(used_at=now)
         .execution_options(synchronize_session=False)
     )
@@ -201,3 +226,52 @@ async def find_passkey_with_user(
     )
     row = result.one_or_none()
     return None if row is None else (row[0], row[1])
+
+
+# --- user management (#34), shared by the CLI and `/users` ------------------------------
+
+
+async def create_user(
+    session: AsyncSession, household_id: uuid.UUID, email: str, role: UserRole, actor: Actor
+) -> AppUser:
+    """Insert a login (`email` normalised) and its audit row."""
+    user = AppUser(household_id=household_id, email=email, role=role)
+    session.add(user)
+    await session.flush()
+    await record(
+        session,
+        household_id=household_id,
+        entity="app_user",
+        entity_id=user.id,
+        action=AuditAction.CREATE,
+        before=None,
+        after=snapshot(user),
+        actor=actor,
+    )
+    return user
+
+
+async def set_disabled(
+    session: AsyncSession, user: AppUser, *, disabled: bool, now: datetime, actor: Actor
+) -> tuple[int, int]:
+    """(Un)block login. Disabling also ends the sessions and burns unused links; returns their
+    counts. Never touches documents."""
+    before = snapshot(user)
+    user.disabled_at = now if disabled else None
+    await session.flush()
+    await record(
+        session,
+        household_id=user.household_id,
+        entity="app_user",
+        entity_id=user.id,
+        action=AuditAction.UPDATE,
+        before=before,
+        after=snapshot(user),
+        actor=actor,
+    )
+    if not disabled:
+        return 0, 0
+    return (
+        await revoke_user_sessions(session, user.id, now),
+        await invalidate_unused_tokens(session, user.id, now),
+    )

@@ -15,6 +15,7 @@ PUBLIC_PATHS: frozenset[str] = frozenset(
         "/version",
         "/auth/magic-link",
         "/auth/verify",
+        "/auth/confirm-email",  # #34: the emailed one-time token is its authentication
         "/auth/logout",
         "/bot/telegram/{secret}",  # #11: the secret path + header are its authentication
         "/auth/passkey/login/options",
