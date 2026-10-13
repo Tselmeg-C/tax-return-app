@@ -239,6 +239,12 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
 - Notes: `child_over_25_disabled` (disabled child over 25, `months` trusted) and `child_age_review`
   (over 25 without grade, counted as given). Results and notes carry ids and codes only.
 
+## Household api decisions (#78)
+
+- Employments of a person not in the return (greyed) are read-only (`422 person_not_in_return`
+  on PATCH), but can be deleted. A child row (`PUT /household/{year}/children/{id}`) needs a
+  `tax_profile` for that year (`409 profile_missing`); `copy` always creates the profile first.
+
 ## Tax items and overrides (rules from #10)
 
 - Every user write to `tax_item` goes through `app/tax_items.py` (`update_item` /
@@ -253,6 +259,7 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   plus the field name, never the sent value.
 - Never log, trace or meter override values (amounts, vendor, `reason`, names): log events
   carry ids, field names and codes only.
+- Audit rows never hold `tax_item.vendor` / `reason` (`REDACTED_COLUMNS` in `app/db/audit.py`; the changed-field keys stay).
 - The UI takes enum labels only from `GET /meta/labels` (no copy of `LABELS_DE` in the frontend).
 
 ## Household and profile (rules from #13)
