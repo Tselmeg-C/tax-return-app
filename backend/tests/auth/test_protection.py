@@ -69,6 +69,8 @@ def test_allowlist_is_exactly_the_groomed_one() -> None:
         "/auth/verify",
         "/auth/logout",
         "/bot/telegram/{secret}",  # #11
+        "/auth/passkey/login/options",
+        "/auth/passkey/login/verify",
     }
 
 

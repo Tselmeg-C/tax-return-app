@@ -2,6 +2,7 @@ import { Link, useSearch } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { FileText, LayoutDashboard, Users, Download, Send } from "lucide-react";
 
+import { PasskeyPrompt } from "@/components/auth/PasskeyPrompt";
 import { UserMenu } from "@/components/UserMenu";
 
 const nav = [
@@ -73,7 +74,10 @@ export function AppShell({ children, year }: { children: ReactNode; year?: YearS
           <UserMenu />
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-5 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-5 py-8">
+        <PasskeyPrompt />
+        {children}
+      </main>
       <footer className="mx-auto max-w-6xl px-5 pb-10 text-xs text-muted-foreground">
         Schätzung, keine Steuerberatung. Werte manuell in ELSTER/WISO übertragen.
       </footer>

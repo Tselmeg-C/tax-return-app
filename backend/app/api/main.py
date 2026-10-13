@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import timedelta
@@ -17,7 +18,7 @@ from opentelemetry.metrics import MeterProvider
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.api import auth, bot, documents, household, meta, summary, tax_items
+from app.api import auth, bot, documents, household, meta, passkeys, summary, tax_items
 from app.api.deps import require_session
 from app.api.security import CsrfMiddleware, NoStoreMiddleware
 from app.auth.clock import Clock, SystemClock
@@ -90,6 +91,10 @@ def create_app(
         app.state.bot_adapter = bot_adapter or own_adapter
         app.state.bot_deps = BotDeps(app.state.sessionmaker, storage, resolved, the_clock)
         app.state.bot_tasks = set()  # held webhook tasks (#11)
+        app.state.passkey_options_limiter = RateLimiter(
+            VERIFY_FAILURES_PER_IP, RATE_WINDOW, the_clock
+        )
+        app.state.passkey_key = secrets.token_bytes(32)  # see app/auth/passkeys.py
         try:
             yield
         finally:
@@ -164,6 +169,7 @@ def create_app(
 
     app.include_router(auth.router)
     app.include_router(bot.router)
+    app.include_router(passkeys.router)
     app.include_router(documents.router)
     app.include_router(tax_items.router)
     app.include_router(meta.router)

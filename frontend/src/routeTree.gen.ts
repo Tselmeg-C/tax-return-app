@@ -13,6 +13,7 @@ import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
 import { Route as AuthedBelegeRouteImport } from './routes/_authed/belege'
+import { Route as AuthedEinstellungenRouteImport } from './routes/_authed/einstellungen'
 import { Route as AuthedExportRouteImport } from './routes/_authed/export'
 import { Route as AuthedHaushaltRouteImport } from './routes/_authed/haushalt'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
@@ -37,6 +38,11 @@ const AuthedIndexRoute = AuthedIndexRouteImport.update({
 const AuthedBelegeRoute = AuthedBelegeRouteImport.update({
   id: '/belege',
   path: '/belege',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedEinstellungenRoute = AuthedEinstellungenRouteImport.update({
+  id: '/einstellungen',
+  path: '/einstellungen',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedExportRoute = AuthedExportRouteImport.update({
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthedIndexRoute
   '/healthz': typeof HealthzRoute
   '/belege': typeof AuthedBelegeRoute
+  '/einstellungen': typeof AuthedEinstellungenRoute
   '/export': typeof AuthedExportRoute
   '/haushalt': typeof AuthedHaushaltRoute
   '/api/$': typeof ApiSplatRoute
@@ -84,6 +91,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/healthz': typeof HealthzRoute
   '/belege': typeof AuthedBelegeRoute
+  '/einstellungen': typeof AuthedEinstellungenRoute
   '/export': typeof AuthedExportRoute
   '/haushalt': typeof AuthedHaushaltRoute
   '/api/$': typeof ApiSplatRoute
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/_authed': typeof AuthedRouteWithChildren
   '/healthz': typeof HealthzRoute
   '/_authed/belege': typeof AuthedBelegeRoute
+  '/_authed/einstellungen': typeof AuthedEinstellungenRoute
   '/_authed/export': typeof AuthedExportRoute
   '/_authed/haushalt': typeof AuthedHaushaltRoute
   '/api/$': typeof ApiSplatRoute
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/'
     | '/healthz'
     | '/belege'
+    | '/einstellungen'
     | '/export'
     | '/haushalt'
     | '/api/$'
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
   to:
     | '/healthz'
     | '/belege'
+    | '/einstellungen'
     | '/export'
     | '/haushalt'
     | '/api/$'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/_authed'
     | '/healthz'
     | '/_authed/belege'
+    | '/_authed/einstellungen'
     | '/_authed/export'
     | '/_authed/haushalt'
     | '/api/$'
@@ -179,6 +191,13 @@ declare module '@tanstack/react-router' {
       path: '/belege'
       fullPath: '/belege'
       preLoaderRoute: typeof AuthedBelegeRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/einstellungen': {
+      id: '/_authed/einstellungen'
+      path: '/einstellungen'
+      fullPath: '/einstellungen'
+      preLoaderRoute: typeof AuthedEinstellungenRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/export': {
@@ -228,6 +247,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthedRouteChildren {
   AuthedBelegeRoute: typeof AuthedBelegeRoute
+  AuthedEinstellungenRoute: typeof AuthedEinstellungenRoute
   AuthedExportRoute: typeof AuthedExportRoute
   AuthedHaushaltRoute: typeof AuthedHaushaltRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
@@ -235,6 +255,7 @@ interface AuthedRouteChildren {
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedBelegeRoute: AuthedBelegeRoute,
+  AuthedEinstellungenRoute: AuthedEinstellungenRoute,
   AuthedExportRoute: AuthedExportRoute,
   AuthedHaushaltRoute: AuthedHaushaltRoute,
   AuthedIndexRoute: AuthedIndexRoute,

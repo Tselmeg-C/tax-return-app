@@ -17,6 +17,8 @@ PUBLIC_PATHS: frozenset[str] = frozenset(
         "/auth/verify",
         "/auth/logout",
         "/bot/telegram/{secret}",  # #11: the secret path + header are its authentication
+        "/auth/passkey/login/options",
+        "/auth/passkey/login/verify",
     }
 )
 

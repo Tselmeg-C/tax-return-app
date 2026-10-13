@@ -108,13 +108,13 @@ class PipelineHandler:
     router: Callable[[], LLMRouter] | None = None  # None: get_router() (+ dev fake routing)
     today: Callable[[], date] = _berlin_today
 
-    def _router(self) -> LLMRouter:
+    def _router(self, sha256: str) -> LLMRouter:
         if self.router is not None:
             return self.router()
         llm = get_llm_settings()
         base = get_router()
         if is_dev_fake(llm.llm_classify_model, llm.llm_extract_model):
-            return dev_router(base)
+            return dev_router(base, sha256)
         return base
 
     async def __call__(self, ctx: JobContext) -> None:
@@ -137,7 +137,7 @@ class PipelineHandler:
         prompts = prompt_set(settings.pipeline_prompt_version)
         run = _Run()
         reuse = await _stored_outputs(ctx, doc, prompts.version, run)
-        router = self._router()
+        router = self._router(doc.sha256)
         upload_year = doc.created_at.astimezone(BERLIN).year
 
         async def on_step(outcome: StepOutcome) -> None:
@@ -326,6 +326,7 @@ async def _persist(
                     session,
                     doc.household_id,
                     doc.id,
+                    doc.created_at,
                     vendor=values["vendor"],
                     gross_amount=values["gross_amount"],
                     invoice_date=values["invoice_date"],

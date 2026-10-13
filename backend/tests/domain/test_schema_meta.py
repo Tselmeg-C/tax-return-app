@@ -32,6 +32,7 @@ CORE_TABLES = {
     "job",  # #6
     "lohnersatz",  # #17
     "magic_link_token",  # #5
+    "passkey",  # #12
     "person",
     "tax_item",
     "tax_profile",  # #13

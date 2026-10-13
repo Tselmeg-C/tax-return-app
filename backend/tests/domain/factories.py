@@ -28,6 +28,7 @@ from app.db.models import (
     Job,
     Lohnersatz,
     MagicLinkToken,
+    Passkey,
     Person,
     TaxItem,
     TaxProfile,
@@ -191,6 +192,7 @@ class World:
     estimate: Estimate
     channel_link: ChannelLink
     channel_link_code: ChannelLinkCode
+    passkey: Passkey
 
     def by_model(self) -> dict[type[Any], Any]:
         return {
@@ -211,6 +213,7 @@ class World:
             Estimate: self.estimate,
             ChannelLink: self.channel_link,
             ChannelLinkCode: self.channel_link_code,
+            Passkey: self.passkey,
         }
 
 
@@ -280,8 +283,25 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
         code_hash=random_sha256(),
         expires_at=datetime.now(UTC) + timedelta(minutes=10),
     )
+    passkey = Passkey(
+        household_id=hh.id,
+        user_id=user.id,
+        credential_id=secrets.token_bytes(32),
+        public_key=secrets.token_bytes(32),
+        sign_count=0,
+        name="Passkey 1",
+    )
     session.add_all(
-        [profile, employment, child_year, lohnersatz, estimate, channel_link, channel_link_code]
+        [
+            profile,
+            employment,
+            child_year,
+            lohnersatz,
+            estimate,
+            channel_link,
+            channel_link_code,
+            passkey,
+        ]
     )
     await session.flush()
     return World(
@@ -302,4 +322,5 @@ async def make_world(session: AsyncSession, name: str = "Testhaushalt") -> World
         estimate,
         channel_link,
         channel_link_code,
+        passkey,
     )

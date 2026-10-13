@@ -5,7 +5,7 @@ encrypted chat id (`bytea`); `external_id_hash` is its lookup key. `channel_link
 only `sha256(code)`.
 
 Revision ID: 9c2e5b8d1f47
-Revises: d3f6b9c4e1a5
+Revises: e4a7c1d9b2f6
 Create Date: 2026-10-13 09:00:00.000000
 
 """
@@ -18,7 +18,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "9c2e5b8d1f47"
-down_revision: str | None = "d3f6b9c4e1a5"
+down_revision: str | None = "e4a7c1d9b2f6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
