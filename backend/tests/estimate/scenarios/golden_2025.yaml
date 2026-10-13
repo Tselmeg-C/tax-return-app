@@ -39,6 +39,8 @@ scenarios:
       pflicht: {state: voluntary, reasons: []}
       what_missing: []
 
+  # NOTE: Kirchensteuer is 8 % of the whole ESt although only one spouse is a member; under
+  # § 51a EStG it would be half of that. Known simplification, mixed-faith couples are #53.
   - id: s2_joint_iii_v_church
     title: "Joint, Steuerklasse III / V, one church member in Bayern (8 %), Splitting, Nachzahlung"
     persons: {a: {kind: adult, religion: ev}, b: {kind: adult}}

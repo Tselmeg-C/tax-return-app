@@ -65,6 +65,19 @@ const LABELS: HouseholdLabels = {
 /** A typed Steuer-ID made at runtime; the leading 0 makes it invalid for any real person. */
 const sentinelId = () => `0${String(Math.random()).slice(2, 12).padEnd(10, "7")}`;
 
+const NO_MONEY = {
+  gross_wage: null,
+  lohnsteuer: null,
+  soli_withheld: null,
+  kirchensteuer_withheld: null,
+  rv_employee: null,
+  rv_employer: null,
+  basisrente: null,
+  kv: null,
+  pv: null,
+  sonstige_vorsorge: null,
+};
+
 let seq = 0;
 const nextId = () => `00000000-0000-4000-8000-${String((seq += 1)).padStart(12, "0")}`;
 
@@ -101,6 +114,7 @@ class FakeApi {
       year,
       profile,
       persons: this.persons,
+      lohnersatz: [],
       employments: this.employments
         .filter((e) => e.year === year)
         .map((e) => ({ ...e, in_return: inReturn.includes(e.person_id) })),
@@ -167,13 +181,29 @@ class FakeApi {
         return json(200, row);
       }
       if (path === "/api/employments" && call.method === "POST") {
-        const e = { id: nextId(), in_return: true, ...body } as unknown as EmploymentOut;
+        const e = {
+          id: nextId(),
+          in_return: true,
+          ...NO_MONEY,
+          ...body,
+        } as unknown as EmploymentOut;
         this.employments.push(e);
         return json(201, e);
       }
       return json(404, { detail: "not_found" });
     });
   }
+}
+
+/** The FakeApi has no PATCH /employments: answer it by echoing the body. */
+function mockPatch(api: FakeApi, _calls: Call[]) {
+  const previous = api.other;
+  api.other = (call) => {
+    if (call.method === "PATCH" && call.url.startsWith("/api/employments/")) {
+      return json(200, { ...api.employments[0]!, ...(call.body as object) });
+    }
+    return previous(call);
+  };
 }
 
 function renderPage(path: string) {
@@ -214,11 +244,61 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe("Lohnsteuer und Vorsorge", () => {
+  it("sends German amounts as dot-decimals and rejects a bad one", async () => {
+    const api = new FakeApi();
+    const me = person({ is_me: true });
+    api.persons = [me];
+    api.profiles.set(2025, {
+      year: 2025,
+      filing_status: "single",
+      bundesland: "by",
+      taxpayer_person_id: me.id,
+      spouse_person_id: null,
+    });
+    api.employments = [
+      {
+        id: nextId(),
+        ...NO_MONEY,
+        person_id: me.id,
+        year: 2025,
+        employer_name: "Muster GmbH",
+        steuerklasse: "1",
+        has_factor: false,
+        commute_km: 5,
+        office_days: 1,
+        homeoffice_days: 1,
+        in_return: true,
+      },
+    ];
+    const { calls } = api.serve();
+    mockPatch(api, calls);
+    renderPage("/haushalt?jahr=2025");
+    fireEvent.click((await screen.findAllByRole("button", { name: "Bearbeiten" })).at(-1)!);
+    const wage = await screen.findByLabelText(/Bruttoarbeitslohn/);
+    fireEvent.change(wage, { target: { value: "abc" } });
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    expect(await screen.findByText(TEXT.invalidAmount)).toBeInTheDocument();
+    expect(writes(calls)).toHaveLength(0);
+    fireEvent.change(wage, { target: { value: "52.000,50" } });
+    fireEvent.change(screen.getByLabelText(/Einbehaltene Lohnsteuer/), {
+      target: { value: "7000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await waitFor(() => expect(writes(calls)).toHaveLength(1));
+    expect(writes(calls)[0]!.body).toMatchObject({
+      gross_wage: "52000.50",
+      lohnsteuer: "7000.00",
+      kv: null,
+    });
+  });
+});
+
 describe("Haushalt year handling", () => {
   it("has no mock data import", () => {
     const src = readFileSync("src/routes/_authed/haushalt.tsx", "utf8");
     const page = readFileSync("src/components/household/HouseholdPage.tsx", "utf8");
-    expect(src + page).not.toContain("@/lib/mock");
+    expect(src + page).not.toContain("lib/" + "mock");
   });
 
   it("keeps ?jahr= in nav links and refetches on a year change", async () => {
@@ -395,6 +475,7 @@ describe("Haushalt wizard", () => {
     api.employments = [
       {
         id: nextId(),
+        ...NO_MONEY,
         person_id: me.id,
         year: 2025,
         employer_name: "Muster GmbH",
@@ -454,6 +535,7 @@ describe("Haushalt page view", () => {
     api.employments = [
       {
         id: nextId(),
+        ...NO_MONEY,
         person_id: partner.id,
         year: 2025,
         employer_name: "Beispiel AG",

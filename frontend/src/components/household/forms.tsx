@@ -2,10 +2,14 @@ import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { ApiError } from "@/lib/api";
+import { parseEuroInput, toEuroInput } from "@/lib/money";
 import {
   createEmployment,
   createPerson,
+  deleteLohnersatz,
+  putLohnersatz,
   DISABILITY_GRADES,
+  EMPLOYMENT_MONEY,
   putProfile,
   patchEmployment,
   patchPerson,
@@ -14,6 +18,7 @@ import {
   STEUER_ID_RE,
   TEXT,
   type ChildEntry,
+  type EmploymentFields,
   type EmploymentOut,
   type HouseholdLabels,
   type HouseholdOut,
@@ -333,12 +338,26 @@ export function EmploymentForm(props: {
     office_days: String(e?.office_days ?? 0),
     homeoffice_days: String(e?.homeoffice_days ?? 0),
   });
+  const [money, setMoney] = useState<Record<string, string>>(() =>
+    Object.fromEntries(EMPLOYMENT_MONEY.map(([k]) => [k, toEuroInput(e?.[k] ?? null)])),
+  );
   const set = (patch: Partial<typeof draft>) => setDraft((d) => ({ ...d, ...patch }));
   const [error, setError] = useState<SaveError | null>(null);
   const [busy, setBusy] = useState(false);
   const err = (field: string) => errorAt(error, field);
   const submit = async () => {
+    const amounts: Record<string, string | null> = {};
+    for (const [k] of EMPLOYMENT_MONEY) {
+      const raw = money[k] ?? "";
+      const parsed = raw.trim() === "" ? null : parseEuroInput(raw);
+      if (raw.trim() !== "" && parsed === null) {
+        setError({ field: k, message: TEXT.invalidAmount });
+        return;
+      }
+      amounts[k] = parsed;
+    }
     const fields = {
+      ...(amounts as Pick<EmploymentFields, (typeof EMPLOYMENT_MONEY)[number][0]>),
       employer_name: draft.employer_name,
       steuerklasse: draft.steuerklasse,
       has_factor: draft.steuerklasse === "4" && draft.has_factor,
@@ -429,6 +448,19 @@ export function EmploymentForm(props: {
           />
         </Field>
       </div>
+      <p className="text-sm font-medium">{TEXT.lohnsteuerHeading}</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {EMPLOYMENT_MONEY.map(([k, text]) => (
+          <Field key={k} label={`${text} (€)`} error={err(k)}>
+            <input
+              inputMode="decimal"
+              className={`${inputClass} num`}
+              value={money[k] ?? ""}
+              onChange={(ev) => setMoney((m) => ({ ...m, [k]: ev.target.value }))}
+            />
+          </Field>
+        ))}
+      </div>
       <FormError error={error} />
       <div className="flex flex-col gap-2 sm:flex-row">
         <button type="button" className={buttonClass} onClick={props.onCancel}>
@@ -438,6 +470,62 @@ export function EmploymentForm(props: {
           Speichern
         </button>
       </div>
+    </form>
+  );
+}
+
+export function LohnersatzForm(props: {
+  personId: string;
+  jahr: number;
+  amount: string | null;
+  onSaved: () => void;
+}) {
+  const [text, setText] = useState(toEuroInput(props.amount));
+  const [error, setError] = useState<SaveError | null>(null);
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    const parsed = text.trim() === "" ? null : parseEuroInput(text);
+    if (text.trim() !== "" && parsed === null) {
+      setError({ field: "amount", message: TEXT.invalidAmount });
+      return;
+    }
+    setBusy(true);
+    try {
+      if (parsed === null) {
+        if (props.amount !== null) await deleteLohnersatz(props.jahr, props.personId);
+      } else {
+        await putLohnersatz(props.jahr, props.personId, parsed);
+      }
+      setError(null);
+      toast.success(TEXT.saved);
+      props.onSaved();
+    } catch (caught) {
+      setError(saveError(caught, { jahr: props.jahr }));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <form
+      className="flex flex-col gap-2 sm:flex-row sm:items-end"
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        void submit();
+      }}
+    >
+      <div className="sm:flex-1">
+        <Field label={`${TEXT.lohnersatzLabel} (€)`} error={error?.message ?? null}>
+          <input
+            inputMode="decimal"
+            className={`${inputClass} num`}
+            value={text}
+            onChange={(ev) => setText(ev.target.value)}
+          />
+        </Field>
+      </div>
+      <button type="submit" className={buttonClass} disabled={busy}>
+        Betrag speichern
+      </button>
     </form>
   );
 }
