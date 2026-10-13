@@ -39,8 +39,8 @@ scenarios:
       pflicht: {state: voluntary, reasons: []}
       what_missing: []
 
-  # NOTE: Kirchensteuer is 8 % of the whole ESt although only one spouse is a member; under
-  # § 51a EStG it would be half of that. Known simplification, mixed-faith couples are #53.
+  # #53: only A is a church member, so the KiSt is on A's share of the Bemessungsgrundlage
+  # (BY: Art. 9 Abs. 2 Nr. 2 KirchStG, ESt split by the Einkuenfte; no Kirchgeld in Bayern).
   - id: s2_joint_iii_v_church
     title: "Joint, Steuerklasse III / V, one church member in Bayern (8 %), Splitting, Nachzahlung"
     persons: {a: {kind: adult, religion: ev}, b: {kind: adult}}
@@ -56,8 +56,8 @@ scenarios:
       - "Altersvorsorge: (5.580 + 2.232) x 2 = 15.624 (<= 58.688), abzgl. AG-Anteil 7.812 = 7.812"
       - "Basiskranken: A 4.200 x 0,96 + 1.000 = 5.032; B 1.700 x 0,96 + 400 = 2.032; Summe 7.064 (> Deckel 3.800, Nr. 3 voll)"
       - "Vorsorge 7.812 + 7.064 = 14.876; zvE = 81.540 - 384 - 14.876 = 66.280 (BMF Splitting: ESt 10.424, Soli 0)"
-      - "KiSt 8 % Bayern: 10.424 x 0,08 = 833,92 (§ 51a Abs. 2)"
-      - "Einbehalten 4.800 + 5.600 + KiSt 384 = 10.784; Ergebnis = 10.784 - 10.424 - 833,92 = -473,92 (Nachzahlung)"
+      - "KiSt 8 % Bayern nur auf den Anteil von A: Anteil = 58.770 / 81.540 (Summe der Einkuenfte); 10.424 x 0,08 x 58.770 / 81.540 = 601,0483 -> 601,04 (Cent abgerundet, § 9 Abs. 2 AVKirchStG)"
+      - "Einbehalten 4.800 + 5.600 + KiSt 384 = 10.784; Ergebnis = 10.784 - 10.424 - 601,04 = -241,04 (Nachzahlung)"
       - "Pflicht: Steuerklasse V bei Ehegatten mit Arbeitslohn (§ 46 Abs. 2 Nr. 3a)"
     bmf: [s2_joint_66280]
     expected:
@@ -68,12 +68,46 @@ scenarios:
       ermaessigung_35a: "0.00"
       festzusetzende_est: "10424.00"
       soli: "0.00"
-      kirchensteuer: "833.92"
+      kirchensteuer: "601.04"
+      kirchensteuer_method: member_share
       kindergeld_added: "0.00"
       withheld: {lohnsteuer: "10400.00", soli: "0.00", kirchensteuer: "384.00"}
-      refund: "-473.92"
+      refund: "-241.04"
       pflicht: {state: mandatory, reasons: [steuerklasse_combination]}
       what_missing: []
+      notes: [kist_share_estimated]
+
+  - id: s2c_joint_one_member_nw_share_above_kirchgeld
+    title: "As s2, but Nordrhein-Westfalen (9 %): member share 676,17 beats the Kirchgeld 156"
+    persons: {a: {kind: adult, religion: ev}, b: {kind: adult}}
+    profile: {filing: joint, bundesland: nw, taxpayer: a, spouse: b}
+    employments:
+      - {person: a, steuerklasse: "3", gross_wage: "60000.00", lohnsteuer: "4800.00",
+         kirchensteuer_withheld: "384.00", rv_employee: "5580.00", kv: "4200.00", pv: "1000.00"}
+      - {person: b, steuerklasse: "5", gross_wage: "24000.00", lohnsteuer: "5600.00",
+         rv_employee: "2232.00", kv: "1700.00", pv: "400.00"}
+    chain:
+      - "Einkuenfte, Sonderausgaben, Vorsorge and zvE as s2: zvE = 66.280 (BMF Splitting: ESt 10.424, Soli 0)"
+      - "KiSt-Anteil: 10.424 x 0,09 x 58.770 / 81.540 = 676,1700 -> 676,17 (NW 9 %, Erlass FinMin NRW v. 17.11.2025)"
+      - "Besonderes Kirchgeld NW 2025: zvE 66.280 in Stufe 2 (57.500 bis 69.999) = 156; Vergleichsberechnung, der hoehere Betrag: 676,17"
+      - "Einbehalten 4.800 + 5.600 + KiSt 384 = 10.784; Ergebnis = 10.784 - 10.424 - 676,17 = -316,17"
+    bmf: [s2_joint_66280]
+    expected:
+      gde: "81540.00"
+      zve_before_children: "66280.00"
+      zve: "66280.00"
+      tarifliche_est: "10424.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "10424.00"
+      soli: "0.00"
+      kirchensteuer: "676.17"
+      kirchensteuer_method: member_share
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "10400.00", soli: "0.00", kirchensteuer: "384.00"}
+      refund: "-316.17"
+      pflicht: {state: mandatory, reasons: [steuerklasse_combination]}
+      what_missing: []
+      notes: [kist_share_estimated]
 
   - id: s3a_joint_two_children_kindergeld
     title: "Joint + 2 children, Guenstigerpruefung keeps the Kindergeld (low zvE)"
@@ -315,6 +349,37 @@ scenarios:
       kindergeld_added: "0.00"
       withheld: {lohnsteuer: "14000.00", soli: "0.00", kirchensteuer: "0.00"}
       refund: "3576.00"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []
+
+  - id: s7b_joint_member_without_income_kirchgeld
+    title: "As s7, spouse B (no income) is the church member in NW: besonderes Kirchgeld Stufe 2"
+    persons: {a: {kind: adult}, b: {kind: adult, religion: ev}}
+    profile: {filing: joint, bundesland: nw, taxpayer: a, spouse: b}
+    employments:
+      - {person: a, steuerklasse: "3", gross_wage: "80000.00", lohnsteuer: "14000.00",
+         rv_employee: "7440.00", kv: "3000.00", pv: "598.00"}
+    person_vorsorge:
+      - {person: b, kv: "1200.00", pv: "300.00"}
+    chain:
+      - "zvE as s7 = 66.280 (BMF Splitting: ESt 10.424, Soli 0); Erstattung vor KiSt 14.000 - 10.424 = 3.576"
+      - "KiSt-Anteil von B: Summe der Einkuenfte B = 0 -> Anteil 0 -> 0,00"
+      - "Besonderes Kirchgeld NW 2025: zvE 66.280 in Stufe 2 (57.500 bis 69.999) = 156 (Erlass FinMin NRW v. 17.11.2025); der hoehere Betrag: 156,00"
+      - "Ergebnis = 14.000 - 10.424 - 156 = 3.420"
+    bmf: [s2_joint_66280]
+    expected:
+      gde: "78770.00"
+      zve_before_children: "66280.00"
+      zve: "66280.00"
+      tarifliche_est: "10424.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "10424.00"
+      soli: "0.00"
+      kirchensteuer: "156.00"
+      kirchensteuer_method: kirchgeld
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "14000.00", soli: "0.00", kirchensteuer: "0.00"}
+      refund: "3420.00"
       pflicht: {state: voluntary, reasons: []}
       what_missing: []
 

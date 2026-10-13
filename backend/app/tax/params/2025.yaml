@@ -20,7 +20,7 @@ soli: # §§ 3, 4 SolzG 1995
 
 church_tax:
   provisional: true
-  source: "Kirchensteuersätze aus den Kirchensteuerbeschlüssen der Länder (bekannt gemacht im BStBl. I): BW, BY 8 %, übrige Länder 9 %. provisional: the per-Land official source was not verified in #14 (gesetze-im-internet.de / Landesrecht not reachable from the session); rounding down to cents (#14 Decision 5) is not confirmed by the BMF Einkommensteuerrechner, which does not compute Kirchensteuer. Re-check in #53."
+  source: "#53, read 2026-10-13. Rates (Kirchensteuerbeschlüsse, as announced by the Länder): SN 9 % (Bek. SMF Sachsen v. 28.03.2025 for 2025, 28.04.2026 for 2026, steuern.sachsen.de/download/KiStB_2025.pdf / _2026.pdf), NW 9 % (FinMin NRW Erlass v. 17.11.2025, BStBl. 2025 I S. 2060, via deubner-steuern.de and datenbank.nwb.de/Dokument/1086351), NI 9 % (FinMin NI, BStBl. 2025 I S. 1172, datenbank.nwb.de/Dokument/1070543), BE / BB / MV / ST 9 % (KiStB kath. Erzbistum Berlin v. 22.11.2024, ABl. 12/2024, Evangelische Kirchen of those Länder not read). NOT read in a primary text (only secondary summaries: haufe.de Kirchensteuersätze 2025, lohnsteuer-kompakt.de, search snippets): BW 8 % (FinMin BW Erlass v. 06.02.2025, BStBl. 2025 I S. 420, paywalled), BY 8 %, HB, HH, HE, RP, SL, SH, TH 9 %. Rounding: fractions of a cent are dropped for BY (§ 9 Abs. 2 AVKirchStG, gesetze-bayern.de); no text read for the other Länder (assumed alike). Member share in glaubensverschiedener Ehe: BY Art. 9 Abs. 2 Nr. 2 KirchStG (ESt of the joint return split by the ratio of the Summe der Einkünfte), the Sachsen Bek. Nr. 1 and Erzbistum Berlin § 2 Abs. 1 say the same for the Kappung; the engine uses that ratio with the Summe der Einkünfte approximated by the Gesamtbetrag der Einkünfte per person (#53). Kirchgeld (kirchgeld): table of the Sachsen Bek. Nr. 3 (2025 and 2026, identical) = NW Erlass 2025 (table read in datenbank.nwb.de/Dokument/1086351) = NI 2025 (stage 1 read) = Erzbistum Berlin KiStB kath. § 3 Abs. 2; Vergleichsberechnung, the higher amount is charged (Sachsen Bek. Nr. 3, NI 2025); Bemessungsgrundlage = zvE after the Kinderfreibeträge (§ 51a Abs. 2 EStG, Sachsen Bek. Nr. 3). compare_states: SN confirmed 2025 + 2026, NW and NI confirmed 2025 only (2026 Erlasse of 13.04.2026 / 01.04.2026 found, not read: same table assumed). no_kirchgeld_states: BY (Art. 9 KirchStG knows no Kirchgeld; confirmed by the law text). Not modelled (member share + note kirchgeld_not_modelled): BW (2025 table not read; the 2016 table started at 30.000), BE, BB, MV, ST (the evangelical tables not read), HB, HH, HE, RP, SL, SH, TH. Kappung (#112) and part-year membership (#113) are not applied."
   rate_by_state: # ISO 3166-2:DE without "DE-"
     BW: "0.08"
     BY: "0.08"
@@ -38,6 +38,23 @@ church_tax:
     ST: "0.09"
     SH: "0.09"
     TH: "0.09"
+  kirchgeld: # besonderes Kirchgeld in glaubensverschiedener Ehe, annual amount from the lower bound of the zvE
+    compare_states: [NI, NW, SN]
+    no_kirchgeld_states: [BY]
+    stufen:
+      - {lower: "50000", amount: "96"}
+      - {lower: "57500", amount: "156"}
+      - {lower: "70000", amount: "276"}
+      - {lower: "82500", amount: "396"}
+      - {lower: "95000", amount: "540"}
+      - {lower: "107500", amount: "696"}
+      - {lower: "120000", amount: "840"}
+      - {lower: "145000", amount: "1200"}
+      - {lower: "170000", amount: "1560"}
+      - {lower: "195000", amount: "1860"}
+      - {lower: "220000", amount: "2220"}
+      - {lower: "270000", amount: "2940"}
+      - {lower: "320000", amount: "3600"}
 
 werbungskosten: # §§ 9, 9a EStG, § 4 Abs. 5 Satz 1 Nr. 6c EStG (#15)
   source: "§ 9a Satz 1 Nr. 1 Buchst. a EStG (Arbeitnehmer-Pauschbetrag 1.230 Euro, seit VZ 2023 durch Art. 4 JStG 2022 v. 16.12.2022, BGBl. 2022 I S. 2294); § 9 Abs. 1 Satz 3 Nr. 4 Satz 2 und 8 EStG (Entfernungspauschale: VZ 2021 bis 2026 0,30 Euro je Kilometer für die ersten 20 km, 0,38 Euro ab dem 21. km; Höchstbetrag 4.500 Euro bei Nicht-Kfz-Nutzung) i.d.F. vor Art. 2 StÄndG 2025; § 4 Abs. 5 Satz 1 Nr. 6c i.V.m. § 9 Abs. 5 Satz 1 EStG (Tagespauschale 6 Euro, höchstens 1.260 Euro). Read 2026-10-08 at buzer.de/9_EStG.htm, 9a_EStG.htm, 4_EStG.htm and buzer.de/gesetz/4499/al233627-0.htm (a.F. of § 9 up to 31.12.2025); gesetze-im-internet.de was not reachable. § 9a Satz 3 (Gewerkschaftsbeiträge neben dem Pauschbetrag) applies only from VZ 2026."

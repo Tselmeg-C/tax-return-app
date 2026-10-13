@@ -71,6 +71,8 @@ def test_money_fields_are_decimal(year: int) -> None:
             return walk(value.model_dump())
         if isinstance(value, dict):
             return [leaf for v in value.values() for leaf in walk(v)]
+        if isinstance(value, list | tuple | set | frozenset):
+            return [leaf for v in value for leaf in walk(v)]
         return [value]
 
     p = load_params(year)

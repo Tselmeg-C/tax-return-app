@@ -1,0 +1,53 @@
+# Reference cases for `church_tax_joint` (#53): joint return, ONE church member. Hand-computed from the
+# Land texts named in `source` (never with the engine). `input`: state, bmg (Bemessungsgrundlage of the
+# KiSt = ESt after § 35a), zve_bmg (zvE after the Kinderfreibetraege, basis of the Kirchgeld), member /
+# total = Summe der Einkuenfte of the member / of both spouses. Notes: codes only. The BMF calculator
+# does not compute any of this. NW / NI 2026: the 2026 Erlass was not read (same table assumed).
+- id: K1
+  rule: church_tax_joint
+  source: "Art. 9 Abs. 2 Nr. 2 BayKirchStG (ESt split by the Summe der Einkuenfte); Umlagesatz 8 %; Bayern knows no besonderes Kirchgeld"
+  arithmetic: "share = 30.000 / 60.000 = 1/2; KiSt = 10.000 x 0,08 x 1/2 = 400,00; no Kirchgeld in BY, so no comparison"
+  input: {state: BY, bmg: "10000", zve_bmg: "60000", member: "30000", total: "60000"}
+  expected: {kist: "400.00", method: member_share, notes: [kist_share_estimated]}
+- id: K2
+  rule: church_tax_joint
+  source: "Kirchensteuerbeschluss NRW 9 % (Erlass FinMin NRW v. 17.11.2025, BStBl. 2025 I S. 2060); Kirchgeld table NRW with Vergleichsberechnung, der hoehere Betrag"
+  arithmetic: "share = 1/2; KiSt = 10.000 x 0,09 x 1/2 = 450,00; Kirchgeld: zvE 60.000 is in Stufe 2 (57.500 bis 69.999) = 156; 450,00 > 156, so the member share is charged"
+  input: {state: NW, bmg: "10000", zve_bmg: "60000", member: "30000", total: "60000"}
+  expected: {kist: "450.00", method: member_share, notes: [kist_share_estimated]}
+- id: K3
+  rule: church_tax_joint
+  source: "Kirchensteuerbeschluss NRW 9 %; Kirchgeld table NRW (Stufe 2: 57.500 bis 69.999 = 156); Vergleichsberechnung, der hoehere Betrag"
+  arithmetic: "the member earns 0 (the non-member earns all): share = 0, KiSt = 0,00; Kirchgeld Stufe 2 = 156 > 0,00, so 156,00 is charged"
+  input: {state: NW, bmg: "10000", zve_bmg: "60000", member: "0", total: "60000"}
+  expected: {kist: "156.00", method: kirchgeld, notes: []}
+- id: K4
+  rule: church_tax_joint
+  source: "Bek. SMF Sachsen 2025 / 2026 Nr. 1 (9 %) and Nr. 3 (Kirchgeld table, Vergleichsberechnung, der hoehere Betrag)"
+  arithmetic: "share = 0, KiSt 0,00; zvE 100.000 is in Stufe 5 (95.000 bis 107.499) = 540; 540,00 > 0,00"
+  input: {state: SN, bmg: "20000", zve_bmg: "100000", member: "0", total: "60000"}
+  expected: {kist: "540.00", method: kirchgeld, notes: []}
+- id: K5
+  rule: church_tax_joint
+  source: "Art. 9 Abs. 2 Nr. 2 BayKirchStG; Bayern knows no besonderes Kirchgeld"
+  arithmetic: "share = 0: 10.000 x 0,08 x 0 = 0,00; BY has no Kirchgeld, so 0,00 and no kirchgeld_not_modelled note"
+  input: {state: BY, bmg: "10000", zve_bmg: "60000", member: "0", total: "60000"}
+  expected: {kist: "0.00", method: member_share, notes: []}
+- id: K6
+  rule: church_tax_joint
+  source: "Hessen 9 % (secondary source only); the Kirchgeld table of Hessen was not read"
+  arithmetic: "share = 20.000 / 60.000 = 1/3; KiSt = 10.000 x 0,09 x 1/3 = 300,00; no table for HE: member share plus the note kirchgeld_not_modelled"
+  input: {state: HE, bmg: "10000", zve_bmg: "60000", member: "20000", total: "60000"}
+  expected: {kist: "300.00", method: member_share, notes: [kist_share_estimated, kirchgeld_not_modelled]}
+- id: K7
+  rule: church_tax_joint
+  source: "§ 9 Abs. 2 AVKirchStG (Bruchteile von Cent bleiben unberuecksichtigt); Art. 9 Abs. 2 Nr. 2 BayKirchStG"
+  arithmetic: "share = 1/3; 10.000 x 0,08 / 3 = 266,666... -> 266,66 (rounded down, not 266,67)"
+  input: {state: BY, bmg: "10000", zve_bmg: "60000", member: "20000", total: "60000"}
+  expected: {kist: "266.66", method: member_share, notes: [kist_share_estimated]}
+- id: K8
+  rule: church_tax_joint
+  source: "Bek. SMF Sachsen Nr. 1 (9 %) and Nr. 3 (Stufe 10: 195.000 bis 219.999 = 1.860; Vergleichsberechnung)"
+  arithmetic: "share = 30.000 / 40.000 = 3/4; KiSt = 50.000 x 0,09 x 3/4 = 3.375,00; Kirchgeld Stufe 10 = 1.860 < 3.375,00, so the member share is charged"
+  input: {state: SN, bmg: "50000", zve_bmg: "200000", member: "30000", total: "40000"}
+  expected: {kist: "3375.00", method: member_share, notes: [kist_share_estimated]}

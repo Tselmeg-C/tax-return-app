@@ -459,6 +459,27 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   `tests/tax/test_sv_estimate.py`) and the estimate scenarios s8 / s9 in `golden_2025.yaml`.
 - Not estimated (follow-up): Minijob / Midijob, Beamte, PKV, Rentner, Studenten, bAV, Zusatzbeitrag per person.
 
+## Church tax, one member (rules from #53)
+
+- `app/tax/church.py` (pure): `church_tax_joint(bmg, zve_bmg, MemberShare(member, total), state, p)`
+  for a JOINT return with exactly ONE church member. KiSt = rate x Bemessungsgrundlage x member /
+  total (Summe der Einkuenfte ratio, rounded down to cents). `festsetzung(..., church_member=None)`:
+  `None` = old behaviour (whole base); the estimate service sets it only for joint + one member
+  (member flags from `person.religion`, income = wage Einkuenfte per person, note
+  `kist_share_estimated`). Result carries `kist_method` (`full` / `member_share` / `kirchgeld`),
+  `GET /summary` adds `kirchensteuer_method` (additive).
+- Params `church_tax.kirchgeld`: `stufen` (lower bound of the zvE after the Kinderfreibetraege ->
+  annual amount), `compare_states` (higher of member-share KiSt and Kirchgeld is charged),
+  `no_kirchgeld_states` (BY: share only). Any other Land: member share + note
+  `kirchgeld_not_modelled`. A new Land needs its Kirchgeld text read first (source in `source`).
+- What is confirmed and what not is in the params `source` (per Land, per year); the section stays
+  `provisional: true`. Open: BW / BE / BB / MV / ST / HB / HH / HE / RP / SL / SH / TH tables, NW and NI
+  2026 (Erlass not read), 8 % for BW / BY from secondary sources only. Out: Kappung #112,
+  part-year #113, Witwensplitting #114, § 26a #115.
+- Reference cases `tests/tax/reference/kirchensteuer_{year}.yaml` (hand-computed) +
+  `tests/tax/test_church.py` (Stufe boundaries for SN / NW / NI). The Kirchenlohnsteuer already
+  withheld is part of the refund sum, never netted inside the engine.
+
 ## Stack
 
 - Backend (`backend/`): Python 3.12, `uv`, FastAPI, SQLAlchemy 2.0 + Alembic, Postgres 16, Postgres-based job queue
