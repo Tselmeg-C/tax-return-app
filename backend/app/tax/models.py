@@ -335,6 +335,19 @@ class MappingEntry(_Frozen):
 MAPPED_CATEGORIES: frozenset[Category] = frozenset(Category) - {Category.IRRELEVANT}
 
 
+class EntlastungsbetragParams(_Section):
+    """§ 24b Abs. 2 EStG (#81): Entlastungsbetrag für Alleinerziehende, per year."""
+
+    base: Dec
+    per_further_child: Dec
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        if self.base <= 0 or self.per_further_child <= 0:
+            raise ValueError("base and per_further_child must be positive")
+        return self
+
+
 class TaxParams(_Frozen):
     year: int
     tariff: TariffParams
@@ -348,6 +361,7 @@ class TaxParams(_Frozen):
     kinder: KinderParams
     filing: FilingParams
     haushaltsnahe: HaushaltsnaheParams
+    entlastungsbetrag: EntlastungsbetragParams
     mapping: dict[Category, MappingEntry]
 
     @model_validator(mode="after")

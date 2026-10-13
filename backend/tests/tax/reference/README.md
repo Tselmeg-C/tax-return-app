@@ -71,3 +71,13 @@ literals in `test_assessment.py::ISSUE_2025`. `used` lists the children whose Fr
 rule `H1` = `haushaltsnahe`; `input` lists labour shares of items paid by transfer (`hw` Handwerker,
 `dl` Dienstleistung, `cash_hw` paid in cash); `expected` = the Ermäßigung (total, cents). The rates
 and caps are the same in 2025 and 2026, so both files hold the same cases.
+
+## Entlastungsbetrag (#81)
+
+`entlastungsbetrag_{year}.yaml` (read by `tests/tax/test_entlastungsbetrag.py`, not by
+`test_reference.py`): rules `E1` (amount per number of children), `E2` (Zwölftelung, Abs. 4),
+`E3` (who counts as a child of the household), `E4` (no Splitting, no Haushaltsgemeinschaft with an
+adult). `input`: `filing`, `shares` (Haushaltsgemeinschaft with another adult), `children`
+(`months`, `in_household`); `expected` = the amount off the Summe der Einkünfte (cents). 4.260 /
+240 are the same in 2025 and 2026, so both files hold the same cases. OPEN reading (E2): the child
+with the most months carries the 4.260, each further child adds 240 x months / 12.

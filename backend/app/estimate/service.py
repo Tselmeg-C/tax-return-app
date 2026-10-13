@@ -57,6 +57,7 @@ from app.tax.deductions import (
     ReturnContext,
     VorsorgeInput,
     agb,
+    entlastungsbetrag,
     haushaltsnahe,
     sonderausgaben,
     vorsorge,
@@ -329,7 +330,12 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
         ) + w.beside_pauschbetrag
         einkuenfte += wage[pid] - limited
         wk_on_wages[pid] = min(wage[pid], pauschbetrag_part)
-    gde = einkuenfte  # + V, KAP = 0 (#19 / #20), - Entlastungsbetrag = 0 (#81)
+    # § 24b: off the Summe der Einkünfte, before Sonderausgaben / agB (V, KAP = 0 until #19 / #20).
+    entlastung = entlastungsbetrag(
+        ctx, kids, profile.shares_household_with_adult, params.entlastungsbetrag
+    )
+    notes.extend(entlastung.notes)
+    gde = einkuenfte - entlastung.total
 
     # 4. Sonderausgaben, Vorsorge, agB -> zvE before children.
     withheld_kist = _sum(e.kirchensteuer_withheld or _ZERO for e in loaded.employments)
@@ -404,6 +410,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
         "zve": _m(fest.kinder.zve_tariff),
         "zve_before_children": _m(zve_before),
         "gde": _m(gde),
+        "entlastungsbetrag": _m(entlastung.total),
         "tarifliche_est": _m(fest.tarifliche_est),
         "ermaessigung_35a": _m(fest.ermaessigung_applied),
         "festzusetzende_est": _m(fest.festzusetzende_est),
@@ -430,6 +437,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
     inputs_hash = _hash(
         {
             "ctx": asdict(ctx),
+            "shares_household": profile.shares_household_with_adult,
             "state": state,
             "params_version": version,
             "items": [asdict(i) for i in loaded.items],

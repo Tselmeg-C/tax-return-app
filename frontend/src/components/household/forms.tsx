@@ -638,6 +638,7 @@ export function ProfileForm(props: {
   const [bundesland, setBundesland] = useState(data.profile?.bundesland ?? "");
   const [joint, setJoint] = useState(data.profile?.filing_status === "joint");
   const [partner, setPartner] = useState(data.profile?.spouse_person_id ?? others[0]?.id ?? "new");
+  const [shares, setShares] = useState(data.profile?.shares_household_with_adult ?? false);
   const partnerDraft = usePersonDraft();
   const [error, setError] = useState<SaveError | null>(null);
   const [partnerError, setPartnerError] = useState<SaveError | null>(null);
@@ -663,6 +664,7 @@ export function ProfileForm(props: {
         bundesland,
         taxpayer_person_id: taxpayer,
         spouse_person_id: spouse,
+        shares_household_with_adult: !joint && shares,
       });
       setError(null);
       toast.success(TEXT.saved);
@@ -723,6 +725,14 @@ export function ProfileForm(props: {
           </label>
         ))}
       </fieldset>
+      {joint ? null : (
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <input type="checkbox" checked={shares} onChange={(ev) => setShares(ev.target.checked)} />
+          Ich lebe mit einer anderen volljährigen Person im Haushalt (nicht gemeint: ein Kind, für
+          das Kindergeld oder ein Freibetrag zusteht). Das schließt den Entlastungsbetrag für
+          Alleinerziehende aus.
+        </label>
+      )}
       {joint ? (
         <div className="space-y-4 rounded-md border border-dashed p-4">
           <Field label="Partnerin / Partner" error={errorAt(error, "spouse_person_id")}>

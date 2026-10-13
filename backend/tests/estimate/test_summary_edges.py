@@ -325,3 +325,16 @@ async def test_church_state_only_when_a_member_is_in_the_return(
     spec["persons"]["a"]["religion"] = "rk"
     b = await build(db_session, spec)
     assert (await b.summary())["kirchensteuer"] == "692.37"  # 9 % Berlin of 7.693
+
+
+async def test_shares_household_removes_the_entlastungsbetrag(db_session: AsyncSession) -> None:
+    from app.db.models import TaxProfile
+
+    b = await build(db_session, SCENARIOS["s7_single_parent_entlastungsbetrag"])
+    assert (await b.summary())["entlastungsbetrag"] == "4260.00"
+    profile = (await db_session.execute(b.scope.select(TaxProfile))).scalar_one()
+    profile.shares_household_with_adult = True
+    await db_session.flush()
+    result = await b.summary()
+    assert (result["entlastungsbetrag"], result["gde"]) == ("0.00", "38770.00")
+    assert "entlastung_household_shared" in {n["code"] for n in result["notes"]}

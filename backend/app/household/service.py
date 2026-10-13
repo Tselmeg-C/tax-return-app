@@ -319,6 +319,7 @@ class ProfileInput:
     bundesland: Bundesland
     taxpayer_person_id: uuid.UUID
     spouse_person_id: uuid.UUID | None
+    shares_household_with_adult: bool = False
 
 
 async def _adult(scope: HouseholdScope, person_id: uuid.UUID, field: str) -> Person:
@@ -352,6 +353,7 @@ async def put_profile(
             "bundesland": data.bundesland,
             "taxpayer_person_id": data.taxpayer_person_id,
             "spouse_person_id": data.spouse_person_id,
+            "shares_household_with_adult": data.shares_household_with_adult,
         }
         profile = await _profile(scope, year)
         if profile is None:
@@ -667,6 +669,7 @@ async def copy_year(
                 bundesland=source.bundesland,
                 taxpayer_person_id=source.taxpayer_person_id,
                 spouse_person_id=source.spouse_person_id,
+                shares_household_with_adult=source.shares_household_with_adult,
             )
         ]
         jobs = await _all(

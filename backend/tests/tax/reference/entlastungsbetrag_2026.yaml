@@ -1,0 +1,75 @@
+# Hand-computed reference cases for § 24b EStG, VZ 2026 (#81); see README.md.
+# Amounts: § 24b Abs. 2 EStG (4.260 first child, +240 per further child), Abs. 4 (1/12 per full month
+# without the conditions). Same in 2025 and 2026. `children`: `months` (entitlement) and `in_household`.
+- id: one_child_full_year
+  rule: E1
+  source: § 24b Abs. 2 Satz 1 EStG
+  input: {filing: single, shares: false, children: [{months: 12, in_household: true}]}
+  arithmetic: '4260'
+  expected: '4260.00'
+- id: two_children_full_year
+  rule: E1
+  source: § 24b Abs. 2 Satz 1 und 2 EStG
+  input: {filing: single, shares: false, children: [{months: 12, in_household: true}, {months: 12, in_household: true}]}
+  arithmetic: '4260 + 240 = 4500'
+  expected: '4500.00'
+- id: three_children_full_year
+  rule: E1
+  source: § 24b Abs. 2 Satz 2 EStG
+  input: {filing: single, shares: false, children: [{months: 12, in_household: true}, {months: 12, in_household: true}, {months: 12, in_household: true}]}
+  arithmetic: '4260 + 2 x 240 = 4740'
+  expected: '4740.00'
+- id: one_child_seven_months
+  rule: E2
+  source: § 24b Abs. 4 EStG
+  input: {filing: single, shares: false, children: [{months: 7, in_household: true}]}
+  arithmetic: '5 full months without the conditions: 4260 x 7/12 = 2485'
+  expected: '2485.00'
+- id: two_children_second_from_month_five
+  rule: E2
+  source: § 24b Abs. 2, 4 EStG
+  input: {filing: single, shares: false, children: [{months: 12, in_household: true}, {months: 8, in_household: true}]}
+  arithmetic: '4260 + 240 x 8/12 = 4260 + 160 = 4420'
+  expected: '4420.00'
+- id: second_child_longer_carries_base
+  rule: E2
+  source: § 24b Abs. 2, 4 EStG
+  input: {filing: single, shares: false, children: [{months: 3, in_household: true}, {months: 12, in_household: true}]}
+  arithmetic: 'the 12-month child is the first: 4260 + 240 x 3/12 = 4260 + 60 = 4320'
+  expected: '4320.00'
+- id: child_not_in_household
+  rule: E3
+  source: § 24b Abs. 1 Satz 1 EStG (Kind gehört zum Haushalt)
+  input: {filing: single, shares: false, children: [{months: 12, in_household: false}]}
+  arithmetic: 'child not in the household: 0'
+  expected: '0.00'
+- id: only_one_of_two_in_household
+  rule: E3
+  source: § 24b Abs. 1 Satz 1, Abs. 2 EStG
+  input: {filing: single, shares: false, children: [{months: 12, in_household: true}, {months: 12, in_household: false}]}
+  arithmetic: 'one child counts: 4260'
+  expected: '4260.00'
+- id: child_without_entitlement
+  rule: E3
+  source: § 24b Abs. 1 Satz 1 EStG (Freibetrag oder Kindergeld)
+  input: {filing: single, shares: false, children: [{months: 0, in_household: true}]}
+  arithmetic: 'no Freibetrag / Kindergeld month: 0'
+  expected: '0.00'
+- id: no_children
+  rule: E3
+  source: § 24b Abs. 1 Satz 1 EStG
+  input: {filing: single, shares: false, children: []}
+  arithmetic: 'no child: 0'
+  expected: '0.00'
+- id: joint_gets_nothing
+  rule: E4
+  source: § 24b Abs. 3 Satz 1 EStG (Splitting-Verfahren)
+  input: {filing: joint, shares: false, children: [{months: 12, in_household: true}]}
+  arithmetic: 'Splitting (§ 26 Abs. 1): not allein stehend: 0'
+  expected: '0.00'
+- id: shares_household_with_adult
+  rule: E4
+  source: § 24b Abs. 3 Satz 1 EStG (Haushaltsgemeinschaft mit einer volljaehrigen Person)
+  input: {filing: single, shares: true, children: [{months: 12, in_household: true}]}
+  arithmetic: 'Haushaltsgemeinschaft with another adult: 0'
+  expected: '0.00'

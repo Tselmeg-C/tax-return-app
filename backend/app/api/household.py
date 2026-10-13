@@ -88,6 +88,7 @@ class TaxProfileOut(BaseModel):
     bundesland: Bundesland
     taxpayer_person_id: uuid.UUID
     spouse_person_id: uuid.UUID | None
+    shares_household_with_adult: bool
 
     @classmethod
     def of(cls, p: TaxProfile) -> TaxProfileOut:
@@ -97,6 +98,7 @@ class TaxProfileOut(BaseModel):
             bundesland=p.bundesland,
             taxpayer_person_id=p.taxpayer_person_id,
             spouse_person_id=p.spouse_person_id,
+            shares_household_with_adult=p.shares_household_with_adult,
         )
 
 
@@ -234,6 +236,7 @@ class ProfileBody(_Body):
     bundesland: Bundesland
     taxpayer_person_id: uuid.UUID
     spouse_person_id: uuid.UUID | None = None
+    shares_household_with_adult: bool = False
 
 
 class EmploymentPatch(_Body):
@@ -375,6 +378,7 @@ async def put_profile(user: SignedIn, scope: Scope, year: int, body: ProfileBody
         bundesland=body.bundesland,
         taxpayer_person_id=body.taxpayer_person_id,
         spouse_person_id=body.spouse_person_id,
+        shares_household_with_adult=body.shares_household_with_adult,
     )
     try:
         profile = await service.put_profile(scope, user.user_id, year, data)
