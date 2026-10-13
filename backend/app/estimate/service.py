@@ -66,8 +66,10 @@ from app.tax.deductions import (
     werbungskosten,
 )
 from app.tax.deductions.select import EXCLUDED_REASONS
+from app.tax.models import TaxParams
 from app.tax.pflicht import PflichtEmployment, PflichtPerson, pflichtveranlagung
 from app.tax.progression import LohnersatzInput, progression_amount
+from app.tax.sv_estimate import SvEstimate, estimate_sv
 from app.tax_params import load_params, params_version
 
 log = structlog.stdlib.get_logger("app.estimate")
@@ -158,8 +160,13 @@ def _vorsorge_inputs(
     loaded: _Loaded,
     employed: frozenset[str],
     notes: list[Note],
+    estimates: dict[str, SvEstimate],
 ) -> tuple[list[VorsorgeInput], list[str]]:
-    """Per person and group: person-level row > employment fields > items (never summed)."""
+    """Per person and group: person-level row > employment fields > items > estimate (#85).
+
+    The sources are never summed; `estimates` (from the gross wage) only fills a group that has
+    none of the others.
+    """
     from_items, item_notes = vorsorge_from_items(ctx, loaded.items, employed)
     by_person: dict[str, list[Employment]] = {}
     for e in loaded.employments:
@@ -186,17 +193,31 @@ def _vorsorge_inputs(
         sonst = group(pid, "sonstige_vorsorge")["sonstige_vorsorge"]
         use_rv = any(v is not None for v in rv.values())
         use_kv = any(v is not None for v in kvpv.values())
+        est = estimates.get(pid)
+        est_rv = est is not None and not use_rv and not base.rv_employee and not base.rv_employer
+        est_kv = est is not None and not use_kv and not base.kv and not base.pv
+        est_alv = est is not None and sonst is None and not base.sonstige
         if use_kv:
             kvpv_manual.add(pid)
+        if est is not None and (est_rv or est_kv or est_alv):
+            notes.append(Note(DeductionNote.VORSORGE_ESTIMATED, person_id=pid))
         final = VorsorgeInput(
             person_id=pid,
             employed=base.employed,
-            rv_employee=(rv["rv_employee"] or _ZERO) if use_rv else base.rv_employee,
-            rv_employer=rv["rv_employer"] if use_rv else base.rv_employer,
+            rv_employee=est.rv_employee
+            if est_rv and est
+            else (rv["rv_employee"] or _ZERO)
+            if use_rv
+            else base.rv_employee,
+            rv_employer=est.rv_employer
+            if est_rv and est
+            else rv["rv_employer"]
+            if use_rv
+            else base.rv_employer,
             basisrente=ruerup if ruerup is not None else base.basisrente,
-            kv=(kvpv["kv"] or _ZERO) if use_kv else base.kv,
-            pv=(kvpv["pv"] or _ZERO) if use_kv else base.pv,
-            sonstige=sonst if sonst is not None else base.sonstige,
+            kv=est.kv if est_kv and est else (kvpv["kv"] or _ZERO) if use_kv else base.kv,
+            pv=est.pv if est_kv and est else (kvpv["pv"] or _ZERO) if use_kv else base.pv,
+            sonstige=est.alv if est_alv and est else sonst if sonst is not None else base.sonstige,
         )
         result.append(final)
         if not any((final.rv_employee, final.basisrente, final.kv, final.pv, final.sonstige)):
@@ -208,6 +229,32 @@ def _vorsorge_inputs(
         if not (n.code is DeductionNote.KV_PV_UNSPLIT and n.person_id in kvpv_manual)
     )
     return result, missing
+
+
+def _sv_estimates(
+    loaded: _Loaded, wage: dict[str, Decimal], employed: frozenset[str], params: TaxParams
+) -> dict[str, SvEstimate]:
+    """Estimate per employed person with a wage (#85); the household's children set the PV rate.
+
+    ponytail: ages are taken at 31 December (a child counts until the year it turns 25, a person
+    pays the surcharge from the year of the 23rd birthday); the law counts by month.
+    """
+    year = params.year
+    kids = [p for p in loaded.persons.values() if p.kind is PersonKind.CHILD]
+    under_25 = sum(1 for k in kids if k.dob is not None and year - k.dob.year < 25)
+    result: dict[str, SvEstimate] = {}
+    for pid in sorted(employed):
+        person = loaded.persons[pid]
+        under_23 = person.dob is not None and year - person.dob.year < 23
+        est = estimate_sv(
+            wage[pid],
+            params.sozialversicherung,
+            children_under_25=under_25,
+            childless_surcharge=not kids and not under_23,
+        )
+        if est is not None:
+            result[pid] = est
+    return result
 
 
 def _child_inputs(loaded: _Loaded) -> list[ChildInput]:
@@ -299,6 +346,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
             "pflicht": None,
             "what_missing": [],
             "notes": [],
+            "vorsorge_estimated": [],
             "attention_count": int(attention or 0),
         }
 
@@ -357,7 +405,8 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
     withheld_kist = _sum(e.kirchensteuer_withheld or _ZERO for e in loaded.employments)
     sa = sonderausgaben(ctx, loaded.items, kids, gde, withheld_kist, params.sonderausgaben)
     notes.extend(sa.notes)
-    vorsorge_inputs, vorsorge_missing = _vorsorge_inputs(ctx, loaded, employed, notes)
+    sv = _sv_estimates(loaded, wage, employed, params)
+    vorsorge_inputs, vorsorge_missing = _vorsorge_inputs(ctx, loaded, employed, notes, sv)
     vs = vorsorge(ctx, vorsorge_inputs, params.vorsorge)
     notes.extend(vs.notes)
     ag = agb(ctx, loaded.items, people, kids, gde, params.agb)
@@ -442,6 +491,9 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
             "deadline_statutory": pflicht.deadline.isoformat(),
             "deadline_kind": pflicht.deadline_kind.value,
         },
+        "vorsorge_estimated": sorted(
+            {n.person_id for n in unique_notes if n.code is DeductionNote.VORSORGE_ESTIMATED}
+        ),
         "what_missing": [{"code": c.value, "person_id": p} for c, p in missing],
         "notes": [
             {"code": n.code.value, "item_id": n.item_id, "person_id": n.person_id}
@@ -465,6 +517,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
             "persons": [asdict(p) for p in people],
             "religions": [p.religion.value for p in adults],
             "lohnersatz": loaded.lohnersatz,
+            "sv_estimate": {k: asdict(v) for k, v in sv.items()},
             "attention_count": loaded.attention_count,
         }
     )

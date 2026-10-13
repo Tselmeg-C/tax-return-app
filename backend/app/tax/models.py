@@ -348,6 +348,43 @@ class EntlastungsbetragParams(_Section):
         return self
 
 
+class SozialversicherungParams(_Section):
+    """Employee social-insurance rates and limits for the Vorsorge estimate (#85)."""
+
+    bbg_rv: Dec  # Beitragsbemessungsgrenze allgemeine RV and ALV (§ 4 SVBezGrV), per year
+    bbg_kv: Dec  # Beitragsbemessungsgrenze KV / PV (§ 2 Abs. 2 SVBezGrV = § 6 Abs. 7 SGB V)
+    rv_rate: Dec  # total rate allgemeine RV (§ 158 SGB VI, Bekanntmachung); employee pays half
+    alv_rate: Dec  # total rate ALV (§ 341 Abs. 2 SGB III); employee pays half
+    kv_rate: Dec  # allgemeiner Beitragssatz (§ 241 SGB V); employee pays half
+    kv_zusatz_average: (
+        Dec  # durchschnittlicher Zusatzbeitragssatz (§ 242a SGB V); employee pays half
+    )
+    pv_rate: Dec  # total rate (§ 55 Abs. 1 SGB XI); employee pays half
+    pv_childless_surcharge: Dec  # § 55 Abs. 3 Satz 1, employee only
+    pv_child_abschlag: Dec  # § 55 Abs. 3 Satz 3, per child from the 2nd to the 5th under 25
+    pv_abschlag_max_steps: int  # 4 = children 2 to 5
+    uebergangsbereich_upper_monthly: Dec  # § 20 Abs. 2 SGB IV; at or below x 12: no estimate
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        for name in ("bbg_rv", "bbg_kv", "uebergangsbereich_upper_monthly"):
+            if getattr(self, name) <= 0:
+                raise ValueError(f"{name} must be positive")
+        for name in (
+            "rv_rate",
+            "alv_rate",
+            "kv_rate",
+            "kv_zusatz_average",
+            "pv_rate",
+            "pv_childless_surcharge",
+            "pv_child_abschlag",
+        ):
+            _rate(name, getattr(self, name))
+        if self.pv_abschlag_max_steps < 0:
+            raise ValueError("pv_abschlag_max_steps must not be negative")
+        return self
+
+
 class TaxParams(_Frozen):
     year: int
     tariff: TariffParams
@@ -362,6 +399,7 @@ class TaxParams(_Frozen):
     filing: FilingParams
     haushaltsnahe: HaushaltsnaheParams
     entlastungsbetrag: EntlastungsbetragParams
+    sozialversicherung: SozialversicherungParams
     mapping: dict[Category, MappingEntry]
 
     @model_validator(mode="after")

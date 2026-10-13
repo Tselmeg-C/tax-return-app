@@ -191,6 +191,7 @@ class DeductionNote(StrEnum):
     RIESTER_NOT_SUPPORTED = "riester_not_supported"
     CHILD_OVER_25_DISABLED = "child_over_25_disabled"
     ENTLASTUNG_HOUSEHOLD_SHARED = "entlastung_household_shared"
+    VORSORGE_ESTIMATED = "vorsorge_estimated"
 
 
 class EstimateMissing(StrEnum):
@@ -541,6 +542,7 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         _N.RIESTER_NOT_SUPPORTED: "Riester-Beitrag noch nicht berücksichtigt",
         _N.CHILD_OVER_25_DISABLED: "Kind über 25 mit Behinderung, Voraussetzungen nicht geprüft",
         _N.ENTLASTUNG_HOUSEHOLD_SHARED: "Haushalt mit Erwachsenem, kein Entlastungsbetrag",
+        _N.VORSORGE_ESTIMATED: "Vorsorge aus dem Bruttolohn geschätzt (vorläufig)",
     },
     EstimateMissing: {
         EstimateMissing.NO_LSTB: "Lohnsteuerbescheinigung fehlt (Bruttolohn, Lohnsteuer)",

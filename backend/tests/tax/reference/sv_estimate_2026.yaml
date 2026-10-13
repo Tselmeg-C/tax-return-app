@@ -1,0 +1,75 @@
+# Hand-computed reference cases for the Vorsorge estimate from the gross wage, VZ 2026 (#85). Employee shares, each branch
+# rounded half-even to cents. A case may only change together with its `arithmetic` (README.md).
+- id: S1_below_both_bbg_childless
+  source: "§ 168 SGB VI, § 346 SGB III, § 249 SGB V, § 58 SGB XI (halbe Beiträge); § 55 Abs. 3 SGB XI; BBG und Sätze der params 2026.yaml (`sozialversicherung.source`)"
+  input:
+    wage: '60000.00'
+    children_under_25: 0
+    childless_surcharge: true
+  arithmetic: "RV 60000 x 0.093 = 5580; KV 60000 x 0.0875 = 5250; PV rate 0.018 + 0.006 = 0.024, 60000 x 0.024 = 1440; ALV 60000 x 0.013 = 780"
+  expected: 
+    rv_employee: '5580.00'
+    rv_employer: '5580.00'
+    kv: '5250.00'
+    pv: '1440.00'
+    alv: '780.00'
+- id: S2_between_bbg_one_child
+  source: "§ 168 SGB VI, § 346 SGB III, § 249 SGB V, § 58 SGB XI (halbe Beiträge); § 55 Abs. 3 SGB XI; BBG und Sätze der params 2026.yaml (`sozialversicherung.source`)"
+  input:
+    wage: '85000.00'
+    children_under_25: 1
+    childless_surcharge: false
+  arithmetic: "RV 85000 x 0.093 = 7905 (85000 < 101400); KV min(85000, 69750) = 69750 x 0.0875 = 6103.125, tie rounds half-even to 6103.12; PV 69750 x 0.018 = 1255.50; ALV 85000 x 0.013 = 1105"
+  expected: 
+    rv_employee: '7905.00'
+    rv_employer: '7905.00'
+    kv: '6103.12'
+    pv: '1255.50'
+    alv: '1105.00'
+- id: S3_above_both_bbg_three_children
+  source: "§ 168 SGB VI, § 346 SGB III, § 249 SGB V, § 58 SGB XI (halbe Beiträge); § 55 Abs. 3 SGB XI; BBG und Sätze der params 2026.yaml (`sozialversicherung.source`)"
+  input:
+    wage: '120000.00'
+    children_under_25: 3
+    childless_surcharge: false
+  arithmetic: "RV 101400 x 0.093 = 9430.2; KV 69750 x 0.0875 = 6103.125 -> 6103.12; PV rate 0.013, 69750 x 0.013 = 906.75; ALV 101400 x 0.013 = 1318.2"
+  expected: 
+    rv_employee: '9430.20'
+    rv_employer: '9430.20'
+    kv: '6103.12'
+    pv: '906.75'
+    alv: '1318.20'
+- id: S4_two_children
+  source: "§ 168 SGB VI, § 346 SGB III, § 249 SGB V, § 58 SGB XI (halbe Beiträge); § 55 Abs. 3 SGB XI; BBG und Sätze der params 2026.yaml (`sozialversicherung.source`)"
+  input:
+    wage: '30000.00'
+    children_under_25: 2
+    childless_surcharge: false
+  arithmetic: "RV 30000 x 0.093 = 2790; KV 30000 x 0.0875 = 2625; PV rate 0.0155, 30000 x 0.0155 = 465; ALV 390"
+  expected: 
+    rv_employee: '2790.00'
+    rv_employer: '2790.00'
+    kv: '2625.00'
+    pv: '465.00'
+    alv: '390.00'
+- id: S5_six_children_abschlag_capped
+  source: "§ 168 SGB VI, § 346 SGB III, § 249 SGB V, § 58 SGB XI (halbe Beiträge); § 55 Abs. 3 SGB XI; BBG und Sätze der params 2026.yaml (`sozialversicherung.source`)"
+  input:
+    wage: '50000.00'
+    children_under_25: 6
+    childless_surcharge: false
+  arithmetic: "RV 50000 x 0.093 = 4650; KV 50000 x 0.0875 = 4375; four Abschlag steps: PV rate 0.008, 50000 x 0.008 = 400; ALV 650"
+  expected: 
+    rv_employee: '4650.00'
+    rv_employer: '4650.00'
+    kv: '4375.00'
+    pv: '400.00'
+    alv: '650.00'
+- id: S6_uebergangsbereich_no_estimate
+  source: "§ 168 SGB VI, § 346 SGB III, § 249 SGB V, § 58 SGB XI (halbe Beiträge); § 55 Abs. 3 SGB XI; BBG und Sätze der params 2026.yaml (`sozialversicherung.source`)"
+  input:
+    wage: '24000.00'
+    children_under_25: 0
+    childless_surcharge: true
+  arithmetic: "12 x 2000 = 24000; at or below: no estimate (§ 20 Abs. 2 SGB IV)"
+  expected: null

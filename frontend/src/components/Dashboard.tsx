@@ -204,7 +204,21 @@ function Ready({ data, jahr, labels }: { data: Summary; jahr: number; labels: Su
                 {noteCodes.map((c) => (
                   <li key={c} className="flex gap-2 text-xs text-muted-foreground">
                     <Info className="mt-0.5 h-3 w-3 shrink-0" />
-                    {label(labels.deduction_notes, c)}
+                    <span>
+                      {label(labels.deduction_notes, c)}
+                      {c === "vorsorge_estimated" ? (
+                        <>
+                          {" "}
+                          <Link
+                            to="/haushalt"
+                            search={{ jahr }}
+                            className="text-primary hover:underline"
+                          >
+                            {T.enterRealValues}
+                          </Link>
+                        </>
+                      ) : null}
+                    </span>
                   </li>
                 ))}
               </ul>

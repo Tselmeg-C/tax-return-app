@@ -418,6 +418,30 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   `tests/tax/test_entlastungsbetrag.py`); service scenario `s7_single_parent_entlastungsbetrag`
   (tariff from the BMF calculator). `GET /summary` carries `entlastungsbetrag`.
 
+## Vorsorge estimate from the wage (rules from #85)
+
+- `app/tax/sv_estimate.py` (pure): `estimate_sv(wage, params.sozialversicherung, children_under_25=,
+  childless_surcharge=)` returns the employee shares RV (+ the same as `rv_employer`), KV, PV, ALV
+  (ALV goes to `sonstige`, Nr. 3a) or `None` for a wage at or below 12 x `uebergangsbereich_upper_monthly`
+  (Minijob / Übergangsbereich: other formula, no estimate). Each branch is capped by its BBG (RV and ALV
+  `bbg_rv`, KV and PV `bbg_kv`) and rounded half-even to cents (the law has no rule for an estimate).
+- Params section `sozialversicherung` belongs to #85: total rates (RV 18,6 %, ALV 2,6 %, KV 14,6 %,
+  PV 3,6 %; the employee pays half) and the average Zusatzbeitrag (half), BBGs from the SVBezGrV of the
+  year. A new year needs the BBGs, rates and Zusatzbeitrag read from the sources, not from memory. The
+  section is `provisional: true` (secondary sources only, see its `source`); the Zusatzbeitrag is the
+  Bundesdurchschnitt, never the person's Kasse.
+- PV employee share: half the rate, + `pv_childless_surcharge` when the household has no child person at
+  all and the person is not under 23, - `pv_child_abschlag` per child under 25 from the 2nd to the 5th.
+  Ages are taken at 31 December (law: by month). The Sachsen PV split is not applied.
+- `_vorsorge_inputs` order per group (RV, KV + PV, `sonstige`): person-level row > employment fields >
+  items > estimate; sources are never summed. The estimate fills a group only when none of the others has
+  a value, and then adds the note `vorsorge_estimated` (person id) and the summary field
+  `vorsorge_estimated: [person_id]`; a person with an estimate is not in `vorsorge_missing`. The Übersicht
+  shows the note with a link to Haushalt. The estimated amounts are part of `inputs_hash`.
+- Golden tests: `tests/tax/reference/sv_estimate_{year}.yaml` (hand-computed, run by
+  `tests/tax/test_sv_estimate.py`) and the estimate scenarios s8 / s9 in `golden_2025.yaml`.
+- Not estimated (follow-up): Minijob / Midijob, Beamte, PKV, Rentner, Studenten, bAV, Zusatzbeitrag per person.
+
 ## Stack
 
 - Backend (`backend/`): Python 3.12, `uv`, FastAPI, SQLAlchemy 2.0 + Alembic, Postgres 16, Postgres-based job queue
