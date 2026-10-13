@@ -37,7 +37,6 @@ const LABELS: SummaryLabels = {
     ["vorsorge_missing", "Vorsorgeaufwendungen fehlen"],
     ["kap_v_not_supported", "Anlage KAP / V wird noch nicht berechnet"],
   ]),
-  pflicht_states: coded([]),
   pflicht_reasons: coded([["steuerklasse_combination", "Steuerklassen III und V"]]),
   pflicht_checks: coded([["kv_refund", "Beitragserstattung der Krankenversicherung"]]),
   pflicht_deadline_kinds: coded([["self", "ohne Steuerberater"]]),

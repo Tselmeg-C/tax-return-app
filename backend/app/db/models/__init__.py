@@ -11,7 +11,7 @@ from app.db.models.household import Household
 from app.db.models.job import Job
 from app.db.models.passkey import Passkey
 from app.db.models.person import Person
-from app.db.models.profile import ChildYear, Employment, Lohnersatz, TaxProfile
+from app.db.models.profile import ChildYear, Employment, Lohnersatz, PersonVorsorge, TaxProfile
 from app.db.models.tax_item import TaxItem
 
 __all__ = [
@@ -27,6 +27,7 @@ __all__ = [
     "Household",
     "Job",
     "Lohnersatz",
+    "PersonVorsorge",
     "MagicLinkToken",
     "Passkey",
     "Person",

@@ -210,3 +210,50 @@ async def test_no_amount_or_name_in_logs_spans_errors_or_audit(
     for sentinel in (WAGE, LST, LABEL, "8123.45"):  # amounts only where they belong
         for body in bodies[1:2] + bodies[4:5]:
             assert sentinel not in body, sentinel
+
+
+async def test_person_vorsorge_put_get_delete_audit_and_copy(t: T) -> None:
+    home = await t.home()
+    me = (await person(t, home, first_name=f"Name{LABEL}"))["id"]
+    assert (await profile(t, home, 2025, me)).status_code == 200
+    url = f"/household/2025/vorsorge/{me}"
+    put = await call(t, home, "PUT", url, {"kv": "1200.00", "pv": "300.00"})
+    assert put.status_code == 200 and put.json()["kv"] == "1200.00"
+    assert put.json()["rv_employee"] is None
+    again = await call(t, home, "PUT", url, {"kv": "1300.00"})  # replaces the whole row
+    assert again.json()["kv"] == "1300.00" and again.json()["pv"] is None
+    year = (await t.get(home, "/household/2025")).json()
+    assert [r["kv"] for r in year["person_vorsorge"]] == ["1300.00"]
+    summary = (await t.get(home, "/summary?year=2025")).json()
+    assert all(m["code"] != "vorsorge_missing" for m in summary["what_missing"])
+    copied = await call(t, home, "POST", "/household/2026/copy", {"from_year": 2025})
+    assert copied.json()["person_vorsorge"] == []
+    assert (await call(t, home, "DELETE", url)).status_code == 204
+    assert (await call(t, home, "DELETE", url)).status_code == 404
+    after = (await t.get(home, "/summary?year=2025")).json()
+    assert [m["code"] for m in after["what_missing"]] == ["vorsorge_missing"]
+    actions = [r.action.value for r in await t.audit("person_vorsorge")]
+    assert sorted(actions) == ["create", "delete", "update"]
+
+
+async def test_person_vorsorge_rejections(t: T) -> None:
+    home = await t.home()
+    me = (await person(t, home))["id"]
+    assert (await profile(t, home, 2025, me)).status_code == 200
+    stranger = (await person(t, home, first_name="Fremd"))["id"]
+    url = f"/household/2025/vorsorge/{me}"
+    for bad in (1200, "1200", "-1.00"):
+        r = await call(t, home, "PUT", url, {"kv": bad})
+        assert r.json() == {"detail": "invalid_amount", "field": "kv"}
+        assert str(bad) not in r.text
+    for body in ({}, {"kv": None}):
+        r = await call(t, home, "PUT", url, body)
+        assert r.status_code == 422 and r.json()["detail"] == "empty_vorsorge"
+    unknown = await call(t, home, "PUT", url, {"kv": "1.00", "gross_wage": "1.00"})
+    assert unknown.status_code == 422
+    other = await call(t, home, "PUT", f"/household/2025/vorsorge/{stranger}", {"kv": "1.00"})
+    assert other.json() == {"detail": "person_not_in_return", "field": "person_id"}
+    no_profile = await call(t, home, "PUT", f"/household/2026/vorsorge/{me}", {"kv": "1.00"})
+    assert no_profile.json() == {"detail": "profile_required", "field": "year"}
+    bad_year = await call(t, home, "PUT", f"/household/1999/vorsorge/{me}", {"kv": "1.00"})
+    assert bad_year.json()["detail"] == "unsupported_year"

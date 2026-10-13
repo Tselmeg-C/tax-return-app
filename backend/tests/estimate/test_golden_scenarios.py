@@ -29,6 +29,7 @@ TARIFF_CASE = {
     "s5_single_35a_soli_on_reduced_est": "s5_single_73838",
     "s5b_single_35a_capped_by_est": "s5b_single_13353",
     "s6_single_agb_spenden": "s6_single_22676",
+    "s7_joint_spouse_person_vorsorge": "s2_joint_66280",
 }
 IDS = [s["id"] for s in SCENARIOS]
 

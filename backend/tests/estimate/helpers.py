@@ -11,7 +11,15 @@ from typing import Any
 import yaml
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import ChildYear, Document, Employment, Household, Lohnersatz, TaxProfile
+from app.db.models import (
+    ChildYear,
+    Document,
+    Employment,
+    Household,
+    Lohnersatz,
+    PersonVorsorge,
+    TaxProfile,
+)
 from app.db.scope import HouseholdScope
 from app.domain.enums import (
     AllowanceShare,
@@ -155,6 +163,15 @@ async def build(session: AsyncSession, spec: dict[str, Any], year: int = 2025) -
                 person_id=people[ls["person"]].id,
                 year=year,
                 amount=Decimal(ls["amount"]),
+            )
+        )
+    for pv in spec.get("person_vorsorge", []):
+        session.add(
+            PersonVorsorge(
+                household_id=household.id,
+                person_id=people[pv["person"]].id,
+                year=year,
+                **{k: Decimal(v) for k, v in pv.items() if k != "person"},
             )
         )
     for item in spec.get("items", []):

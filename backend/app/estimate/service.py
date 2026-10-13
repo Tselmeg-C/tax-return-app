@@ -31,6 +31,7 @@ from app.db.models import (
     Estimate,
     Lohnersatz,
     Person,
+    PersonVorsorge,
     TaxItem,
     TaxProfile,
 )
@@ -95,6 +96,7 @@ class _Loaded:
     employments: list[Employment]
     children: list[ChildYear]
     lohnersatz: dict[str, Decimal]
+    person_vorsorge: dict[str, PersonVorsorge]
     items: list[ItemInput]
     attention_count: int
 
@@ -121,6 +123,11 @@ async def _load(scope: HouseholdScope, year: int, profile: TaxProfile) -> _Loade
         for r in await rows(Lohnersatz, Lohnersatz.year == year)
         if r.person_id in in_return
     }
+    person_vorsorge = {
+        str(r.person_id): r
+        for r in await rows(PersonVorsorge, PersonVorsorge.year == year)
+        if r.person_id in in_return
+    }
     docs = {
         d.id: d.attention_reason
         for d in await rows(Document, Document.status == DocumentStatus.NEEDS_ATTENTION)
@@ -140,7 +147,9 @@ async def _load(scope: HouseholdScope, year: int, profile: TaxProfile) -> _Loade
         )
         for i in sorted(await rows(TaxItem, TaxItem.year == year), key=lambda i: str(i.id))
     ]
-    return _Loaded(profile, persons, employments, children, lohnersatz, items, len(docs))
+    return _Loaded(
+        profile, persons, employments, children, lohnersatz, person_vorsorge, items, len(docs)
+    )
 
 
 def _vorsorge_inputs(
@@ -149,7 +158,7 @@ def _vorsorge_inputs(
     employed: frozenset[str],
     notes: list[Note],
 ) -> tuple[list[VorsorgeInput], list[str]]:
-    """Per person: a manual group (employment fields) wins over the items, else the items."""
+    """Per person and group: person-level row > employment fields > items (never summed)."""
     from_items, item_notes = vorsorge_from_items(ctx, loaded.items, employed)
     by_person: dict[str, list[Employment]] = {}
     for e in loaded.employments:
@@ -159,14 +168,21 @@ def _vorsorge_inputs(
         values = [v for e in by_person.get(pid, []) if (v := getattr(e, name)) is not None]
         return _sum(values) if values else None
 
+    def group(pid: str, *names: str) -> dict[str, Decimal | None]:
+        row = loaded.person_vorsorge.get(pid)
+        if row is not None and any(getattr(row, n) is not None for n in names):
+            return {n: getattr(row, n) for n in names}
+        return {n: manual(pid, n) for n in names}
+
     result: list[VorsorgeInput] = []
     kvpv_manual: set[str] = set()
     missing: list[str] = []
     for base in from_items:
         pid = base.person_id
-        rv = {n: manual(pid, n) for n in _RV}
-        kvpv = {n: manual(pid, n) for n in _KVPV}
-        ruerup, sonst = manual(pid, "basisrente"), manual(pid, "sonstige_vorsorge")
+        rv = group(pid, *_RV)
+        kvpv = group(pid, *_KVPV)
+        ruerup = group(pid, "basisrente")["basisrente"]
+        sonst = group(pid, "sonstige_vorsorge")["sonstige_vorsorge"]
         use_rv = any(v is not None for v in rv.values())
         use_kv = any(v is not None for v in kvpv.values())
         if use_kv:

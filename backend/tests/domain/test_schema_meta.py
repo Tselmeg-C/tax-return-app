@@ -34,6 +34,7 @@ CORE_TABLES = {
     "magic_link_token",  # #5
     "passkey",  # #12
     "person",
+    "person_vorsorge",  # #98
     "tax_item",
     "tax_profile",  # #13
     "user_session",  # #5

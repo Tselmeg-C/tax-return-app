@@ -19,8 +19,16 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, StrictBool
 
 from app.api.deps import Scope, SignedIn
 from app.auth.clock import Clock
-from app.db.models import AppUser, ChildYear, Employment, Lohnersatz, Person, TaxProfile
-from app.db.models.profile import EMPLOYMENT_MONEY_FIELDS
+from app.db.models import (
+    AppUser,
+    ChildYear,
+    Employment,
+    Lohnersatz,
+    Person,
+    PersonVorsorge,
+    TaxProfile,
+)
+from app.db.models.profile import EMPLOYMENT_MONEY_FIELDS, PERSON_VORSORGE_FIELDS
 from app.db.scope import HouseholdScope
 from app.domain.enums import (
     AllowanceShare,
@@ -153,6 +161,25 @@ class LohnersatzOut(BaseModel):
         return cls(person_id=row.person_id, year=row.year, amount=f"{row.amount:.2f}")
 
 
+class PersonVorsorgeOut(BaseModel):
+    person_id: uuid.UUID
+    year: int
+    rv_employee: str | None
+    rv_employer: str | None
+    basisrente: str | None
+    kv: str | None
+    pv: str | None
+    sonstige_vorsorge: str | None
+
+    @classmethod
+    def of(cls, row: PersonVorsorge) -> PersonVorsorgeOut:
+        money = {
+            k: None if (v := getattr(row, k)) is None else f"{v:.2f}"
+            for k in PERSON_VORSORGE_FIELDS
+        }
+        return cls(person_id=row.person_id, year=row.year, **money)
+
+
 class ChildYearOut(BaseModel):
     person_id: uuid.UUID
     year: int
@@ -185,6 +212,7 @@ class HouseholdOut(BaseModel):
     children: list[ChildEntryOut]
     years_with_profile: list[int]
     lohnersatz: list[LohnersatzOut]
+    person_vorsorge: list[PersonVorsorgeOut]
 
     @classmethod
     def of(cls, h: HouseholdYear, me: uuid.UUID | None) -> HouseholdOut:
@@ -203,6 +231,7 @@ class HouseholdOut(BaseModel):
             ],
             years_with_profile=h.years_with_profile,
             lohnersatz=[LohnersatzOut.of(r) for r in h.lohnersatz],
+            person_vorsorge=[PersonVorsorgeOut.of(r) for r in h.person_vorsorge],
         )
 
 
@@ -271,6 +300,15 @@ class ChildYearBody(_Body):
 
 class LohnersatzBody(_Body):
     amount: Any
+
+
+class PersonVorsorgeBody(_Body):
+    rv_employee: Any = None
+    rv_employer: Any = None
+    basisrente: Any = None
+    kv: Any = None
+    pv: Any = None
+    sonstige_vorsorge: Any = None
 
 
 class CopyBody(_Body):
@@ -434,6 +472,30 @@ async def delete_lohnersatz(
 ) -> Response:
     try:
         await service.delete_lohnersatz(scope, user.user_id, year, person_id)
+    except Rejected as exc:
+        return _rejected(exc)
+    return Response(status_code=204)
+
+
+@router.put("/household/{year}/vorsorge/{person_id}")
+async def put_person_vorsorge(
+    user: SignedIn, scope: Scope, year: int, person_id: uuid.UUID, body: PersonVorsorgeBody
+) -> JSONResponse:
+    try:
+        row = await service.put_person_vorsorge(
+            scope, user.user_id, year, person_id, body.model_dump()
+        )
+    except Rejected as exc:
+        return _rejected(exc)
+    return JSONResponse(PersonVorsorgeOut.of(row).model_dump(mode="json"))
+
+
+@router.delete("/household/{year}/vorsorge/{person_id}", status_code=204)
+async def delete_person_vorsorge(
+    user: SignedIn, scope: Scope, year: int, person_id: uuid.UUID
+) -> Response:
+    try:
+        await service.delete_person_vorsorge(scope, user.user_id, year, person_id)
     except Rejected as exc:
         return _rejected(exc)
     return Response(status_code=204)

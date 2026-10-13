@@ -168,6 +168,18 @@ function Ready({ data, jahr, labels }: { data: Summary; jahr: number; labels: Su
                   <p className="text-sm font-medium">
                     {label(labels.estimate_missing, m.code)}
                     {name(m.person_id) ? ` (${name(m.person_id)})` : ""}
+                    {m.code === "vorsorge_missing" ? (
+                      <>
+                        {" "}
+                        <Link
+                          to="/haushalt"
+                          search={{ jahr }}
+                          className="text-primary hover:underline"
+                        >
+                          eintragen
+                        </Link>
+                      </>
+                    ) : null}
                   </p>
                 </li>
               ))}
