@@ -6,7 +6,13 @@ import tsConfigPaths from "vite-tsconfig-paths";
 import { nitro } from "nitro/vite";
 
 export default defineConfig({
-  server: { port: 3000 },
+  // Dev only. Codespaces forwards `https://<name>-3000.app.github.dev` to the container's
+  // network interface, so listen on all interfaces there and allow that host (#51).
+  server: {
+    port: 3000,
+    allowedHosts: [".app.github.dev"],
+    ...(process.env["CODESPACES"] ? { host: true } : {}),
+  },
   plugins: [
     tsConfigPaths(),
     tailwindcss(),

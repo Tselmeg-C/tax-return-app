@@ -200,6 +200,24 @@ describe("user menu", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
     expect(calls.some((c) => c.url === "/api/auth/logout-all" && c.method === "POST")).toBe(true);
   });
+
+  it("Escape closes the menu and focuses the toggle; an outside click closes it (#71)", async () => {
+    mockFetch(() => json(200, ME));
+    renderPages("/");
+    const toggle = await screen.findByRole("button", { name: ME.email });
+    expect(toggle.getAttribute("aria-haspopup")).toBe("menu");
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.mouseDown(screen.getByRole("menuitem", { name: /^Abmelden/ }));
+    expect(screen.queryByRole("menu")).not.toBeNull(); // inside click keeps it open
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(document.activeElement).toBe(toggle);
+    fireEvent.click(toggle);
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
 });
 
 describe("guard error component", () => {

@@ -2,7 +2,9 @@
 
 CSRF (with `SameSite=Lax` cookies): every POST/PUT/PATCH/DELETE must carry
 `X-Requested-With: belegbot` (a cross-site form cannot set it, and without CORS a cross-site
-`fetch` cannot either), and an `Origin` header, if present, must equal `APP_BASE_URL`'s origin.
+`fetch` cannot either), and an `Origin` header, if present, must equal `APP_BASE_URL`'s origin
+(outside production also `http://localhost:<port>` / `127.0.0.1`: the Codespaces forwarder
+rewrites `Origin` to localhost).
 Otherwise `403 {"detail":"csrf"}`.
 """
 
@@ -22,13 +24,13 @@ UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 NO_STORE_PREFIX = "/auth/"
 
 
-def csrf_ok(method: str, path: str, headers: Headers, app_origin: str) -> bool:
+def csrf_ok(method: str, path: str, headers: Headers, allowed: tuple[str, ...]) -> bool:
     if method.upper() not in UNSAFE_METHODS or path in CSRF_EXEMPT_PATHS:
         return True
     if headers.get(CSRF_HEADER) != CSRF_HEADER_VALUE:
         return False
     origin = headers.get("origin")
-    return origin is None or origin.lower() == app_origin
+    return origin is None or origin.lower() in allowed
 
 
 class CsrfMiddleware:
@@ -40,7 +42,7 @@ class CsrfMiddleware:
             await self.app(scope, receive, send)
             return
         settings: Settings = scope["app"].state.settings
-        if csrf_ok(scope["method"], scope["path"], Headers(scope=scope), settings.app_origin):
+        if csrf_ok(scope["method"], scope["path"], Headers(scope=scope), settings.csrf_origins):
             await self.app(scope, receive, send)
             return
         body = json.dumps({"detail": "csrf"}).encode()

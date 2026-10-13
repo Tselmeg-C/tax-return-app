@@ -53,20 +53,16 @@ npm run dev                      # http://localhost:3000, /api is proxied to loc
 
 ### In GitHub Codespaces
 
-The Codespaces port forwarder needs three adjustments until #51 is fixed:
+Nothing to configure: `npm run dev` listens on all interfaces and serves `*.app.github.dev`
+(`CODESPACES` is set), the api defaults `APP_BASE_URL` to the forwarded
+`https://$CODESPACE_NAME-3000.$GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`, and outside production
+the CSRF check also accepts `http://localhost:<port>` / `127.0.0.1` origins (the forwarder
+rewrites `Origin`). Open that URL (or the port 3000 link in the **Ports** tab) + `/login`; the
+link in `backend/.dev-mail/` opens directly.
 
-```bash
-# backend: the forwarder rewrites the browser's Origin to http://localhost:3000
-cd backend && APP_BASE_URL=http://localhost:3000 uv run uvicorn app.api.main:app --reload --port 8000
-
-# frontend: allow the *.app.github.dev host and listen on all interfaces (avoids 502)
-cd frontend && __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=".$GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN" npm run dev -- --host
-```
-
-Open `https://$CODESPACE_NAME-3000.$GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN/login` (or the
-port 3000 link in the **Ports** tab). The login link in `backend/.dev-mail/` starts with
-`http://localhost:3000`: replace that part with your Codespaces URL before opening it
-(VS Code desktop forwards `localhost:3000`, so there it works as is).
+With VS Code desktop, use `http://localhost:3000`, not `127.0.0.1`. If the browser shows
+`ERR_EMPTY_RESPONSE` after the dev server restarted while `curl localhost:3000` works, the
+forwarded port is stale: Ports tab, Stop Forwarding Port 3000, then Forward a Port 3000 again.
 
 ## Test locally
 

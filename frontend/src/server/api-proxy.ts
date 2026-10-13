@@ -49,6 +49,7 @@ const RECOMPUTED_REQUEST_HEADERS = new Set([
   "host",
   "content-length",
   "accept-encoding",
+  "expect", // hop-by-hop in effect (RFC 9110 10.1.1); undici's fetch rejects it (#57)
   "x-forwarded-for",
   "x-forwarded-proto",
   "x-forwarded-host",

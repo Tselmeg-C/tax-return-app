@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { LogOut, UserRound } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { apiFetch } from "@/lib/api";
 import { useMe } from "@/lib/auth";
@@ -12,6 +12,28 @@ export function UserMenu() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+
+  const rootRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  // Escape (focus back to the toggle) and a click outside close the menu (#71).
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      toggleRef.current?.focus();
+    };
+    const onDown = (e: MouseEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [open]);
 
   async function logout(path: "/auth/logout" | "/auth/logout-all") {
     try {
@@ -25,8 +47,9 @@ export function UserMenu() {
 
   if (!me) return null;
   return (
-    <div className="relative min-w-0 shrink">
+    <div ref={rootRef} className="relative min-w-0 shrink">
       <button
+        ref={toggleRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -42,7 +65,7 @@ export function UserMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-30 mt-1 w-56 rounded-md border bg-card p-1 text-sm shadow"
+          className="absolute right-0 z-30 mt-1 w-56 max-w-[calc(100vw-2rem)] rounded-md border bg-card p-1 text-sm shadow"
         >
           <button
             type="button"

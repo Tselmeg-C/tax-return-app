@@ -29,6 +29,15 @@ def normalise_database_url(url: str) -> str:
     return url
 
 
+def _default_app_base_url() -> str:
+    """The forwarded https URL in Codespaces (so dev-mail links open), else localhost."""
+    name = os.environ.get("CODESPACE_NAME")
+    domain = os.environ.get("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN")
+    if name and domain:
+        return f"https://{name}-3000.{domain}"
+    return "http://localhost:3000"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -55,7 +64,7 @@ class Settings(BaseSettings):
     # Public origin of the web app: magic links, the CSRF Origin check, the cookie name
     # (`__Host-` prefix + Secure with https).
     app_base_url: str = Field(
-        default="http://localhost:3000",
+        default_factory=_default_app_base_url,
         validation_alias=AliasChoices("APP_BASE_URL", "app_base_url"),
     )
     # resend | file | memory. Unset: `resend` in production, else `file`.
@@ -181,6 +190,15 @@ class Settings(BaseSettings):
         """`scheme://host[:port]` of `APP_BASE_URL` (what browsers send as `Origin`)."""
         parts = urlsplit(self.app_base_url)
         return f"{parts.scheme}://{parts.netloc}".lower()
+
+    @property
+    def csrf_origins(self) -> tuple[str, ...]:
+        """Accepted `Origin`s: `APP_BASE_URL`'s; outside production also localhost (#51)."""
+        if self.is_production:
+            return (self.app_origin,)
+        port = urlsplit(self.app_base_url).port or 3000
+        local = tuple(f"http://{h}:{port}" for h in ("localhost", "127.0.0.1"))
+        return (self.app_origin, *local)
 
     @property
     def secure_cookies(self) -> bool:
