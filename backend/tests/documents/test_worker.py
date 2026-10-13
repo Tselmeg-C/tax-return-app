@@ -193,6 +193,27 @@ async def test_backoff_and_final_failure(
     assert (stored.status, stored.error_kind) == (DocumentStatus.FAILED, "ValueError")
 
 
+async def test_encryption_key_error_is_permanent(
+    committed: Sessions, volume: LocalVolume, owner: CommittedUser, migrated_database: str
+) -> None:
+    from sqlalchemy.exc import StatementError
+
+    from app.db.crypto import EncryptionKeyError
+
+    async def wrapped(ctx: JobContext) -> None:
+        # what a bind processor failure looks like: StatementError around the key error
+        raise StatementError("x", "stmt", None, EncryptionKeyError("FIELD_ENCRYPTION_KEY"))
+
+    doc = await upload(committed, volume, owner)
+    worker = make_worker(committed, volume, migrated_database, wrapped)
+    assert await worker.run_once()
+    job = await job_of(committed, doc.id)
+    assert (job.status, job.attempts) == (JobStatus.FAILED, 1)
+    assert job.last_error_kind == "EncryptionKeyError"
+    stored = await doc_of(committed, doc.id)
+    assert (stored.status, stored.error_kind) == (DocumentStatus.FAILED, "EncryptionKeyError")
+
+
 async def test_fails_once_then_succeeds(
     committed: Sessions, volume: LocalVolume, owner: CommittedUser, migrated_database: str
 ) -> None:

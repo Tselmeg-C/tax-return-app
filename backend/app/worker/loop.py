@@ -20,6 +20,7 @@ from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapProp
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.config import Settings
+from app.db.crypto import EncryptionKeyError
 from app.domain.enums import JobKind
 from app.queue import runner
 from app.queue.errors import JobTimeout, PermanentJobError, error_kind_of
@@ -98,6 +99,15 @@ class Worker:
         except TimeoutError:
             if cm.expired():
                 raise JobTimeout() from None
+            raise
+        except Exception as exc:
+            # A missing / malformed key is configuration, not a flaky DB: retrying cannot help.
+            # SQLAlchemy wraps it in StatementError (`orig` / `__cause__`).
+            seen: BaseException | None = exc
+            for _ in range(5):
+                if isinstance(seen, EncryptionKeyError):
+                    raise PermanentJobError(error_kind="EncryptionKeyError") from None
+                seen = getattr(seen, "orig", None) or (seen.__cause__ if seen else None)
             raise
 
     async def run_job(self, job: ClaimedJob) -> None:

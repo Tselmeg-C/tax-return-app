@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -40,7 +41,8 @@ for _name in (
 
 # Uploaded files never land in backend/data/ during tests: one throwaway root per run
 # (absolute, so production-mode tests pass the STORAGE_PATH rule too).
-os.environ["STORAGE_PATH"] = tempfile.mkdtemp(prefix="belegbot-test-storage-")
+_STORAGE_DIR = tempfile.mkdtemp(prefix="belegbot-test-storage-")
+os.environ["STORAGE_PATH"] = _STORAGE_DIR
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_TEST_DB_NAME = "belegbot_test"
@@ -68,6 +70,10 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             "Set TEST_DATABASE_URL to a dedicated test database.",
             returncode=4,
         )
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    shutil.rmtree(_STORAGE_DIR, ignore_errors=True)
 
 
 @pytest.fixture(scope="session")

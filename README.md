@@ -31,6 +31,8 @@ cd backend
 uv sync
 uv run alembic upgrade head      # create / migrate the dev database
 uv run python -m app.db.seed     # fictional "Musterhaushalt" with owner@example.com (idempotent)
+# the worker needs a key for encrypted columns (uploads fail without it); one per environment:
+echo "FIELD_ENCRYPTION_KEY=$(uv run python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" >> .env
 uv run uvicorn app.api.main:app --reload --port 8000
 curl localhost:8000/health       # {"status":"ok","db":"ok"}
 ```

@@ -27,6 +27,7 @@ from pydantic import BaseModel, ValidationError
 from sqlalchemy import delete, update
 
 from app.config import LLMSettings, Settings, SettingsError, get_llm_settings, get_settings
+from app.db.crypto import EncryptionKeyError, check_key
 from app.db.models import Document, Extraction, TaxItem
 from app.db.scope import HouseholdScope
 from app.domain.enums import (
@@ -77,6 +78,11 @@ def check_pipeline_settings(settings: Settings, llm: LLMSettings) -> None:
         problems.append("PIPELINE_MAX_PAGES: must be <= LLM_MAX_PDF_PAGES")
     if 2 * llm.llm_deadline_seconds + 120 > settings.job_timeout_seconds:
         problems.append("JOB_TIMEOUT_SECONDS: must be >= 2 x LLM_DEADLINE_SECONDS + 120")
+    try:
+        key = settings.field_encryption_key
+        check_key(key.get_secret_value() if key else None)  # extraction.raw_json is encrypted
+    except EncryptionKeyError as exc:
+        problems.append(str(exc))  # fixed text naming FIELD_ENCRYPTION_KEY
     try:
         LLMRouter(llm)  # validates routing.yaml + LLM_* overrides (fake refused in production)
     except LLMNotConfigured as exc:
