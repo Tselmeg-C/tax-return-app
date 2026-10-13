@@ -451,6 +451,8 @@ async def create_employment(
 async def update_employment(
     scope: HouseholdScope, user_id: uuid.UUID, employment_id: uuid.UUID, sent: dict[str, Any]
 ) -> Employment:
+    """Greyed rows (person no longer in the return) are read-only: `person_not_in_return`.
+    They can still be deleted; re-adding the person to the profile makes them editable."""
     actor = Actor.user(user_id)
     changed: list[str] = []
 
@@ -583,6 +585,8 @@ async def put_child_year(
         person = await _child(scope, person_id)
         if person.kind is not PersonKind.CHILD:
             raise invalid("not_a_child", "person_id")
+        if await _profile(scope, year) is None:
+            raise Rejected(409, "profile_missing")
         limit = _months_limit(person, year)
         if limit is None:
             raise invalid("child_not_born", "person_id")

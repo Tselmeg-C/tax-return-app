@@ -39,6 +39,7 @@ REDACTED = "[redacted]"
 REDACTED_COLUMNS: dict[str, frozenset[str]] = {
     "person": frozenset({"first_name", "last_name", "dob"}),
     "employment": frozenset({"employer_name"}),
+    "tax_item": frozenset({"vendor", "reason"}),
 }
 
 

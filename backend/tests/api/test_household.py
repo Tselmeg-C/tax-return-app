@@ -226,6 +226,9 @@ async def test_max_months_and_child_rules(t: T) -> None:
     later = {c["person_id"] for c in (await household(t, a, 2026))["children"]}
     assert unborn["id"] in later
 
+    owner = await person(t, a, first_name="Owner")
+    await profile(t, a, 2025, owner["id"])
+
     def put(pid: str, months: int, year: int = 2025) -> Any:
         body = {"months": months, "allowance_share": "full"}
         return call(t, a, "PUT", f"/household/{year}/children/{pid}", body)
@@ -237,6 +240,7 @@ async def test_max_months_and_child_rules(t: T) -> None:
     assert ok.status_code == 200 and ok.json()["in_household"] is True
     adult = await person(t, a)
     assert err(await put(adult["id"], 1))[:2] == (422, "not_a_child")
+    assert err(await put(newborn["id"], 1, 2026))[:2] == (409, "profile_missing")
     entry = next(c for c in (await household(t, a))["children"] if c["person_id"] == newborn["id"])
     assert entry["child_year"]["months"] == 10
     r = await call(t, a, "DELETE", f"/household/2025/children/{newborn['id']}")
@@ -248,6 +252,7 @@ async def test_max_months_and_child_rules(t: T) -> None:
 async def test_dob_change_rechecks_child_rows(t: T) -> None:
     a = await t.home()
     kid = await child(t, a, "2015-01-01")
+    await profile(t, a, 2025, (await person(t, a))["id"])
     r = await call(
         t,
         a,
@@ -305,7 +310,12 @@ async def test_filing_status_switch_keeps_employments(t: T) -> None:
     jobs = (await household(t, a))["employments"]
     assert [(j["person_id"], j["in_return"]) for j in jobs] == [(y["id"], False)]
     assert err(await job(t, a, y["id"]))[:2] == (422, "person_not_in_return")
+    # greyed rows are read-only (documented decision, #78): PATCH is refused, DELETE works
+    r = await call(t, a, "PATCH", f"/employments/{jobs[0]['id']}", {"office_days": 5})
+    assert err(r)[:2] == (422, "person_not_in_return")
+    assert (await call(t, a, "DELETE", f"/employments/{jobs[0]['id']}")).status_code == 204
     await profile(t, a, 2025, x["id"], y["id"])
+    assert (await job(t, a, y["id"])).status_code == 201
     assert [j["in_return"] for j in (await household(t, a))["employments"]] == [True]
 
 

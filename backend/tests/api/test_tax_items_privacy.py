@@ -6,6 +6,7 @@ only its logs / spans / metrics are checked.)"""
 from __future__ import annotations
 
 import io
+import json
 import secrets
 from decimal import Decimal
 from typing import Any
@@ -75,6 +76,11 @@ async def test_no_sentinel_leaks(
     errors.append(busy.text)
     gone = await t.api.request("DELETE", f"/documents/{doc.id}", cookie=a.cookie)
     assert gone.status_code == 204
+
+    audit = json.dumps([[r.before, r.after] for r in await t.audit("tax_item")])
+    assert audit != "[]"
+    for sentinel in (vendor, reason):
+        assert sentinel not in audit, sentinel
 
     logs = json_log.getvalue()
     assert '"tax_item.updated"' in logs and '"tax_item.rejected"' in logs
