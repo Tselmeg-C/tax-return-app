@@ -22,3 +22,5 @@ cases:
   - {id: s6_single_22676, input: {zve: "22676", filing: single}, expected: {est: "2317", soli: "0.00"}}
   - {id: s7_single_27174, input: {zve: "27174", filing: single}, expected: {est: "3514", soli: "0.00"}}
   - {id: s7_single_17574, input: {zve: "17574", filing: single}, expected: {est: "1046", soli: "0.00"}}
+  - {id: s8_single_46789, input: {zve: "46789", filing: single}, expected: {est: "9570", soli: "0.00"}}
+  - {id: s9_single_85010, input: {zve: "85010", filing: single}, expected: {est: "24792", soli: "576.19"}}

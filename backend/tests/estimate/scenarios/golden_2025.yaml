@@ -352,3 +352,68 @@ scenarios:
       refund: "486.00"
       pflicht: {state: voluntary, reasons: []}
       what_missing: []
+
+  # #85: Vorsorge estimated from the gross wage (params `sozialversicherung`, 2025: employee
+  # RV 9,3 %, ALV 1,3 %, KV 7,3 % + 1,25 % average Zusatzbeitrag = 8,55 %, PV 1,8 % (+ 0,6 % childless)).
+  - id: s8_single_wage_estimate
+    title: "Single, gross wage 60.000 only: Vorsorge estimated from the wage (childless)"
+    persons: {a: {kind: adult}}
+    profile: {filing: single, bundesland: be, taxpayer: a}
+    employments:
+      - {person: a, steuerklasse: "1", gross_wage: "60000.00", lohnsteuer: "12000.00"}
+    chain:
+      - "Einkuenfte N = 60.000 - 1.230 = 58.770 = GdE"
+      - "Schaetzung (60.000 unter beiden BBG): RV 60.000 x 0,093 = 5.580; KV 60.000 x 0,0855 = 5.130; PV 60.000 x (0,018 + 0,006) = 1.440; ALV 60.000 x 0,013 = 780"
+      - "Altersvorsorge: 5.580 + AG-Anteil 5.580 = 11.160 (<= 29.344), abzgl. AG-Anteil = 5.580 (§ 10 Abs. 1 Nr. 2, Abs. 3)"
+      - "Basiskranken: KV 5.130 x 0,96 = 4.924,80 + PV 1.440 = 6.364,80; ueber 1.900 daher ALV (Nr. 3a) nicht zusaetzlich (§ 10 Abs. 4 Satz 4)"
+      - "Vorsorge gesamt 5.580 + 6.364,80 = 11.944,80; Sonderausgaben Pauschbetrag 36"
+      - "zvE vor Kindern = 58.770 - 36 - 11.944,80 = 46.789,20; Tarif auf volle Euro abgerundet 46.789 (§ 32a Abs. 1 Satz 1; BMF: ESt 9.570, Soli 0)"
+      - "Erstattung = 12.000 - 9.570 = 2.430"
+    bmf: [s8_single_46789]
+    expected:
+      gde: "58770.00"
+      zve_before_children: "46789.20"
+      zve: "46789.20"
+      tarifliche_est: "9570.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "9570.00"
+      soli: "0.00"
+      kirchensteuer: "0.00"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "12000.00", soli: "0.00", kirchensteuer: "0.00"}
+      refund: "2430.00"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []
+      notes: [vorsorge_estimated]
+
+  - id: s9_single_above_bbg_manual_kv
+    title: "Single, gross wage 100.000, KV / PV typed by hand: RV and ALV estimated (capped), KV / PV not"
+    persons: {a: {kind: adult}}
+    profile: {filing: single, bundesland: be, taxpayer: a}
+    employments:
+      - {person: a, steuerklasse: "1", gross_wage: "100000.00", lohnsteuer: "25000.00",
+         soli_withheld: "1000.00", kv: "4000.00", pv: "900.00"}
+    chain:
+      - "Einkuenfte N = 100.000 - 1.230 = 98.770 = GdE"
+      - "Schaetzung nur RV und ALV (KV / PV stammen aus der Eingabe): wage ueber BBG 96.600: RV 96.600 x 0,093 = 8.983,80; ALV 96.600 x 0,013 = 1.255,80"
+      - "Altersvorsorge: 8.983,80 x 2 = 17.967,60 (<= 29.344), abzgl. AG-Anteil = 8.983,80"
+      - "Basiskranken: KV 4.000 x 0,96 = 3.840 + PV 900 = 4.740 (> 1.900, ALV nicht zusaetzlich, § 10 Abs. 4 Satz 4)"
+      - "Vorsorge gesamt 8.983,80 + 4.740 = 13.723,80; Sonderausgaben Pauschbetrag 36"
+      - "zvE vor Kindern = 98.770 - 36 - 13.723,80 = 85.010,20; abgerundet 85.010 (BMF: ESt 24.792, Soli 576,19)"
+      - "Ergebnis = 25.000 + 1.000 - 24.792 - 576,19 = 631,81 (Erstattung)"
+    bmf: [s9_single_85010]
+    expected:
+      gde: "98770.00"
+      zve_before_children: "85010.20"
+      zve: "85010.20"
+      tarifliche_est: "24792.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "24792.00"
+      soli: "576.19"
+      kirchensteuer: "0.00"
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "25000.00", soli: "1000.00", kirchensteuer: "0.00"}
+      refund: "631.81"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []
+      notes: [vorsorge_estimated]

@@ -92,6 +92,7 @@ def test_sections_cite_sources() -> None:
             "progressionsvorbehalt",
             "kinder",
             "entlastungsbetrag",
+            "sozialversicherung",
         )
 
 
@@ -181,6 +182,7 @@ def test_provisional_sections_listed(tmp_path: Path) -> None:
         "progressionsvorbehalt",
         "kinder",
         "entlastungsbetrag",
+        "sozialversicherung",
     )
 
 
