@@ -245,7 +245,7 @@ export const TEXT = {
     "Ab 18 zählen nur Monate mit Ausbildung, Studium, Freiwilligendienst oder Arbeitssuche.",
   childrenReview: "Die Veranlagung hat sich geändert – bitte prüfe die Kinderfreibeträge.",
   churchHint:
-    "Nur eine Person ist Kirchenmitglied – die Kirchensteuer wird in der Schätzung noch vereinfacht berechnet.",
+    "Nur eine Person ist Kirchenmitglied – die Kirchensteuer wird auf deren Anteil an den Einkünften geschätzt (ggf. besonderes Kirchgeld).",
   saveFailed: "Speichern fehlgeschlagen – bitte erneut versuchen",
   loading: "Haushalt wird geladen…",
   loadError: "Haushalt konnte nicht geladen werden.",

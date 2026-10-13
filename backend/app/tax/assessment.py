@@ -18,6 +18,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from app.domain.enums import FilingStatus
+from app.tax.church import ChurchResult, KistMethod, MemberShare, church_tax_joint
 from app.tax.deductions.models import ChildInput, Note, ReturnContext, check_decimal
 from app.tax.kinder import KinderResult, guenstigerpruefung
 from app.tax.models import TaxParams
@@ -39,6 +41,7 @@ class Festsetzung:
     soli: Decimal
     kist: Decimal
     notes: tuple[Note, ...] = field(default=())
+    kist_method: KistMethod = KistMethod.FULL
 
 
 def _non_negative(value: object, name: str) -> Decimal:
@@ -56,8 +59,11 @@ def festsetzung(
     children: Iterable[ChildInput],
     ermaessigung_35a: Decimal,
     params: TaxParams,
+    church_member: MemberShare | None = None,
 ) -> Festsetzung:
-    """`state=None`: no church tax. `lohnersatz` = #86 `progression_amount.total` (0 without)."""
+    """`state=None`: no church tax. `lohnersatz` = #86 `progression_amount.total` (0 without).
+    `church_member`: joint return with ONE church member (#53); default = every adult is
+    charged (KiSt of the whole Bemessungsgrundlage)."""
     if not isinstance(ctx, ReturnContext):
         raise TypeError("ctx must be a ReturnContext")
     if ctx.year != params.year:
@@ -78,6 +84,10 @@ def festsetzung(
     applied = min(erm, tarifliche)
     bmg_full = est_fn(k.zve_bmg)
     bmg = bmg_full - min(erm, bmg_full)
+    if church_member is not None and state is not None and filing is FilingStatus.JOINT:
+        church = church_tax_joint(bmg, k.zve_bmg, church_member, state, params.church_tax)
+    else:
+        church = ChurchResult(church_tax(bmg, state, params.church_tax), KistMethod.FULL)
     return Festsetzung(
         kinder=k,
         tarifliche_est_without_kindergeld=without_kg,
@@ -87,6 +97,7 @@ def festsetzung(
         festzusetzende_est=tarifliche - applied,
         bmg=bmg,
         soli=solidarity_surcharge(bmg, filing, params.soli),
-        kist=church_tax(bmg, state, params.church_tax),
-        notes=k.notes,
+        kist=church.kist,
+        notes=k.notes + church.notes,
+        kist_method=church.method,
     )

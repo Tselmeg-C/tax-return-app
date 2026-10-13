@@ -108,8 +108,45 @@ class SoliParams(_Section):
         return self
 
 
+class KirchgeldStufe(_Frozen):
+    """One Stufe of the besonderes Kirchgeld: from `lower` (zvE, full euros) the `amount` a year."""
+
+    lower: Dec
+    amount: Dec
+
+
+class KirchgeldParams(_Frozen):
+    """Besonderes Kirchgeld in glaubensverschiedener Ehe (#53).
+
+    `compare_states`: the Land levies the table amount and the higher of it and the member's
+    share of the KiSt is charged. `no_kirchgeld_states`: the Land has no Kirchgeld, only the
+    member's share (BY). Any other Land is not modelled: member share + a note.
+    """
+
+    stufen: tuple[KirchgeldStufe, ...]
+    compare_states: frozenset[str]
+    no_kirchgeld_states: frozenset[str] = frozenset()
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        lowers = [s.lower for s in self.stufen]
+        if not self.stufen or lowers != sorted(set(lowers)):
+            raise ValueError("kirchgeld.stufen must be non-empty and strictly ascending")
+        if any(s.lower < 0 or s.amount <= 0 for s in self.stufen):
+            raise ValueError("kirchgeld.stufen: lower >= 0 and amount > 0")
+        if any(a.amount >= b.amount for a, b in zip(self.stufen, self.stufen[1:], strict=False)):
+            raise ValueError("kirchgeld.stufen: amounts must ascend")
+        both = self.compare_states | self.no_kirchgeld_states
+        if both - STATES:
+            raise ValueError(f"kirchgeld: unknown state {', '.join(sorted(both - STATES))}")
+        if self.compare_states & self.no_kirchgeld_states:
+            raise ValueError("kirchgeld: a state cannot be in both lists")
+        return self
+
+
 class ChurchTaxParams(_Section):
     rate_by_state: dict[str, Dec]
+    kirchgeld: KirchgeldParams
 
     @model_validator(mode="after")
     def _check(self) -> Self:

@@ -44,11 +44,13 @@ from app.domain.enums import (
     DeductionNote,
     DocumentStatus,
     EstimateMissing,
+    FilingStatus,
     PersonKind,
     Religion,
 )
 from app.estimate.deadlines import next_working_day
 from app.tax.assessment import festsetzung
+from app.tax.church import MemberShare
 from app.tax.deductions import (
     ChildInput,
     EmploymentInput,
@@ -361,6 +363,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
         if all(p.religion is Religion.NONE for p in adults)
         else profile.bundesland.value.upper()
     )
+    members = [str(i) for i, p in zip(ids, adults, strict=True) if p.religion is not Religion.NONE]
     kids = _child_inputs(loaded)
     kid_ids = {k.person_id for k in kids}
     people = [
@@ -385,6 +388,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
     wk = werbungskosten(ctx, loaded.items, employment_inputs, params.werbungskosten)
     notes.extend(wk.notes)
     einkuenfte = _ZERO
+    einkuenfte_by_person: dict[str, Decimal] = {}
     wk_on_wages: dict[str, Decimal] = {}
     for pid, w in wk.by_person.items():
         # § 9a: only the Pauschbetrag is limited by the wages; real costs may exceed them.
@@ -393,6 +397,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
             min(pauschbetrag_part, wage[pid]) if w.used_pauschbetrag else pauschbetrag_part
         ) + w.beside_pauschbetrag
         einkuenfte += wage[pid] - limited
+        einkuenfte_by_person[pid] = wage[pid] - limited
         wk_on_wages[pid] = min(wage[pid], pauschbetrag_part)
     # § 24b: off the Summe der Einkünfte, before Sonderausgaben / agB (V, KAP = 0 until #19 / #20).
     entlastung = entlastungsbetrag(
@@ -424,7 +429,18 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
     # 6. § 35a, 7. Festsetzung.
     erm = haushaltsnahe(ctx, loaded.items, params.haushaltsnahe)
     notes.extend(erm.notes)
-    fest = festsetzung(zve_before, ctx, state, progression.total, kids, erm.total, params)
+    # #53: one church member in a joint return -> KiSt on the member's share (+ Kirchgeld);
+    # the share is the Einkünfte ratio, approximated by the wage income per person.
+    one_member = (
+        MemberShare(
+            einkuenfte_by_person.get(members[0], _ZERO), sum(einkuenfte_by_person.values(), _ZERO)
+        )
+        if ctx.filing is FilingStatus.JOINT and len(members) == 1
+        else None
+    )
+    fest = festsetzung(
+        zve_before, ctx, state, progression.total, kids, erm.total, params, one_member
+    )
     notes.extend(fest.notes)
 
     # 8. Refund: positive = Erstattung. Kindergeld is not part of it (it was paid out).
@@ -481,6 +497,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
         "festzusetzende_est": _m(fest.festzusetzende_est),
         "soli": _m(fest.soli),
         "kirchensteuer": _m(fest.kist),
+        "kirchensteuer_method": fest.kist_method.value,
         "kindergeld_added": _m(fest.kindergeld_added),
         "withheld": {k: _m(v) for k, v in withheld.items()},
         "by_anlage": _by_anlage(ctx, loaded, params.mapping, kid_ids),

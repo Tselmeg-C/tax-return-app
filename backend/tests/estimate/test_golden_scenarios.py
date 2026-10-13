@@ -24,6 +24,8 @@ BMF: dict[str, dict[str, str]] = {
 TARIFF_CASE = {
     "s1_single_wage_commute": "s1_single_41158",
     "s2_joint_iii_v_church": "s2_joint_66280",
+    "s2c_joint_one_member_nw_share_above_kirchgeld": "s2_joint_66280",
+    "s7b_joint_member_without_income_kirchgeld": "s2_joint_66280",
     "s3a_joint_two_children_kindergeld": "s3a_joint_43843",
     "s3b_joint_two_children_freibetraege": "s3b_joint_186614",
     "s5_single_35a_soli_on_reduced_est": "s5_single_73838",
@@ -65,6 +67,8 @@ async def test_summary_matches_hand_derivation(
         "refund",
     ):
         assert result[key] == expected[key], (scenario["id"], key)
+    if "kirchensteuer_method" in expected:
+        assert result["kirchensteuer_method"] == expected["kirchensteuer_method"]
     assert result["entlastungsbetrag"] == expected.get("entlastungsbetrag", "0.00")
     assert result["pflicht"]["state"] == expected["pflicht"]["state"]
     assert result["pflicht"]["reasons"] == expected["pflicht"]["reasons"]

@@ -192,6 +192,8 @@ class DeductionNote(StrEnum):
     CHILD_OVER_25_DISABLED = "child_over_25_disabled"
     ENTLASTUNG_HOUSEHOLD_SHARED = "entlastung_household_shared"
     VORSORGE_ESTIMATED = "vorsorge_estimated"
+    KIST_SHARE_ESTIMATED = "kist_share_estimated"  # #53: member's share split by income
+    KIRCHGELD_NOT_MODELLED = "kirchgeld_not_modelled"  # #53: Land without a Kirchgeld table
 
 
 class EstimateMissing(StrEnum):
@@ -543,6 +545,8 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         _N.CHILD_OVER_25_DISABLED: "Kind über 25 mit Behinderung, Voraussetzungen nicht geprüft",
         _N.ENTLASTUNG_HOUSEHOLD_SHARED: "Haushalt mit Erwachsenem, kein Entlastungsbetrag",
         _N.VORSORGE_ESTIMATED: "Vorsorge aus dem Bruttolohn geschätzt (vorläufig)",
+        _N.KIST_SHARE_ESTIMATED: "Kirchensteuer-Anteil des Mitglieds nach Einkünften geschätzt",
+        _N.KIRCHGELD_NOT_MODELLED: "Besonderes Kirchgeld dieses Landes nicht berechnet",
     },
     EstimateMissing: {
         EstimateMissing.NO_LSTB: "Lohnsteuerbescheinigung fehlt (Bruttolohn, Lohnsteuer)",
