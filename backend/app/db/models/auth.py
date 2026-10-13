@@ -42,6 +42,9 @@ class MagicLinkToken(UUIDPrimaryKey, HouseholdOwned, CreatedAt, Base):
     redirect_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Set = an e-mail change confirmation (#34), not a login link: `/auth/verify` ignores it and
+    # `/auth/confirm-email` accepts only these. Lowercase, normalised.
+    new_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
 
 
 class UserSession(UUIDPrimaryKey, HouseholdOwned, CreatedAt, Base):

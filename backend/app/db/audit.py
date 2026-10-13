@@ -37,6 +37,7 @@ REDACTED = "[redacted]"
 
 # Plain-text personal data per table (names, birth date, employer): never stored in an audit row.
 REDACTED_COLUMNS: dict[str, frozenset[str]] = {
+    "app_user": frozenset({"email"}),
     "passkey": frozenset({"name", "credential_id", "public_key", "transports"}),
     "person": frozenset({"first_name", "last_name", "dob"}),
     "employment": frozenset({"employer_name"}),

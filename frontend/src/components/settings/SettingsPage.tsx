@@ -13,6 +13,7 @@ import {
   usePasskeys,
   type Passkey,
 } from "@/lib/passkeys";
+import { DEVICES_TEXT, endOwnSession, SESSIONS_KEY, useOwnSessions } from "@/lib/users";
 
 const date = (iso: string) => new Date(iso).toLocaleDateString("de-DE");
 
@@ -97,6 +98,60 @@ function PasskeyRow({ passkey, onChanged }: { passkey: Passkey; onChanged: () =>
   );
 }
 
+function DevicesCard() {
+  const queryClient = useQueryClient();
+  const { data, isError } = useOwnSessions();
+  const [failed, setFailed] = useState(false);
+
+  async function signOut(id: string) {
+    setFailed(false);
+    try {
+      await endOwnSession(id);
+      await queryClient.invalidateQueries({ queryKey: SESSIONS_KEY });
+    } catch {
+      setFailed(true);
+    }
+  }
+
+  return (
+    <section className="sheet mt-6 p-5" aria-labelledby="devices-title">
+      <h2 id="devices-title" className="text-lg">
+        {DEVICES_TEXT.title}
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">{DEVICES_TEXT.intro}</p>
+      {(isError || failed) && (
+        <p role="alert" className="mt-3 text-sm text-destructive">
+          {isError ? DEVICES_TEXT.loadError : DEVICES_TEXT.failed}
+        </p>
+      )}
+      {data && (
+        <ul className="mt-3 divide-y text-sm">
+          {data.map((s) => (
+            <li key={s.id} className="flex flex-wrap items-center gap-3 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">
+                  Angemeldet am {date(s.created_at)}
+                  {s.current ? ` (${DEVICES_TEXT.current})` : ""}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  zuletzt aktiv am {date(s.last_seen_at)}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-md border bg-card px-3 py-1 hover:bg-secondary"
+                onClick={() => void signOut(s.id)}
+              >
+                {DEVICES_TEXT.signOut}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export function SettingsPage() {
   const queryClient = useQueryClient();
   const [supported, setSupported] = useState(false);
@@ -162,6 +217,7 @@ export function SettingsPage() {
           </p>
         )}
       </section>
+      <DevicesCard />
     </AppShell>
   );
 }

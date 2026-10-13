@@ -14,6 +14,7 @@ import {
   primaryClass,
   ProfileForm,
 } from "@/components/household/forms";
+import { AccessCard } from "@/components/household/AccessCard";
 import { TelegramCard } from "@/components/household/TelegramCard";
 import {
   adultChildHint,
@@ -563,6 +564,7 @@ function PageView(props: ViewProps) {
       )}
 
       <TelegramCard />
+      <AccessCard />
     </div>
   );
 }
