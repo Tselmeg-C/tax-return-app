@@ -168,6 +168,23 @@ async def test_vorsorge_from_items_when_no_field_is_set(db_session: AsyncSession
     assert Decimal(with_items["zve"]) < Decimal(without["zve"])
 
 
+async def test_pauschbetrag_is_limited_by_the_wage_but_real_costs_are_not(
+    db_session: AsyncSession,
+) -> None:
+    low = copy.deepcopy(SINGLE)
+    low["employments"][0]["gross_wage"] = "800.00"  # costs 540 < Pauschbetrag 1230 > wage
+    assert (await (await build(db_session, low)).summary())["gde"] == "0.00"  # § 9a, not negative
+
+
+async def test_real_costs_above_the_wage_give_negative_einkuenfte(
+    db_session: AsyncSession,
+) -> None:
+    high = copy.deepcopy(SINGLE)
+    emp = high["employments"][0]
+    emp.update(gross_wage="5000.00", commute_km=100, office_days=200, homeoffice_days=0)
+    assert Decimal((await (await build(db_session, high)).summary())["gde"]) < 0
+
+
 async def test_employment_without_wage_lists_no_lstb(db_session: AsyncSession) -> None:
     spec = copy.deepcopy(SINGLE)
     del spec["employments"][0]["gross_wage"]
