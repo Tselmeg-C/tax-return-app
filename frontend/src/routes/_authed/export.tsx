@@ -1,10 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileArchive, FileSpreadsheet, FileText } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
+import { ApiError } from "@/lib/api";
+import { downloadZip, EXPORT_TEXT, exportUrl } from "@/lib/exportFiles";
 import { formatEur } from "@/lib/money";
-import { belegeSearch, label, listTaxItems, TAX_ITEMS_KEY, type TaxItemOut } from "@/lib/taxItems";
+import { fetchSummary, summaryKey } from "@/lib/summary";
+import { belegeSearch, label } from "@/lib/taxItems";
 import { useYear } from "@/lib/year";
 
 export const Route = createFileRoute("/_authed/export")({
@@ -29,106 +33,133 @@ export const Route = createFileRoute("/_authed/export")({
   component: Export,
 });
 
-function Export() {
-  const { jahr, select, labels, isSupported } = useYear();
-  const list = useQuery({
-    queryKey: [...TAX_ITEMS_KEY, "export", jahr],
-    queryFn: () => listTaxItems({ year: jahr, filter: "relevant" }),
-    enabled: isSupported,
-  });
-  const rel = (list.data?.items ?? []).filter((i) => i.anlage);
-  const groups = Object.entries(
-    rel.reduce<Record<string, TaxItemOut[]>>((a, i) => ((a[i.anlage!] ??= []).push(i), a), {}),
-  );
-  // Sum in cents (integers): never float math on money.
-  const cents = (v: string) => Math.round(Number(v) * 100);
-  const sum = (l: TaxItemOut[]) =>
-    (l.reduce((s, i) => s + cents(i.deductible_amount), 0) / 100).toFixed(2);
+const CARD = "sheet flex items-center gap-4 p-5 text-left transition-transform";
 
-  const downloadCsv = () => {
-    const rows = [
-      ["Anlage", "Zeile", "Beleg", "Datum", "Absetzbar"],
-      ...rel.map((i) => [
-        i.anlage ?? "",
-        i.zeile ?? "",
-        i.vendor ?? "",
-        i.invoice_date ?? "",
-        i.deductible_amount,
-      ]),
-    ];
-    const blob = new Blob([rows.map((r) => r.join(";")).join("\n")], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `steuer-${jahr}.csv`;
-    a.click();
+export function Export() {
+  const { jahr, select, labels, isSupported } = useYear();
+  const [zipBusy, setZipBusy] = useState(false);
+  const summary = useQuery({
+    queryKey: summaryKey(jahr),
+    queryFn: () => fetchSummary(jahr),
+    enabled: isSupported,
+    retry: false,
+  });
+  const ready = isSupported && summary.data?.status === "ok";
+  const noProfile = isSupported && summary.data?.status === "no_profile";
+  // Same numbers as the files: `by_anlage` sums and `by_line` lines of GET /summary.
+  const lines = summary.data?.by_line ?? [];
+  const num = (z: string | null) => (z && /^\d+$/.test(z) ? Number(z) : Number.POSITIVE_INFINITY);
+
+  const zip = async () => {
+    setZipBusy(true);
+    try {
+      const result = await downloadZip(jahr);
+      if (!result.ok) {
+        toast.error(
+          result.reason === "too_large" ? EXPORT_TEXT.tooLarge(result.maxMb) : EXPORT_TEXT.failed,
+        );
+      } else if (result.missing > 0) {
+        toast.warning(EXPORT_TEXT.missing(result.missing));
+      }
+    } catch {
+      toast.error(EXPORT_TEXT.failed);
+    } finally {
+      setZipBusy(false);
+    }
   };
 
-  const formats = [
-    {
-      icon: FileText,
-      title: "PDF-Bericht",
-      desc: "Nach Anlage & Zeile sortiert",
-      action: () => toast("PDF wird erstellt…"),
-    },
-    { icon: FileSpreadsheet, title: "CSV", desc: "Für Excel / Numbers", action: downloadCsv },
-    {
-      icon: FileArchive,
-      title: "Belege-ZIP",
-      desc: "Alle Originale",
-      action: () => toast("ZIP wird gepackt…"),
-    },
-  ];
+  const cards = [
+    { icon: FileText, title: "PDF-Bericht", desc: "Nach Anlage & Zeile sortiert", format: "pdf" },
+    { icon: FileSpreadsheet, title: "CSV", desc: "Für Excel / Numbers", format: "csv" },
+  ] as const;
 
   return (
     <AppShell {...(select ? { year: select } : {})}>
       <h1 className="text-4xl">Export · Steuerjahr {jahr}</h1>
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        {formats.map(({ icon: Icon, title, desc, action }) => (
-          <button
-            key={title}
-            onClick={action}
-            className="sheet flex items-center gap-4 p-5 text-left transition-transform hover:-translate-y-0.5"
-          >
-            <Icon className="h-8 w-8 text-primary" />
-            <div>
-              <p className="font-display text-lg">{title}</p>
-              <p className="text-xs text-muted-foreground">{desc}</p>
+        {cards.map(({ icon: Icon, title, desc, format }) => {
+          const inner = (
+            <>
+              <Icon className="h-8 w-8 text-primary" />
+              <div>
+                <p className="font-display text-lg">{title}</p>
+                <p className="text-xs text-muted-foreground">{desc}</p>
+              </div>
+            </>
+          );
+          return ready ? (
+            <a
+              key={format}
+              href={exportUrl(jahr, format)}
+              download
+              className={`${CARD} hover:-translate-y-0.5`}
+            >
+              {inner}
+            </a>
+          ) : (
+            <div key={format} aria-disabled="true" className={`${CARD} opacity-50`}>
+              {inner}
             </div>
-          </button>
-        ))}
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => void zip()}
+          disabled={!ready || zipBusy}
+          className={`${CARD} hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0`}
+        >
+          <FileArchive className="h-8 w-8 text-primary" />
+          <div>
+            <p className="font-display text-lg">Belege-ZIP</p>
+            <p className="text-xs text-muted-foreground">
+              {zipBusy ? EXPORT_TEXT.zipBusy : "Alle Originale"}
+            </p>
+          </div>
+        </button>
       </div>
+      {noProfile ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          {EXPORT_TEXT.needProfile}.{" "}
+          <Link to="/haushalt" search={{ jahr }} className="underline">
+            Zum Haushalt
+          </Link>
+        </p>
+      ) : null}
 
       <div className="sheet mt-8 p-8">
         <p className="stamp text-muted-foreground">Vorschau · zum Übertragen in ELSTER</p>
-        {list.isError ? (
+        {summary.isError && !(summary.error instanceof ApiError && summary.error.status === 409) ? (
           <p role="alert" className="mt-4 text-sm text-destructive">
             Belege konnten nicht geladen werden.
           </p>
         ) : null}
-        {list.isPending && isSupported ? (
+        {summary.isPending && isSupported ? (
           <p className="mt-4 text-sm text-muted-foreground">Belege werden geladen…</p>
         ) : null}
-        {groups.map(([a, group]) => (
-          <section key={a} className="mt-6">
-            <h2 className="border-b pb-1 text-xl">{label(labels.data?.anlagen, a)}</h2>
+        {(summary.data?.by_anlage ?? []).map((a) => (
+          <section key={a.anlage} className="mt-6">
+            <h2 className="border-b pb-1 text-xl">{label(labels.data?.anlagen, a.anlage)}</h2>
             <table className="mt-2 w-full text-sm">
               <tbody>
-                {group.map((i) => (
-                  <tr key={i.id} className="border-b border-dashed">
-                    <td className="num w-20 py-2 text-muted-foreground">{i.zeile ?? ""}</td>
-                    <td className="py-2">
-                      {label(labels.data?.categories, i.category)}{" "}
-                      <span className="text-muted-foreground">
-                        {i.vendor ? `· ${i.vendor}` : ""}
-                      </span>
-                    </td>
-                    <td className="num py-2 text-right">{formatEur(i.deductible_amount)}</td>
-                  </tr>
-                ))}
+                {lines
+                  .filter((l) => l.anlage === a.anlage)
+                  .sort((x, y) => num(x.zeile) - num(y.zeile))
+                  .map((l) => (
+                    <tr key={l.category} className="border-b border-dashed">
+                      <td className="num w-20 py-2 text-muted-foreground">{l.zeile ?? ""}</td>
+                      <td className="py-2">
+                        {label(labels.data?.categories, l.category)}{" "}
+                        <span className="text-muted-foreground">
+                          · {l.item_ids.length} {l.item_ids.length === 1 ? "Beleg" : "Belege"}
+                        </span>
+                      </td>
+                      <td className="num py-2 text-right">{formatEur(l.amount)}</td>
+                    </tr>
+                  ))}
                 <tr>
                   <td />
                   <td className="py-2 font-medium">Summe</td>
-                  <td className="num py-2 text-right font-medium">{formatEur(sum(group))}</td>
+                  <td className="num py-2 text-right font-medium">{formatEur(a.amount)}</td>
                 </tr>
               </tbody>
             </table>

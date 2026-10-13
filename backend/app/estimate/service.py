@@ -40,6 +40,7 @@ from app.domain.enums import (
     CATEGORY_GROUP,
     AllowanceShare,
     Anlage,
+    Category,
     CategoryGroup,
     DeductionNote,
     DocumentStatus,
@@ -278,9 +279,10 @@ def _child_inputs(loaded: _Loaded) -> list[ChildInput]:
     return sorted(kids, key=lambda c: c.person_id)
 
 
-def _by_anlage(ctx: ReturnContext, loaded: _Loaded, mapping: Any, kids: set[str]) -> list[Any]:
-    """Receipt sums per Anlage (relevant, not excluded, person in the return or household)."""
-    totals: dict[Anlage, Decimal] = {}
+def _counted(ctx: ReturnContext, loaded: _Loaded, mapping: Any, kids: set[str]) -> list[ItemInput]:
+    """Items counted in the receipt sums (relevant, mapped, person in the return or household,
+    not excluded). The one selection rule of `by_anlage` and `by_line` (#21)."""
+    counted: list[ItemInput] = []
     for item in loaded.items:
         if not item.is_relevant or item.category not in mapping:
             continue
@@ -288,9 +290,41 @@ def _by_anlage(ctx: ReturnContext, loaded: _Loaded, mapping: Any, kids: set[str]
             continue
         if not item.overridden_by_user and item.attention_reason in EXCLUDED_REASONS:
             continue
+        counted.append(item)
+    return counted
+
+
+def _receipt_sums(
+    ctx: ReturnContext, loaded: _Loaded, mapping: Any, kids: set[str]
+) -> tuple[list[Any], list[Any]]:
+    """(`by_anlage`, `by_line`): receipt sums per Anlage and per category line, from the same
+    loop, so the lines of an Anlage always add up to its sum. Lines are ordered by Anlage, then
+    category; the export sorts Zeilen itself."""
+    anlage_totals: dict[Anlage, Decimal] = {}
+    lines: dict[Category, tuple[Decimal, list[str]]] = {}
+    for item in _counted(ctx, loaded, mapping, kids):
         anlage = mapping[item.category].anlage
-        totals[anlage] = totals.get(anlage, _ZERO) + item.deductible_amount
-    return [{"anlage": a.value, "amount": _m(totals[a])} for a in Anlage if a in totals]
+        anlage_totals[anlage] = anlage_totals.get(anlage, _ZERO) + item.deductible_amount
+        total, ids = lines.get(item.category, (_ZERO, []))
+        ids.append(item.id)
+        lines[item.category] = (total + item.deductible_amount, ids)
+    order = list(Anlage)
+    by_line = [
+        {
+            "anlage": mapping[c].anlage.value,
+            "zeile": mapping[c].zeile,
+            "category": c.value,
+            "amount": _m(total),
+            "item_ids": sorted(ids),
+        }
+        for c, (total, ids) in sorted(
+            lines.items(), key=lambda kv: (order.index(mapping[kv[0]].anlage), kv[0].value)
+        )
+    ]
+    by_anlage = [
+        {"anlage": a.value, "amount": _m(anlage_totals[a])} for a in Anlage if a in anlage_totals
+    ]
+    return by_anlage, by_line
 
 
 def _hash(parts: dict[str, Any]) -> str:
@@ -346,6 +380,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
             "kirchensteuer_method": None,
             "withheld": None,
             "by_anlage": [],
+            "by_line": [],
             "pflicht": None,
             "what_missing": [],
             "notes": [],
@@ -485,6 +520,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
         set(notes), key=lambda n: (n.code.value, n.item_id or "", n.person_id or "")
     )
 
+    by_anlage, by_line = _receipt_sums(ctx, loaded, params.mapping, kid_ids)
     core: dict[str, Any] = {
         **base,
         "status": "ok",
@@ -501,7 +537,8 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
         "kirchensteuer_method": fest.kist_method.value,
         "kindergeld_added": _m(fest.kindergeld_added),
         "withheld": {k: _m(v) for k, v in withheld.items()},
-        "by_anlage": _by_anlage(ctx, loaded, params.mapping, kid_ids),
+        "by_anlage": by_anlage,
+        "by_line": by_line,
         "pflicht": {
             "state": pflicht.state.value,
             "reasons": [r.value for r in pflicht.reasons],

@@ -103,6 +103,9 @@ class Settings(BaseSettings):
     max_upload_mb: int = Field(
         default=25, gt=0, validation_alias=AliasChoices("MAX_UPLOAD_MB", "max_upload_mb")
     )
+    export_zip_max_mb: int = Field(  # #21: cap of the receipts ZIP (sum of the originals' sizes)
+        default=500, gt=0, validation_alias=AliasChoices("EXPORT_ZIP_MAX_MB", "export_zip_max_mb")
+    )
     worker_poll_interval_seconds: float = Field(
         default=2.0,
         gt=0,
@@ -196,6 +199,10 @@ class Settings(BaseSettings):
     @property
     def max_upload_bytes(self) -> int:
         return self.max_upload_mb * 1024 * 1024
+
+    @property
+    def export_zip_max_bytes(self) -> int:
+        return self.export_zip_max_mb * 1024 * 1024
 
     @property
     def is_production(self) -> bool:

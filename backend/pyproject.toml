@@ -26,6 +26,7 @@ dependencies = [
     "pyyaml>=6.0.3",
     "pillow-heif>=1.8.0",
     "webauthn>=3.0.1",
+    "reportlab>=5.0.1",
 ]
 
 [dependency-groups]
@@ -38,7 +39,6 @@ dev = [
     "respx>=0.23.1",
     "pypdf>=6.19.0",
     "types-pyyaml>=6.0.12.20260906",
-    "reportlab>=5.0.1",
     "types-reportlab>=5.0.0.20260911",
 ]
 # Golden tariff values from the BMF calculator (tests/tax/golden/collect.py); not in CI.
