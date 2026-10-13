@@ -46,6 +46,11 @@ def _current() -> MultiFernet:
     return _multifernet(secret.get_secret_value())
 
 
+def check_key(secret: str | None) -> None:
+    """Raise `EncryptionKeyError` (message names the variable, never the key) if unusable."""
+    _multifernet(secret or "")
+
+
 def encrypt(plaintext: bytes) -> bytes:
     """Encrypt with the first configured key. Returns the Fernet token (starts with `gAAAAA`)."""
     return _current().encrypt(plaintext)

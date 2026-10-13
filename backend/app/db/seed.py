@@ -4,7 +4,8 @@ Mirrors the *shape* of `frontend/src/lib/mock.ts` with fictional people (househo
 "Musterhaushalt"). Idempotent (fixed UUIDs), refuses to run with `APP_ENV=production`, writes
 no audit rows and prints counts only (never names or e-mails). `SEED_OWNER_EMAIL` overrides
 the owner's e-mail so #5's login can be used locally. No Steuer-ID is seeded, so no
-`FIELD_ENCRYPTION_KEY` is needed. Zeile values are illustrative, not tax-correct.
+`FIELD_ENCRYPTION_KEY` is needed. Anlage / Zeile come from the
+2025 mapping (`load_params`), like the pipeline's.
 """
 
 from __future__ import annotations
@@ -24,7 +25,6 @@ from app.config import get_settings
 from app.db.models import AppUser, Document, Household, Person, TaxItem
 from app.db.session import create_engine, create_sessionmaker
 from app.domain.enums import (
-    Anlage,
     Category,
     Channel,
     DocType,
@@ -32,6 +32,7 @@ from app.domain.enums import (
     PersonKind,
     UserRole,
 )
+from app.tax_params import load_params
 
 _NAMESPACE = uuid.UUID("5eed0000-0000-4000-8000-000000000000")
 DEFAULT_OWNER_EMAIL = "owner@example.com"
@@ -57,8 +58,6 @@ class _Item:
     deductible: str
     labour_35a: str | None
     category: Category
-    anlage: Anlage | None
-    zeile: str | None
     person: uuid.UUID | None  # None = household-level ("Haushalt" in the mock)
     channel: Channel
     confidence: str
@@ -69,28 +68,26 @@ class _Item:
 
 _ITEMS: tuple[_Item, ...] = (
     _Item("Malerbetrieb Huber", date(2025, 3, 14), "1312.40", "720.00", "720.00",
-          Category.HANDWERKERLEISTUNG, Anlage.HAUSHALTSNAHE_AUFWENDUNGEN, "7",
-          None, Channel.TELEGRAM, "0.94"),
+          Category.HANDWERKERLEISTUNG, None, Channel.TELEGRAM, "0.94"),
     _Item("Kita Sonnenschein", date(2025, 12, 31), "2160.00", "1440.00", None,
-          Category.KINDERBETREUUNG, Anlage.KIND, "64", KIM, Channel.WEB, "0.98"),
+          Category.KINDERBETREUUNG, KIM, Channel.WEB, "0.98"),
     _Item("Apple Store", date(2025, 5, 2), "1499.00", "1499.00", None,
-          Category.WK_ARBEITSMITTEL, Anlage.N, "46", ALEX, Channel.WEB, "0.71",
+          Category.WK_ARBEITSMITTEL, ALEX, Channel.WEB, "0.71",
           overridden=True),
     _Item("ADAC Versicherung", date(2025, 1, 15), "389.50", "389.50", None,
-          Category.VORSORGE_SONSTIGE, Anlage.VORSORGEAUFWAND, "49", None, Channel.TELEGRAM,
+          Category.VORSORGE_SONSTIGE, None, Channel.TELEGRAM,
           "0.88"),
     _Item("Zahnarztpraxis Dr. Lenz", date(2025, 8, 22), "860.00", "860.00", None,
-          Category.KRANKHEITSKOSTEN, Anlage.AGB, "4", SAM, Channel.TELEGRAM, "0.90"),
+          Category.KRANKHEITSKOSTEN, SAM, Channel.TELEGRAM, "0.90"),
     _Item("Comdirect", date(2026, 2, 10), "412.30", "412.30", None,
-          Category.KAPITAL_BESCHEINIGUNG, Anlage.KAP, "7", ALEX, Channel.WEB, "0.97",
+          Category.KAPITAL_BESCHEINIGUNG, ALEX, Channel.WEB, "0.97",
           doc_type=DocType.JAHRESSTEUERBESCHEINIGUNG),
     _Item("Gebäudereinigung Blitz", date(2025, 11, 30), "540.00", "540.00", "540.00",
-          Category.HAUSHALTSNAHE_DIENSTLEISTUNG, Anlage.HAUSHALTSNAHE_AUFWENDUNGEN, "4",
-          None, Channel.WEB, "0.62"),
+          Category.HAUSHALTSNAHE_DIENSTLEISTUNG, None, Channel.WEB, "0.62"),
     _Item("REWE", date(2025, 6, 3), "54.12", "0.00", None,
-          Category.IRRELEVANT, None, None, None, Channel.TELEGRAM, "0.99", relevant=False),
+          Category.IRRELEVANT, None, Channel.TELEGRAM, "0.99", relevant=False),
     _Item("Verdi", date(2025, 12, 1), "312.00", "312.00", None,
-          Category.WK_BERUFSVERBAND, Anlage.N, "41", SAM, Channel.WEB, "0.95"),
+          Category.WK_BERUFSVERBAND, SAM, Channel.WEB, "0.95"),
 )  # fmt: skip
 
 TAX_YEAR = 2025  # the Jahressteuerbescheinigung dated 2026-02 belongs to tax year 2025
@@ -125,7 +122,9 @@ async def seed(session: AsyncSession, *, owner_email: str = DEFAULT_OWNER_EMAIL)
 
     documents: list[Document] = []
     items: list[TaxItem] = []
+    mapping = load_params(TAX_YEAR).mapping
     for n, spec in enumerate(_ITEMS, start=1):
+        entry = mapping.get(spec.category)  # irrelevant has none
         doc = Document(
             id=seed_id(f"document/{n}"),
             household_id=hh,
@@ -148,8 +147,8 @@ async def seed(session: AsyncSession, *, owner_email: str = DEFAULT_OWNER_EMAIL)
                 person_id=spec.person,
                 year=TAX_YEAR,
                 category=spec.category,
-                anlage=spec.anlage,
-                zeile=spec.zeile,
+                anlage=entry.anlage if entry else None,
+                zeile=entry.zeile if entry else None,
                 gross_amount=Decimal(spec.gross),
                 deductible_amount=Decimal(spec.deductible),
                 labour_share_35a=Decimal(spec.labour_35a) if spec.labour_35a else None,

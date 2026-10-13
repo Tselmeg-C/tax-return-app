@@ -9,6 +9,7 @@ from decimal import Decimal
 from pathlib import Path
 
 import pytest
+from pydantic import SecretStr
 from sqlalchemy import text, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -514,3 +515,13 @@ async def test_never_send_identifying_data(world: World) -> None:
 
 def test_extract_schema_is_the_spec() -> None:
     assert set(GenericBillExtraction.model_fields) >= {"line_items", "stated_labour_amount_35a"}
+
+
+def test_worker_start_requires_encryption_key(world: World) -> None:
+    for bad in (None, SecretStr(""), SecretStr("not-a-fernet-key")):
+        with pytest.raises(SettingsError, match="FIELD_ENCRYPTION_KEY") as info:
+            check_pipeline_settings(
+                world.settings(field_encryption_key=bad),
+                llm_settings(llm_classify_model="", llm_extract_model=""),
+            )
+        assert "not-a-fernet-key" not in str(info.value)

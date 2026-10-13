@@ -80,3 +80,18 @@ def test_refuses_production(
     captured = capsys.readouterr()
     assert "production" in captured.err
     assert captured.out == ""
+
+
+async def test_seed_anlage_zeile_follow_the_mapping(db_session: AsyncSession) -> None:
+    from sqlalchemy import select
+
+    from app.db.models import TaxItem
+    from app.domain.enums import Category
+    from app.tax_params import load_params
+
+    await seed(db_session)
+    items = (await db_session.execute(select(TaxItem))).scalars().all()
+    assert items
+    for item in items:
+        entry = load_params(item.year).mapping.get(Category(item.category))
+        assert (item.anlage, item.zeile) == ((entry.anlage, entry.zeile) if entry else (None, None))

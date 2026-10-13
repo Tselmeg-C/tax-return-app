@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from cryptography.fernet import Fernet
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -129,7 +130,10 @@ class World:
     persons: dict[str, uuid.UUID] = field(default_factory=dict)
 
     def settings(self, **kw: Any) -> Settings:
-        values: dict[str, Any] = {"database_url": self.database_url}
+        values: dict[str, Any] = {
+            "database_url": self.database_url,
+            "field_encryption_key": Fernet.generate_key().decode(),
+        }
         values.update(kw)
         return Settings(_env_file=None, **values)  # type: ignore[call-arg]
 

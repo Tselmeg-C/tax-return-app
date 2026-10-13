@@ -12,6 +12,7 @@ import time
 from pathlib import Path
 
 import pytest
+from cryptography.fernet import Fernet
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.auth.clock import FakeClock
@@ -25,7 +26,13 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 def _env(database_url: str, **extra: str) -> dict[str, str]:
     env = {k: v for k, v in os.environ.items() if not k.startswith("OTEL_")}
-    env.update(DATABASE_URL=database_url, WORKER_POLL_INTERVAL_SECONDS="0.1", **extra)
+    # the worker refuses to start without a valid key (#64)
+    env.update(
+        DATABASE_URL=database_url,
+        WORKER_POLL_INTERVAL_SECONDS="0.1",
+        FIELD_ENCRYPTION_KEY=Fernet.generate_key().decode(),
+        **extra,
+    )
     return env
 
 
