@@ -445,3 +445,26 @@ async def test_estimate_follows_each_spouses_own_wage(db_session: AsyncSession) 
     result = await (await build(db_session, spec)).summary()
     assert len(result["vorsorge_estimated"]) == 1  # b earns 24.000: Uebergangsbereich
     assert [m["code"] for m in result["what_missing"]] == ["vorsorge_missing"]
+
+
+async def test_manual_or_item_rv_replaces_the_rv_estimate(db_session: AsyncSession) -> None:
+    base = await (await build(db_session, _wage_only())).summary()
+    spec = _wage_only()
+    spec["employments"][0]["rv_employee"] = "1000.00"  # differs from the estimated 5580
+    manual = await (await build(db_session, spec)).summary()
+    assert Decimal(manual["zve_before_children"]) > Decimal(base["zve_before_children"])
+    b = await build(db_session, _wage_only())
+    await add_item(b, {"category": "vorsorge_rv", "deductible": "1000.00", "person": "a"})
+    item = await b.summary()
+    assert item["zve_before_children"] == manual["zve_before_children"]  # same RV, nothing added
+
+
+async def test_a_child_in_the_household_removes_the_childless_surcharge(
+    db_session: AsyncSession,
+) -> None:
+    base = await (await build(db_session, _wage_only())).summary()
+    spec = _wage_only()
+    spec["persons"]["k1"] = {"kind": "child", "dob": "2015-03-01"}
+    with_child = await (await build(db_session, spec)).summary()
+    # PV without the 0.6 % surcharge is smaller, so the deduction is smaller, the zvE larger
+    assert Decimal(with_child["zve_before_children"]) > Decimal(base["zve_before_children"])
