@@ -343,6 +343,7 @@ async def build_summary(scope: HouseholdScope, year: int, today: date) -> dict[s
             **base,
             "status": "no_profile",
             **dict.fromkeys(_AMOUNT_KEYS),
+            "kirchensteuer_method": None,
             "withheld": None,
             "by_anlage": [],
             "pflicht": None,

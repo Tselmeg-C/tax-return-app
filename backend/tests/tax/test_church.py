@@ -95,6 +95,22 @@ def test_no_income_at_all_gives_no_share_and_member_income_above_total_is_capped
     assert capped.kist == D("80.00") and capped.method is KistMethod.MEMBER_SHARE
 
 
+def test_losses_count_as_zero_in_the_share() -> None:
+    p = load_params(2025).church_tax
+    # negative member income: no share, never a negative tax
+    assert church_tax_joint(D(1000), D(10), MemberShare(D(-100), D(500)), "BY", p).kist == 0
+    # negative income of the non-member: the member carries the whole base
+    full = church_tax_joint(D(1000), D(10), MemberShare(D(100), D(-50)), "BY", p)
+    assert full.kist == D("80.00")
+
+
+def test_kirchgeld_wins_by_less_than_one_euro() -> None:
+    p = load_params(2025).church_tax
+    # share KiSt 155.50 (9 % of 1727.78, floored), Kirchgeld table at zvE 57.500 is 156
+    r = church_tax_joint(D("1727.78"), D(57500), MemberShare(D(1), D(1)), "NW", p)
+    assert r.method is KistMethod.KIRCHGELD and r.kist == D("156.00")
+
+
 def test_festsetzung_default_and_both_members_are_unchanged() -> None:
     params = load_params(2025)
     ctx = ReturnContext(2025, FilingStatus.JOINT, "A", "B")
