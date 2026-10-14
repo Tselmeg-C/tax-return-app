@@ -38,7 +38,7 @@ from app.documents.service import (
 from app.domain.enums import AttentionReason, Channel, DocType, DocumentStatus
 from app.queue.enqueue import current_traceparent
 from app.queue.metrics import UploadMetrics
-from app.storage import ObjectNotFound, ObjectTooLarge, Storage, StorageFull
+from app.storage import ObjectNotFound, ObjectTooLarge, Storage, StorageFull, preview_key
 from app.storage.base import InvalidStorageKey
 
 router = APIRouter()
@@ -213,6 +213,34 @@ async def download_document(
             "Content-Disposition": content_disposition(
                 name, extended=doc.original_filename is not None
             ),
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, no-store",
+        },
+    )
+
+
+@router.get("/documents/{document_id}/preview")
+async def preview_document(
+    request: Request, scope: Scope, document_id: uuid.UUID
+) -> StreamingResponse:
+    doc = await _get(scope, document_id)
+    try:
+        reader = await _storage(request).open(preview_key(scope.household_id, doc.id))
+    except (ObjectNotFound, InvalidStorageKey):
+        raise HTTPException(status_code=404, detail="preview_not_found") from None
+
+    async def body() -> AsyncIterator[bytes]:
+        try:
+            async for chunk in reader:
+                yield chunk
+        finally:
+            await reader.aclose()
+
+    return StreamingResponse(
+        body(),
+        media_type="image/jpeg",
+        headers={
+            "Content-Length": str(reader.size),
             "X-Content-Type-Options": "nosniff",
             "Cache-Control": "private, no-store",
         },

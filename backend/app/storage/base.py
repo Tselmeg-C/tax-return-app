@@ -107,3 +107,8 @@ def document_prefix(household_id: uuid.UUID, document_id: uuid.UUID) -> str:
 def document_key(household_id: uuid.UUID, document_id: uuid.UUID) -> str:
     """`households/<h>/documents/<d>/original` (no extension, no file name, no date)."""
     return f"{document_prefix(household_id, document_id)}/original"
+
+
+def preview_key(household_id: uuid.UUID, document_id: uuid.UUID) -> str:
+    """`households/<h>/documents/<d>/preview.jpg` (#35)."""
+    return f"{document_prefix(household_id, document_id)}/preview.jpg"

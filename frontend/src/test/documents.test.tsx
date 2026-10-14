@@ -236,7 +236,11 @@ describe("Hochgeladene Belege", () => {
     expect(await screen.findByText("Rechnung Müller.pdf")).toBeInTheDocument();
     expect(screen.getByText(/^Beleg vom /)).toBeInTheDocument();
     expect(screen.getByText(evil)).toBeInTheDocument();
-    expect(view.container.querySelector("img")).toBeNull();
+    // The file name never becomes markup; the only images are previews (#35) with a fixed alt.
+    for (const img of view.container.querySelectorAll("img")) {
+      expect(img.getAttribute("alt")).toBe("Vorschau des Belegs");
+      expect(img.getAttribute("src")).toMatch(/^\/api\/documents\/[0-9a-f-]+\/preview$/);
+    }
     const links = screen.getAllByText("Original öffnen");
     expect(links[0]!.closest("a")?.getAttribute("href")).toMatch(/^\/api\/documents\/.+\/file$/);
     expect(links[0]!.closest("a")?.getAttribute("target")).toBe("_blank");

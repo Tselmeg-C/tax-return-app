@@ -293,6 +293,19 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   on PATCH), but can be deleted. A child row (`PUT /household/{year}/children/{id}`) needs a
   `tax_profile` for that year (`409 profile_missing`); `copy` always creates the profile first.
 
+## Previews (rules from #35)
+
+- `preview.jpg` (JPEG, long side <= 400 px, upright, no EXIF / GPS) sits next to the original at
+  `app.storage.preview_key(h, d)`; written only through `Storage` by `app.documents.previews.ensure_preview`.
+  Decoding is `app.pipeline.preprocess.preview_jpeg` (same decoders and error kinds as the pipeline).
+- Generated as a best-effort step at the start of the `process_document` job (no extra queue job):
+  it never raises, never fails or delays the tax processing beyond one decode, logs only
+  `type(exc).__name__`, and leaves no file for a corrupt document. Existing previews are kept
+  (reprocess does not regenerate). Delete removes it with the document directory.
+- `GET /documents/{id}/preview`: same scoping as `/file`, `404 preview_not_found` until it exists.
+  Frontend: `DocThumb` (`<img>` with the session cookie, alt text never holds the file name).
+- Backfill: `uv run python -m app.documents.previews [--dry-run]` (idempotent, ids / counts only).
+
 ## Tax items and overrides (rules from #10)
 
 - Every user write to `tax_item` goes through `app/tax_items.py` (`update_item` /

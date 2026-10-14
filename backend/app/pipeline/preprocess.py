@@ -156,15 +156,19 @@ def _render_first_page(doc: pdfium.PdfDocument) -> ImagePart:
     return ImagePart(data=out.getvalue(), mime="image/jpeg")
 
 
-def _pdf(data: bytes, limits: Limits) -> Prepared:
+def _open_pdf(data: bytes) -> pdfium.PdfDocument:
     try:
-        doc = pdfium.PdfDocument(data)
+        return pdfium.PdfDocument(data)
     except pdfium.PdfiumError as exc:
         if getattr(exc, "err_code", None) == pdfium_c.FPDF_ERR_PASSWORD:
             raise EncryptedPdf() from None
         raise CorruptDocument() from None
     except Exception:
         raise CorruptDocument() from None
+
+
+def _pdf(data: bytes, limits: Limits) -> Prepared:
+    doc = _open_pdf(data)
     try:
         pages = len(doc)
         if pages == 0:
@@ -199,3 +203,50 @@ def preprocess(data: bytes, mime_type: str, limits: Limits) -> Prepared:
     if mime_type == "application/pdf":
         return _pdf(data, limits)
     return _image(data, mime_type, limits)
+
+
+PREVIEW_LONG_SIDE_PX = 400
+PREVIEW_QUALITY = 80
+
+
+def preview_jpeg(data: bytes, mime_type: str, limits: Limits) -> bytes:
+    """A thumbnail (#35): JPEG, long side <= 400 px, upright, first page / frame, no metadata.
+
+    Same decoders and errors as `preprocess` (`CorruptDocument`, `EncryptedPdf`,
+    `ImageTooLarge`, `UnsupportedImageFormat`).
+    """
+    if mime_type == "application/pdf":
+        doc = _open_pdf(data)
+        try:
+            if len(doc) == 0:
+                raise CorruptDocument()
+            page = doc[0]
+            try:
+                width, height = page.get_size()
+                image = page.render(scale=PREVIEW_LONG_SIDE_PX / max(width, height, 1.0)).to_pil()
+            except Exception:
+                raise CorruptDocument() from None
+            finally:
+                page.close()
+        finally:
+            doc.close()
+    else:
+        formats = (PASS_THROUGH.get(mime_type) and (PASS_THROUGH[mime_type],)) or CONVERTED.get(
+            mime_type
+        )
+        if formats is None:
+            raise UnsupportedImageFormat()
+        image = _open(data, limits, formats)
+    try:
+        upright = ImageOps.exif_transpose(image) or image
+        if upright.mode in ("I;16", "I;16B", "I;16L", "I"):
+            upright = upright.point(lambda v: v / 256).convert("L")
+        rgba = upright.convert("RGBA")
+        flat = Image.new("RGB", rgba.size, (255, 255, 255))
+        flat.paste(rgba, mask=rgba.getchannel("A"))
+        flat.thumbnail((PREVIEW_LONG_SIDE_PX, PREVIEW_LONG_SIDE_PX))
+        out = io.BytesIO()
+        flat.save(out, format="JPEG", quality=PREVIEW_QUALITY)  # no exif / icc passed: stripped
+    except Exception:
+        raise CorruptDocument() from None
+    return out.getvalue()

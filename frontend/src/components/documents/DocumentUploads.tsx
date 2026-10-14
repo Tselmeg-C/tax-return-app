@@ -14,6 +14,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import type { AskReprocess } from "@/components/documents/Reprocess";
+import { DocThumb } from "@/components/documents/DocThumb";
 import { ItemForm } from "@/components/documents/ItemForm";
 import { ApiError } from "@/lib/api";
 import {
@@ -282,6 +283,7 @@ export function DocumentUploads({
               <Row
                 key={doc.id}
                 channel={doc.channel}
+                document={doc}
                 label={nameOf(doc)}
                 secondary={doc.original_filename ? when(doc.created_at) : null}
                 below={
@@ -385,14 +387,21 @@ function Row(props: {
   status: ReactNode;
   actions: ReactNode;
   channel?: "web" | "telegram";
+  document?: DocumentOut;
   below?: ReactNode;
 }) {
+  const icon =
+    props.channel === "telegram" ? (
+      <Send className="h-3.5 w-3.5 text-primary" />
+    ) : (
+      <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+    );
   return (
     <li className="flex flex-wrap items-center gap-3 p-3" data-testid="document-row">
-      {props.channel === "telegram" ? (
-        <Send className="h-3.5 w-3.5 text-primary" />
+      {props.document ? (
+        <DocThumb documentId={props.document.id} retryKey={props.document.status} fallback={icon} />
       ) : (
-        <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+        icon
       )}
       <div className="min-w-0 flex-1">
         {/* Rendered as text, never as HTML. */}
