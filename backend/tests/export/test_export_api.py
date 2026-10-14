@@ -293,3 +293,46 @@ async def test_member_of_another_household_gets_own_data_only(t: T, fmt: str) ->
     b = await make_scenario(t, with_items=False)
     assert (await t.get(a.home, f"/export/{YEAR}.{fmt}")).status_code == 200
     assert (await t.get(b.home, f"/export/{YEAR}.{fmt}")).status_code == 200
+
+
+async def test_export_queries_are_household_scoped(t: T, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Defense in depth (#121): ids come from the summary, the selects still scope."""
+    import app.export.data as export_data
+    from app.domain.enums import Category
+
+    sc = await make_scenario(t, with_items=False)
+    other = await make_scenario(t, base=1000)  # has documents and items of its own
+    foreign_doc = other.docs["pdf1"]
+    foreign_item = iid(1001)
+    await item(
+        sc, 1, who="a", category=Category.WK_FORTBILDUNG, vendor="Muster Eigen",
+        document_id=foreign_doc.id,
+    )  # fmt: skip
+
+    data = await load_export(sc.built.scope, YEAR, date(2026, 1, 15))
+    assert data is not None
+    (row,) = data.lines
+    assert row.document_id is None and row.storage_key is None  # the foreign document is invisible
+
+    real = export_data.build_summary
+
+    async def tampered(*a: Any, **kw: Any) -> dict[str, Any]:
+        summary = await real(*a, **kw)
+        summary["by_line"][0]["item_ids"].append(foreign_item)
+        return summary
+
+    monkeypatch.setattr(export_data, "build_summary", tampered)
+    with pytest.raises(KeyError):  # the foreign item is not loaded, never rendered
+        await load_export(sc.built.scope, YEAR, date(2026, 1, 15))
+
+
+async def test_pdf_escapes_xml_in_vendor(t: T) -> None:
+    from app.domain.enums import Category
+
+    sc = await make_scenario(t, with_items=False)
+    evil = "<b>x</b> <unclosed <font size=99>&amp;"
+    await item(sc, 1, who="a", category=Category.WK_FORTBILDUNG, vendor=evil)
+    r = await get(sc, "pdf")
+    assert r.status_code == 200
+    text = pdf_text(r.content)
+    assert "<unclosed" in text and "<b>x</b>" in text  # shown literally, not interpreted

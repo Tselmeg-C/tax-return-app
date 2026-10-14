@@ -85,6 +85,7 @@ class Authenticator:
         sign_count: int | None = None,
         flags: int = UP | UV,
         tamper: bool = False,
+        user_handle: bytes | None = None,
     ) -> dict[str, Any]:
         self.sign_count = self.sign_count + 1 if sign_count is None else sign_count
         client_data = json.dumps(
@@ -112,7 +113,7 @@ class Authenticator:
                 "clientDataJSON": b64(client_data),
                 "authenticatorData": b64(auth_data),
                 "signature": b64(signature),
-                "userHandle": None,
+                "userHandle": None if user_handle is None else b64(user_handle),
             },
             "clientExtensionResults": {},
         }

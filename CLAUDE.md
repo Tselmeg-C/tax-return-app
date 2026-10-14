@@ -78,7 +78,10 @@ before starting a task.
   (no new env var; changing the host orphans passkeys, `_docs/deploy.md`).
 - Challenges are stateless: an HMAC-signed 5 min token in an httpOnly `SameSite=Strict` cookie
   (`__Host-belegbot_passkey`), purpose `register|login` (+ user id for register), cleared after use.
-  The key is per process (`app.state.passkey_key`). No challenge table.
+  The key is per process (`app.state.passkey_key`). No challenge table; a finished ceremony puts its
+  challenge into an in-memory used set (`app.state.used_challenges`, TTL-pruned, same lifetime as the
+  key), so a copied cookie cannot be replayed (#105). `userHandle` (when present) must be the owner's
+  user id. `register/verify` locks the user row before counting (limit of 10 holds in parallel).
 - Discoverable login (`residentKey=required`, `userVerification=required`, attestation `none`).
   `/auth/passkey/login/options` and `/login/verify` are in `PUBLIC_PATHS`; register / list /
   rename / delete need a session. Every login failure (unknown credential, disabled user, bad
@@ -101,8 +104,12 @@ before starting a task.
   (another household's id = `404 not_found`). Web and CLI share `app.auth.service`
   (`create_user`, `set_disabled`, `revoke_user_sessions`, `invalidate_unused_tokens`); add new
   behaviour there, not in both places.
-- Guard: demoting or disabling the last active owner is `409 last_owner` (other active owners are
-  locked `FOR UPDATE` for the check). Disabling never touches documents; there is no delete.
+- Guard: demoting or disabling the last active owner is `409 last_owner` (ALL active owners, target
+  included, are locked `FOR UPDATE ORDER BY id` and the target reloaded, so two owners acting on each
+  other serialise instead of deadlocking; never make the lock set depend on the target).
+  Decisions (#119, unchanged): `409 email_taken` on invite / e-mail change tells an owner that an
+  address exists in any household (acceptable for a private family app, the CLI does the same); login
+  and change links share one per-address limit (`email_limit_reached`). Disabling never touches documents; there is no delete.
 - E-mail change: `PATCH /users/{id}` `{email}` stores a `magic_link_token` with `new_email` and mails
   the NEW address; `POST /auth/confirm-email` (public, token = proof) applies it, ends all sessions
   of the user and burns their links. Login links (`new_email IS NULL`) and change links are not
@@ -400,7 +407,8 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   user or a removed link gets nothing at all.
 - Link codes: 8 digits, 10 min, single use, atomic `UPDATE ... RETURNING`, only `sha256` stored, a
   new code invalidates the user's open ones. `/link` limits: 5 failures / chat and 30 global per
-  15 min (in memory); over the limit no reply and no check. The `/link` message is deleted (best
+  15 min (in memory); over the limit no reply and no check. `/link` with a code from a chat that
+  already belongs to someone else burns the code (accepted, #107; issue a new one). The `/link` message is deleted (best
   effort). Relinking replaces the user's row (audit delete + create); `external_id` is encrypted,
   `external_id_hash` (`sha256("telegram:" + chat id)`) is the lookup key and is redacted in audit rows.
 - One update at a time per chat (`asyncio.Lock` per chat hash, arrival order), `last_update_id` is

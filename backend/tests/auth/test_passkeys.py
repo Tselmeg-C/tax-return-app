@@ -380,3 +380,49 @@ async def test_passkey_login_creates_a_session_row(
     assert after == before + 1
     row = (await db_session.execute(select(Passkey))).scalar_one()
     assert row.transports == ["internal"] and row.sign_count == 1
+
+
+async def test_limit_of_ten_is_checked_again_at_verify(api: Api, owner_session: str) -> None:
+    for _ in range(9):
+        assert (await register(api, owner_session, Authenticator())).status_code == 201
+    held = await api.post("/auth/passkey/register/options", cookie=owner_session)  # at 9 keys
+    assert held.status_code == 200
+    held_cred = Authenticator().create(held.json(), origin=ORIGIN, rp_id=RP_ID)
+    assert (await register(api, owner_session, Authenticator())).status_code == 201  # the 10th
+    over = await api.post(
+        "/auth/passkey/register/verify",
+        json={"credential": held_cred},
+        headers=_headers(api, _challenge_cookie(api, held), owner_session),
+    )
+    assert over.status_code == 409 and over.json() == {"detail": "passkey_limit"}
+    assert len((await api.get("/auth/passkeys", cookie=owner_session)).json()) == 10
+
+
+async def test_user_handle_must_match_the_passkey_owner(
+    api: Api, family: Family, owner_session: str
+) -> None:
+    import uuid
+
+    auth = Authenticator()
+    await register(api, owner_session, auth)
+    wrong = await passkey_login(api, auth, user_handle=uuid.uuid4().bytes)
+    assert wrong.status_code == 400 and wrong.json() == INVALID
+    right = await passkey_login(api, auth, user_handle=family.owner.id.bytes)
+    assert right.status_code == 200
+
+
+async def test_challenge_is_single_use(api: Api, owner_session: str) -> None:
+    auth = Authenticator()
+    await register(api, owner_session, auth)
+    opts = await api.post("/auth/passkey/login/options")
+    cookie = _challenge_cookie(api, opts)
+
+    async def send() -> httpx.Response:  # a fresh signature (higher counter) on the same challenge
+        cred = auth.get(opts.json(), origin=ORIGIN, rp_id=RP_ID)
+        return await api.post(
+            "/auth/passkey/login/verify", json={"credential": cred}, headers=_headers(api, cookie)
+        )
+
+    assert (await send()).status_code == 200
+    again = await send()  # a copy of the cookie within the 5 minutes
+    assert again.status_code == 400 and again.json() == INVALID
