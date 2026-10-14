@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import type { AskReprocess } from "@/components/documents/Reprocess";
+import { DocThumb } from "@/components/documents/DocThumb";
 import { ItemForm } from "@/components/documents/ItemForm";
 import { ApiError } from "@/lib/api";
 import {
@@ -239,10 +240,14 @@ export function TaxItemList(props: {
                       }
                     />
                   )}
-                  {doc?.channel === "telegram" ? (
-                    <Send className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  {doc ? (
+                    <DocThumb
+                      documentId={doc.id}
+                      retryKey={doc.status}
+                      fallback={channelIcon(doc)}
+                    />
                   ) : (
-                    <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    channelIcon(doc)
                   )}
                   <div className="min-w-0">
                     {/* Rendered as text, never as HTML. */}
@@ -369,6 +374,14 @@ function Badge({ children }: { children: React.ReactNode }) {
     <span className="stamp inline-block rounded-sm bg-accent px-1 text-accent-foreground">
       {children}
     </span>
+  );
+}
+
+function channelIcon(doc: { channel: string } | null) {
+  return doc?.channel === "telegram" ? (
+    <Send className="h-3.5 w-3.5 shrink-0 text-primary" />
+  ) : (
+    <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
   );
 }
 

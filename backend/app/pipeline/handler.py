@@ -30,6 +30,7 @@ from app.config import LLMSettings, Settings, SettingsError, get_llm_settings, g
 from app.db.crypto import EncryptionKeyError, check_key
 from app.db.models import Document, Extraction, TaxItem
 from app.db.scope import HouseholdScope
+from app.documents.previews import ensure_preview
 from app.domain.enums import (
     CATEGORY_GROUP,
     AttentionReason,
@@ -134,6 +135,19 @@ class PipelineHandler:
         llm = get_llm_settings()
         doc = await load_document(ctx)
         data = await read_stored_file(ctx, doc.storage_key, doc.sha256)
+        # #35: best-effort thumbnail in the same job (no extra queue job); never fails the document.
+        await ensure_preview(
+            ctx.storage,
+            doc.household_id,
+            doc.id,
+            data,
+            doc.mime_type,
+            Limits(
+                settings.pipeline_max_pages,
+                settings.pipeline_classify_max_chars,
+                llm.llm_max_image_pixels,
+            ),
+        )
         prompts = prompt_set(settings.pipeline_prompt_version)
         run = _Run()
         reuse = await _stored_outputs(ctx, doc, prompts.version, run)
