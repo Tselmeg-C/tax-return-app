@@ -106,6 +106,7 @@ def create_app(
             VERIFY_FAILURES_PER_IP, RATE_WINDOW, the_clock
         )
         app.state.passkey_key = secrets.token_bytes(32)  # see app/auth/passkeys.py
+        app.state.used_challenges = {}  # single-use challenges, same lifetime as the key
         try:
             yield
         finally:

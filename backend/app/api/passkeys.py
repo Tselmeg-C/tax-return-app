@@ -142,8 +142,17 @@ async def register_verify(
 ) -> JSONResponse:
     settings: Settings = request.app.state.settings
     sealed = _unseal(request, ceremony.REGISTER)
-    if sealed is None or sealed[1] != user.user_id or not isinstance(body.credential, dict):
+    used: dict[bytes, float] = request.app.state.used_challenges
+    now = request.app.state.clock.now()
+    if (
+        sealed is None
+        or sealed[1] != user.user_id
+        or not isinstance(body.credential, dict)
+        or ceremony.is_used(used, sealed[0], now)
+    ):
         return _invalid()
+    # Lock the user row so two parallel verifies count one after the other (limit of 10).
+    await db.execute(scope.select(AppUser).where(AppUser.id == user.user_id).with_for_update())
     existing = await _own(scope, user)
     if len(existing) >= ceremony.MAX_PASSKEYS:
         return JSONResponse({"detail": PASSKEY_LIMIT}, status_code=409)
@@ -180,6 +189,7 @@ async def register_verify(
         actor=Actor.user(user.user_id),
     )
     await db.commit()
+    ceremony.mark_used(used, sealed[0], now)
     logger.info("auth.passkey.registered", user_id=str(user.user_id), passkey_id=str(passkey.id))
     response = JSONResponse(_out(passkey), status_code=201)
     _with_cookie(response, request, "", 0)
@@ -221,6 +231,9 @@ async def login_verify(body: CredentialBody, request: Request, db: DbSession) ->
         return _invalid()
 
     sealed = _unseal(request, ceremony.LOGIN)
+    used: dict[bytes, float] = request.app.state.used_challenges
+    if sealed is not None and ceremony.is_used(used, sealed[0], clock.now()):
+        return fail("replayed")
     raw_id = ceremony.raw_credential_id(body.credential)
     if sealed is None or raw_id is None:
         return fail("malformed")
@@ -240,6 +253,9 @@ async def login_verify(body: CredentialBody, request: Request, db: DbSession) ->
         return fail("verification", exc)
     if user.disabled_at is not None:
         return fail("user_disabled")
+    if not ceremony.user_handle_matches(body.credential, user.id):
+        return fail("user_handle")
+    ceremony.mark_used(used, sealed[0], clock.now())
 
     passkey.sign_count = new_count
     passkey.last_used_at = clock.now()

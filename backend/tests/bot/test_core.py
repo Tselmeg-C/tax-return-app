@@ -253,6 +253,23 @@ async def test_undo_deletes_the_last_telegram_document_of_the_user(bot: Bot) -> 
     assert newest.id not in ids or newest.channel is Channel.WEB
 
 
+async def test_undo_never_touches_another_household(bot: Bot) -> None:
+    """#107: the Document select is scoped; a newer foreign Telegram document of the same
+    uploader id (impossible via the app, possible in the DB) must survive."""
+    chat = await bot.linked()
+    other = await bot.linked()
+    foreign = await make_document(
+        bot.session,
+        other.household,
+        chat.user,
+        channel=Channel.TELEGRAM,
+        created_at=bot.clock.now() + timedelta(days=1),
+    )
+    await bot.session.commit()
+    assert await bot.send(chat.chat_id, "/undo") == [m.UNDO_NOTHING]
+    assert {d.id for d in await bot.documents()} == {foreign.id}
+
+
 async def test_undo_busy_and_overridden(bot: Bot) -> None:
     chat = await bot.linked()
     await bot.send_file(chat.chat_id, pdf())

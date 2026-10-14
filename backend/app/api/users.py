@@ -151,17 +151,19 @@ async def invite_user(body: InviteBody, request: Request, caller: Owner, scope: 
 
 
 async def _other_active_owner_exists(scope: Scope, target: AppUser) -> bool:
-    """Lock the household's other active owners (serialises concurrent demote / disable)."""
+    """Lock ALL active owners of the household (target included), always in id order, then
+    reload the target. Two owners demoting / disabling each other at once lock the same rows in
+    the same order, so the second waits instead of deadlocking and then sees the committed state
+    (-> `last_owner`). The lock set must not depend on the target (that was the deadlock)."""
     rows = await scope.session.scalars(
         scope.select(AppUser)
-        .where(
-            AppUser.role == UserRole.OWNER,
-            AppUser.disabled_at.is_(None),
-            AppUser.id != target.id,
-        )
+        .where(AppUser.role == UserRole.OWNER, AppUser.disabled_at.is_(None))
+        .order_by(AppUser.id)
         .with_for_update()
     )
-    return rows.first() is not None
+    others = [r for r in rows if r.id != target.id]
+    await scope.session.refresh(target)
+    return bool(others)
 
 
 @router.patch("/users/{user_id}")
@@ -199,13 +201,11 @@ async def update_user(
     was_active_owner = user.role is UserRole.OWNER and user.disabled_at is None
     demotes = new_role is UserRole.MEMBER
     disables = body.disabled is True
-    if (
-        was_active_owner
-        and (demotes or disables)
-        and not await _other_active_owner_exists(scope, user)
-    ):
-        await db.rollback()
-        return _code(LAST_OWNER, 409)
+    if was_active_owner and (demotes or disables):
+        has_other = await _other_active_owner_exists(scope, user)
+        if user.role is UserRole.OWNER and user.disabled_at is None and not has_other:
+            await db.rollback()
+            return _code(LAST_OWNER, 409)
 
     now = request.app.state.clock.now()
     before = snapshot(user)

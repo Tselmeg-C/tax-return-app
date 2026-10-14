@@ -481,3 +481,29 @@ async def test_member_management_leaks_nothing(
     }.items():
         assert needle not in exported, f"{label} in spans"
         assert needle not in logged, f"{label} in logs"
+
+
+async def test_owner_guard_locks_every_active_owner_in_id_order(
+    api: Api, family: Family, db_session: AsyncSession
+) -> None:
+    """#119: two owners demoting each other at once must lock the same rows in the same order
+    (the harness has one connection, so the lock statement is asserted instead of a race)."""
+    from sqlalchemy import event
+
+    cookie = await api.login(family.owner.email)
+    assert (await _patch(api, family.member, cookie, {"role": "owner"})).status_code == 200
+    seen: list[str] = []
+
+    def capture(conn, cursor, statement, *a):  # type: ignore[no-untyped-def]
+        if "FOR UPDATE" in statement and "app_user" in statement:
+            seen.append(statement)
+
+    engine = db_session.bind.sync_engine  # type: ignore[union-attr]
+    event.listen(engine, "before_cursor_execute", capture)
+    try:
+        assert (await _patch(api, family.owner, cookie, {"role": "member"})).status_code == 200
+    finally:
+        event.remove(engine, "before_cursor_execute", capture)
+    (stmt,) = seen
+    assert "ORDER BY app_user.id" in stmt
+    assert "app_user.id !=" not in stmt and "app_user.id <>" not in stmt  # same set for both owners

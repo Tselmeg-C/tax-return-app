@@ -46,6 +46,32 @@ REGISTER = "register"
 LOGIN = "login"
 
 
+def mark_used(used: dict[bytes, float], challenge: bytes, now: datetime) -> None:
+    """Remember a challenge that finished a ceremony (single use, #105). In memory like the key:
+    entries older than the TTL are unusable anyway, so they are dropped here (bounded)."""
+    t = now.timestamp()
+    for old in [c for c, e in used.items() if e <= t]:
+        del used[old]
+    used[challenge] = t + CHALLENGE_TTL.total_seconds()
+
+
+def is_used(used: dict[bytes, float], challenge: bytes, now: datetime) -> bool:
+    return used.get(challenge, 0.0) > now.timestamp()
+
+
+def user_handle_matches(credential: object, user_id: uuid.UUID) -> bool:
+    """A present `userHandle` must be the passkey owner's id (it is set to it at registration);
+    authenticators may omit it, which the signature check still covers."""
+    response = credential.get("response") if isinstance(credential, dict) else None
+    handle = response.get("userHandle") if isinstance(response, dict) else None
+    if handle in (None, ""):
+        return True
+    try:
+        return bool(base64url_to_bytes(handle) == user_id.bytes)
+    except Exception:
+        return False
+
+
 def rp_id(settings: Settings) -> str:
     return urlsplit(settings.app_base_url).hostname or "localhost"
 
