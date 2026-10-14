@@ -128,6 +128,14 @@ the `pipeline.document` log line and `belegbot.pipeline.attention`.
 - After commit: `DocumentProcessed(document_id, household_id, channel, status,
   attention_reason, doc_type)`; a failing subscriber is logged by class name only.
 
+## Reprocess (#45)
+
+"Neu verarbeiten" re-queues the same `process_document` job (`app/documents/reprocess.py`, api in
+`app/api/documents.py`). A document with any `overridden_by_user` item is never queued (the
+persist step would keep the items, so the paid calls would be wasted). `fresh=false` reuses the
+stored steps of the current prompt version (no LLM call); `fresh=true` sets `job.fresh`, and the
+handler then ignores stored outputs older than that job. Rules and limits: `CLAUDE.md`.
+
 ## Observability
 
 Spans `pipeline process_document` → `pipeline preprocess | classify | extract | rules |

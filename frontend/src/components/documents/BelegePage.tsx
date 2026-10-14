@@ -2,8 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/AppShell";
+import { useReprocess } from "@/components/documents/Reprocess";
 import { DocumentUploads } from "@/components/documents/DocumentUploads";
 import { TaxItemList } from "@/components/documents/TaxItemList";
+import { useMe } from "@/lib/auth";
 import {
   defaultYear,
   fetchLabels,
@@ -19,6 +21,8 @@ export function BelegePage() {
   const navigate = useNavigate();
   const labels = useQuery({ queryKey: LABELS_KEY, queryFn: fetchLabels, staleTime: Infinity });
   const persons = useQuery({ queryKey: PERSONS_KEY, queryFn: fetchPersons });
+  const owner = useMe().data?.role === "owner";
+  const { ask, dialog } = useReprocess();
   const supported = labels.data?.supported_years ?? [];
   const jahr =
     search.jahr !== undefined && supported.includes(search.jahr)
@@ -34,9 +38,15 @@ export function BelegePage() {
       {...(labels.data ? { year: { value: jahr, options: supported, onChange: setYear } } : {})}
     >
       <h1 className="text-4xl">Belege</h1>
-      <DocumentUploads {...(context ? { belege: context } : {})} />
+      <DocumentUploads {...(context ? { belege: context } : {})} onReprocess={ask} />
       {context ? (
-        <TaxItemList jahr={jahr} labels={context.labels} persons={context.persons} />
+        <TaxItemList
+          jahr={jahr}
+          labels={context.labels}
+          persons={context.persons}
+          owner={owner}
+          onReprocess={ask}
+        />
       ) : labels.isError ? (
         <div className="mt-10 flex items-center gap-3 text-sm">
           <span className="text-destructive">{TEXT.loadError}</span>
@@ -51,6 +61,7 @@ export function BelegePage() {
       ) : (
         <p className="mt-10 text-sm text-muted-foreground">{TEXT.loading}</p>
       )}
+      {dialog}
     </AppShell>
   );
 }

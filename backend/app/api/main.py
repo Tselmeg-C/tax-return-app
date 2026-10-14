@@ -39,6 +39,7 @@ from app.bot.core import BotDeps, ChannelAdapter
 from app.bot.telegram import TelegramAdapter
 from app.config import Settings, check_api_settings, get_settings
 from app.db.session import create_engine, create_sessionmaker
+from app.documents.reprocess import ReprocessMetrics
 from app.observability import API_SERVICE_NAME, setup_observability
 from app.observability.http import instrument_app, instrument_engine
 from app.observability.logs import set_level
@@ -89,6 +90,7 @@ def create_app(
         app.state.storage = storage
         app.state.upload_metrics = UploadMetrics(meter_provider)
         app.state.tax_item_metrics = TaxItemMetrics(meter_provider)
+        app.state.reprocess_metrics = ReprocessMetrics(meter_provider)
         app.state.mailer = MailDispatcher(mail_backend or backend_from_settings(resolved))
         app.state.magic_link_limiter = RateLimiter(
             MAGIC_LINK_REQUESTS_PER_IP, RATE_WINDOW, the_clock

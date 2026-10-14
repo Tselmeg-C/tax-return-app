@@ -201,7 +201,12 @@ def event_reasons(event: DocumentProcessed, result: PipelineResult) -> list[Atte
 async def _stored_outputs(
     ctx: JobContext, doc: Document, version: str, run: _Run
 ) -> dict[ExtractionStep, BaseModel]:
-    """Successful outputs of earlier attempts for this prompt version (newest first)."""
+    """Successful outputs of earlier attempts for this prompt version (newest first).
+
+    A `fresh` job (#45) only reuses outputs written by its own earlier attempts.
+    """
+    since = ctx.job.fresh_since
+    fresh_filter = [] if since is None else [Extraction.created_at >= since]
     async with ctx.sessionmaker() as session:
         rows = (
             (
@@ -213,6 +218,7 @@ async def _stored_outputs(
                         Extraction.prompt_version == version,
                         Extraction.error_kind.is_(None),
                         Extraction.raw_json.is_not(None),
+                        *fresh_filter,
                     )
                     .order_by(Extraction.created_at.desc())
                 )

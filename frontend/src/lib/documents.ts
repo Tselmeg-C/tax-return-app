@@ -58,6 +58,46 @@ export async function deleteDocument(id: string): Promise<void> {
   await apiFetch(`/documents/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
+export const MAX_BULK_REPROCESS = 25;
+
+export interface ReprocessResult {
+  queued: string[];
+  skipped: { id: string; reason: "busy" | "has_overrides" | "not_found" }[];
+}
+
+/** "Neu verarbeiten" (#45): one document (any member) ... */
+export async function reprocessDocument(id: string, fresh: boolean): Promise<ReprocessResult> {
+  await apiFetch(`/documents/${encodeURIComponent(id)}/reprocess`, {
+    method: "POST",
+    json: { fresh },
+  });
+  return { queued: [id], skipped: [] };
+}
+
+/** ... or up to 25 at once (owner only). */
+export const reprocessMany = (ids: string[], fresh: boolean) =>
+  apiFetch<ReprocessResult>("/documents/reprocess", {
+    method: "POST",
+    json: { document_ids: ids, fresh },
+  });
+
+export const REPROCESS = {
+  button: "Neu verarbeiten",
+  fresh: "Zwischenergebnisse verwerfen (fresh)",
+  cancel: "Abbrechen",
+  confirm: (n: number) =>
+    `${n} ${n === 1 ? "Beleg" : "Belege"} neu verarbeiten? Dabei werden KI-Aufrufe ausgeführt, die Kosten verursachen. Eigene Änderungen bleiben unberührt; Belege mit eigenen Änderungen werden übersprungen.`,
+  result: (queued: number, skipped: number) =>
+    `${queued} in der Warteschlange, ${skipped} übersprungen`,
+  selected: (n: number) => `Neu verarbeiten (${n})`,
+  max: `Höchstens ${MAX_BULK_REPROCESS} Belege auf einmal`,
+  select: "Beleg auswählen",
+  rateLimited: "Zu viele Anfragen – bitte später erneut versuchen",
+  busy: "Wird gerade verarbeitet, bitte gleich nochmal versuchen",
+  hasOverrides: "Beleg mit eigenen Änderungen wird nicht neu verarbeitet",
+  failed: "Neu verarbeiten fehlgeschlagen",
+} as const;
+
 export const isRunning = (status: DocumentStatus) => status === "queued" || status === "processing";
 
 /** "resend": the button sends the same `File` again; "pick": it opens the file picker. */

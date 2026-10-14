@@ -1,11 +1,20 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ExternalLink, Globe, Pencil, Send, Trash2 } from "lucide-react";
+import { Check, ExternalLink, Globe, Pencil, RefreshCw, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import type { AskReprocess } from "@/components/documents/Reprocess";
 import { ItemForm } from "@/components/documents/ItemForm";
 import { ApiError } from "@/lib/api";
-import { deleteDocument, DOCUMENTS_KEY, isRunning, MESSAGES } from "@/lib/documents";
+import {
+  deleteDocument,
+  DOCUMENTS_KEY,
+  isRunning,
+  MAX_BULK_REPROCESS,
+  MESSAGES,
+  POLL_MS,
+  REPROCESS,
+} from "@/lib/documents";
 import { formatEur } from "@/lib/money";
 import {
   deleteConfirm,
@@ -36,8 +45,15 @@ const COLS = "sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)_7rem_7rem_
 const COLS_YEAR = "sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)_3.5rem_7rem_7rem_auto]";
 
 /** "Belege {jahr}": filter chips and the household's tax items (#10). */
-export function TaxItemList(props: { jahr: number; labels: Labels; persons: Person[] }) {
-  const { jahr, labels, persons } = props;
+export function TaxItemList(props: {
+  jahr: number;
+  labels: Labels;
+  persons: Person[];
+  owner?: boolean;
+  onReprocess?: AskReprocess;
+}) {
+  const { jahr, labels, persons, owner = false, onReprocess } = props;
+  const [picked, setSelected] = useState<string[]>([]); // document ids (owner: bulk)
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<ItemFilter>("all");
   const [editing, setEditing] = useState<string | null>(null);
@@ -46,12 +62,21 @@ export function TaxItemList(props: { jahr: number; labels: Labels; persons: Pers
     queryKey: [...TAX_ITEMS_KEY, jahr, filter],
     queryFn: ({ pageParam }) => listTaxItems({ year: jahr, filter, offset: pageParam }),
     initialPageParam: 0,
+    refetchInterval: (q) =>
+      q.state.data?.pages.some((p) =>
+        p.items.some((i) => i.document && isRunning(i.document.status)),
+      )
+        ? POLL_MS
+        : false,
     getNextPageParam: (last, pages) => {
       const shown = pages.reduce((n, p) => n + p.items.length, 0);
       return shown < last.total ? shown : undefined;
     },
   });
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
+  // only documents of the current list count: stale ids (other filter / year, deleted) drop out
+  const visible = new Set(items.map((i) => i.document_id));
+  const selected = picked.filter((id) => visible.has(id));
   const withYear = filter === "attention";
   const cols = withYear ? COLS_YEAR : COLS;
 
@@ -123,6 +148,22 @@ export function TaxItemList(props: { jahr: number; labels: Labels; persons: Pers
           </button>
         ))}
       </div>
+      {owner && onReprocess && selected.length > 0 && (
+        <div className="mt-3 flex items-center gap-3 text-sm">
+          <button
+            type="button"
+            onClick={() => {
+              onReprocess(selected, true, () => setSelected([]));
+            }}
+            className="rounded-md bg-primary px-3 py-1 text-primary-foreground hover:bg-primary/90"
+          >
+            {REPROCESS.selected(selected.length)}
+          </button>
+          {selected.length >= MAX_BULK_REPROCESS && (
+            <span className="text-muted-foreground">{REPROCESS.max}</span>
+          )}
+        </div>
+      )}
       {notice && (
         <p role="status" className="mt-3 text-sm text-destructive">
           {notice}
@@ -180,6 +221,24 @@ export function TaxItemList(props: { jahr: number; labels: Labels; persons: Pers
                 className={`grid grid-cols-[minmax(0,1fr)] gap-2 p-3 sm:items-center sm:gap-3 ${cols} ${item.is_relevant ? "" : "text-muted-foreground"}`}
               >
                 <div className="flex min-w-0 items-center gap-2">
+                  {owner && onReprocess && doc && !item.overridden_by_user && (
+                    <input
+                      type="checkbox"
+                      aria-label={REPROCESS.select}
+                      checked={selected.includes(doc.id)}
+                      disabled={
+                        busy ||
+                        (!selected.includes(doc.id) && selected.length >= MAX_BULK_REPROCESS)
+                      }
+                      onChange={(e) =>
+                        setSelected(
+                          e.target.checked
+                            ? [...selected, doc.id]
+                            : selected.filter((x) => x !== doc.id),
+                        )
+                      }
+                    />
+                  )}
                   {doc?.channel === "telegram" ? (
                     <Send className="h-3.5 w-3.5 shrink-0 text-primary" />
                   ) : (
@@ -243,6 +302,16 @@ export function TaxItemList(props: { jahr: number; labels: Labels; persons: Pers
                       icon={<Check className="h-3.5 w-3.5" />}
                       text="Passt so"
                     />
+                  )}
+                  {onReprocess && doc && !item.overridden_by_user && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => onReprocess([doc.id], false)}
+                      className="flex items-center gap-1 rounded px-2 py-1 hover:bg-secondary disabled:opacity-50"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" /> {REPROCESS.button}
+                    </button>
                   )}
                   {doc && (
                     <a

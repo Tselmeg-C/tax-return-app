@@ -508,6 +508,30 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   `UPDATE_SNAPSHOTS=1 uv run pytest tests/export/test_snapshots.py` reviewed in the diff.
 - `reportlab` is a runtime dependency (pure wheel, built-in Helvetica); do not add system packages.
 
+## Reprocess (rules from #45)
+
+- `app/documents/reprocess.py` (`reprocess_documents`) is the one place that re-queues a finished
+  document ("Neu verarbeiten"): lock the `document` row (bulk in id order), status must be `done` /
+  `needs_attention` / `failed` (else `busy`), any `overridden_by_user` item (mixed documents too)
+  -> `has_overrides` (no job, no LLM call, nothing changes), then `enqueue` and one `document`
+  audit row, all in the request's transaction. Status -> `queued`, `error_kind` / `attention_reason`
+  cleared.
+- `POST /documents/{id}/reprocess` (any member; `409 document_busy` / `has_overrides`) and
+  `POST /documents/reprocess` (owner only, <= `REPROCESS_BULK_MAX` = 25 ids, `422 too_many`,
+  duplicates `422`, never a 4xx per document: `{queued, skipped[{id, reason}]}`).
+- `fresh` rides in the new `job.fresh` column (`ClaimedJob.fresh_since` = job `created_at`): the
+  handler then reuses only extraction rows written by that job's own attempts; `fresh=false`
+  reuses the same prompt version's cached steps (no LLM call). Extraction rows are append-only.
+- Rate limit (3 bulk / 20 single requests per user and hour, `429` + `Retry-After`) is counted from
+  `audit_log` rows whose `after` has the `reprocess` marker (`single` or `bulk:<request id>`); it
+  uses DB `now()`, not the app clock. Do not drop that marker from the audit row. `retry_after`
+  first takes `pg_advisory_xact_lock(hashtextextended('reprocess:<user id>', 0))`, so parallel
+  requests of one user serialise until the holder commits; keep it before the count and in the
+  same transaction as the audit rows.
+- Metric `belegbot.documents.reprocess{outcome}`; logs carry ids, counts and `fresh` only.
+- No ops CLI yet (follow-up issue). No eval run needed: pipeline, prompts, schema and routing are
+  unchanged.
+
 ## Stack
 
 - Backend (`backend/`): Python 3.12, `uv`, FastAPI, SQLAlchemy 2.0 + Alembic, Postgres 16, Postgres-based job queue

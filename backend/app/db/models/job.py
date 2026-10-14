@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -81,5 +82,9 @@ class Job(UUIDPrimaryKey, HouseholdOwned, Timestamps, Base):
     last_error_kind: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # W3C `traceparent` of the enqueuing request (span link from the job span).
     trace_context: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # #45: "Neu verarbeiten" with `fresh`: the handler ignores outputs stored before this job.
+    fresh: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
