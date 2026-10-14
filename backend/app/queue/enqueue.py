@@ -35,6 +35,7 @@ async def enqueue(
     document_id: uuid.UUID | None,
     trace_context: str | None = None,
     max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+    fresh: bool = False,
 ) -> uuid.UUID | None:
     """Insert a `queued` job; returns its id, or `None` if one is already active.
 
@@ -52,6 +53,7 @@ async def enqueue(
             attempts=0,
             max_attempts=max_attempts,
             trace_context=trace_context,
+            fresh=fresh,
         )
         .on_conflict_do_nothing(
             index_elements=["kind", "document_id"], index_where=text(ACTIVE_STATUSES_SQL)

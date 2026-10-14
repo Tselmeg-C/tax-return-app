@@ -135,6 +135,12 @@ class Settings(BaseSettings):
         gt=0,
         validation_alias=AliasChoices("JOB_TIMEOUT_SECONDS", "job_timeout_seconds"),
     )
+    reprocess_bulk_max: int = Field(  # #45: ids per bulk "Neu verarbeiten" request
+        default=25,
+        ge=1,
+        le=200,
+        validation_alias=AliasChoices("REPROCESS_BULK_MAX", "reprocess_bulk_max"),
+    )
     job_max_attempts: int = Field(
         default=5,
         ge=1,

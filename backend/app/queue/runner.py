@@ -17,7 +17,7 @@ import random
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import and_, case, func, or_, select, update
@@ -44,6 +44,7 @@ class ClaimedJob:
     trace_context: str | None
     worker_id: str
     reclaimed: bool  # its previous lease had expired
+    fresh_since: datetime | None = None  # #45: ignore stored outputs older than this
 
 
 @dataclass(frozen=True)
@@ -186,6 +187,8 @@ async def claim(
                     Job.attempts,
                     Job.max_attempts,
                     Job.trace_context,
+                    Job.fresh,
+                    Job.created_at,
                 )
                 .execution_options(synchronize_session=False)
             )
@@ -206,6 +209,7 @@ async def claim(
                 trace_context=row.trace_context,
                 worker_id=worker_id,
                 reclaimed=JobStatus(previous_status) is JobStatus.RUNNING,
+                fresh_since=row.created_at if row.fresh else None,
             )
     return None
 

@@ -14,12 +14,20 @@ from typing import Annotated, Any
 import structlog
 from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from app.api.deps import Scope, SignedIn
+from app.api.users import Owner
 from app.config import Settings
 from app.db.models import Document, TaxItem
 from app.documents.filenames import content_disposition, download_name, sanitize_filename
+from app.documents.reprocess import (
+    BUSY,
+    HAS_OVERRIDES,
+    ReprocessMetrics,
+    reprocess_documents,
+    retry_after,
+)
 from app.documents.service import (
     DocumentBusy,
     EmptyFile,
@@ -223,3 +231,111 @@ async def remove_document(
         raise HTTPException(status_code=404, detail=NOT_FOUND)
     log.info("document.deleted", document_id=str(document_id))
     return Response(status_code=204)
+
+
+class ReprocessBody(BaseModel):
+    fresh: bool = False
+
+
+class BulkReprocessBody(BaseModel):
+    document_ids: list[uuid.UUID] = Field(min_length=1)
+    fresh: bool = False
+
+    @field_validator("document_ids")
+    @classmethod
+    def _unique(cls, ids: list[uuid.UUID]) -> list[uuid.UUID]:
+        if len(set(ids)) != len(ids):
+            raise ValueError("duplicate ids")
+        return ids
+
+
+def _reprocess_metrics(request: Request) -> ReprocessMetrics:
+    found: ReprocessMetrics = request.app.state.reprocess_metrics
+    return found
+
+
+def _rate_limited(request: Request, seconds: int) -> JSONResponse:
+    _reprocess_metrics(request).record("rate_limited")
+    return JSONResponse(
+        {"detail": "rate_limited"}, status_code=429, headers={"Retry-After": str(seconds)}
+    )
+
+
+@router.post("/documents/reprocess")
+async def reprocess_many(
+    request: Request, user: Owner, scope: Scope, body: BulkReprocessBody
+) -> JSONResponse:
+    """Bulk "Neu verarbeiten" (owner only, cost control): never a 4xx per document."""
+    settings = _settings(request)
+    if len(body.document_ids) > settings.reprocess_bulk_max:
+        return JSONResponse({"detail": "too_many", "max": settings.reprocess_bulk_max}, 422)
+    wait = await retry_after(scope.session, user.user_id, bulk=True)
+    if wait is not None:
+        return _rate_limited(request, wait)
+    out = await reprocess_documents(
+        scope,
+        body.document_ids,
+        user.user_id,
+        fresh=body.fresh,
+        bulk=True,
+        trace_context=current_traceparent(),
+        max_attempts=settings.job_max_attempts,
+    )
+    await scope.session.commit()
+    metrics = _reprocess_metrics(request)
+    metrics.record("queued", len(out.queued))
+    for reason in (BUSY, HAS_OVERRIDES):
+        metrics.record(reason, sum(1 for _, r in out.skipped if r == reason))
+    log.info(
+        "documents.reprocess",
+        bulk=True,
+        fresh=body.fresh,
+        queued=len(out.queued),
+        skipped=len(out.skipped),
+    )
+    return JSONResponse(
+        {
+            "queued": [str(d.id) for d in out.queued],
+            "skipped": [{"id": str(i), "reason": r} for i, r in out.skipped],
+        }
+    )
+
+
+@router.post("/documents/{document_id}/reprocess", status_code=202)
+async def reprocess_one(
+    request: Request,
+    user: SignedIn,
+    scope: Scope,
+    document_id: uuid.UUID,
+    body: ReprocessBody | None = None,
+) -> JSONResponse:
+    settings = _settings(request)
+    fresh = body.fresh if body else False
+    wait = await retry_after(scope.session, user.user_id, bulk=False)
+    if wait is not None:
+        return _rate_limited(request, wait)
+    out = await reprocess_documents(
+        scope,
+        [document_id],
+        user.user_id,
+        fresh=fresh,
+        bulk=False,
+        trace_context=current_traceparent(),
+        max_attempts=settings.job_max_attempts,
+    )
+    if not out.queued:
+        await scope.session.rollback()
+        reason = out.skipped[0][1]
+        if reason == BUSY:
+            _reprocess_metrics(request).record("busy")
+            raise HTTPException(status_code=409, detail="document_busy")
+        if reason == HAS_OVERRIDES:
+            _reprocess_metrics(request).record("has_overrides")
+            raise HTTPException(status_code=409, detail="has_overrides")
+        raise HTTPException(status_code=404, detail=NOT_FOUND)
+    await scope.session.commit()
+    _reprocess_metrics(request).record("queued")
+    log.info("documents.reprocess", bulk=False, fresh=fresh, queued=1, document_id=str(document_id))
+    return JSONResponse(
+        {"document": DocumentOut.of(out.queued[0]).model_dump(mode="json")}, status_code=202
+    )

@@ -4,6 +4,7 @@ import {
   ExternalLink,
   Globe,
   PenLine,
+  RefreshCw,
   RotateCcw,
   Send,
   Trash2,
@@ -12,6 +13,7 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
+import type { AskReprocess } from "@/components/documents/Reprocess";
 import { ItemForm } from "@/components/documents/ItemForm";
 import { ApiError } from "@/lib/api";
 import {
@@ -24,6 +26,7 @@ import {
   MESSAGES,
   POLL_MS,
   precheck,
+  REPROCESS,
   uploadDocument,
   uploadProblem,
   type DocumentOut,
@@ -62,7 +65,13 @@ const when = (iso: string) =>
  * Upload area (drop zone, file picker, camera) and the "Hochgeladene Belege" list: documents
  * without a tax item (in flight, failed, needs attention without item).
  */
-export function DocumentUploads({ belege }: { belege?: BelegeContext }) {
+export function DocumentUploads({
+  belege,
+  onReprocess,
+}: {
+  belege?: BelegeContext;
+  onReprocess?: AskReprocess;
+}) {
   const queryClient = useQueryClient();
   const documents = useQuery({
     queryKey: DOCUMENTS_KEY,
@@ -320,6 +329,16 @@ export function DocumentUploads({ belege }: { belege?: BelegeContext }) {
                     {doc.status === "failed" && (
                       <RetryButton onClick={() => void retryDocument(doc)} />
                     )}
+                    {onReprocess &&
+                      (doc.status === "failed" || doc.status === "needs_attention") && (
+                        <button
+                          type="button"
+                          onClick={() => onReprocess([doc.id], false)}
+                          className="flex items-center gap-1 rounded border px-2 py-1 hover:bg-secondary"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" /> {REPROCESS.button}
+                        </button>
+                      )}
                     {canManual && (
                       <button
                         type="button"
