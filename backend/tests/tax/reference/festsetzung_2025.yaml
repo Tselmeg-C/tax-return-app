@@ -47,7 +47,7 @@
     bmg: '14896'
     soli: '0'
     kist: '1340.64'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C3_kindergeld_wins
   rule: F
   source: § 31 Satz 1, 4 EStG, § 51a Abs. 2 EStG
@@ -70,7 +70,7 @@
     bmg: '1048'
     soli: '0'
     kist: '94.32'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C4_five_months
   rule: F
   source: § 32 Abs. 6 Satz 5 EStG, § 66 Abs. 2 EStG
@@ -93,7 +93,7 @@
     bmg: '19976'
     soli: '0'
     kist: '1797.84'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C5_single_60000
   rule: F
   source: § 31 Satz 4, § 32 Abs. 6 EStG
@@ -140,7 +140,7 @@
     bmg: '8834'
     soli: '0'
     kist: '795.06'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C7_tie_single_above
   rule: F
   source: § 31 Satz 1, 4 EStG
@@ -163,7 +163,7 @@
     bmg: '6511'
     soli: '0'
     kist: '585.99'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C7_tie_single_at
   rule: F
   source: § 31 Satz 1, 4 EStG
@@ -186,7 +186,7 @@
     bmg: '6512'
     soli: '0'
     kist: '586.08'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C7_tie_joint_above
   rule: F
   source: § 31 Satz 1, 4 EStG
@@ -209,7 +209,7 @@
     bmg: '13022'
     soli: '0'
     kist: '1171.98'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C7_tie_joint_at
   rule: F
   source: § 31 Satz 1, 4 EStG
@@ -232,7 +232,7 @@
     bmg: '13024'
     soli: '0'
     kist: '1172.16'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C8_zve_below_freibetrag
   rule: F
   source: § 31 Satz 4, § 32 Abs. 6 EStG
@@ -279,7 +279,7 @@
     bmg: '11778'
     soli: '0'
     kist: '1060.02'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C10_small_second_child
   rule: F
   source: § 31 Satz 4 EStG
@@ -303,7 +303,7 @@
     bmg: '14258'
     soli: '0'
     kist: '1283.22'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C11_seven_months
   rule: F
   source: § 32 Abs. 6 Satz 5 EStG
@@ -395,7 +395,7 @@
     bmg: '14896'
     soli: '0'
     kist: '1340.64'
-    notes: [child_over_25_disabled]
+    notes: [child_over_25_disabled, kist_kappung_not_modelled]
 - id: C14b_over_25_no_grade
   rule: F
   source: § 32 Abs. 4 Satz 1 Nr. 2 EStG
@@ -441,7 +441,7 @@
     bmg: '19700'
     soli: '0'
     kist: '1773'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C16_progression
   rule: F
   source: § 32b Abs. 2 Nr. 1, § 31 Satz 4 EStG
@@ -489,7 +489,7 @@
     bmg: '0'
     soli: '0'
     kist: '0'
-    notes: []
+    notes: [kist_kappung_not_modelled]
 - id: C18_35a_progression
   rule: F
   source: § 35a Abs. 3, § 32b EStG

@@ -35,7 +35,7 @@ def test_every_supported_year_has_cases() -> None:
 
 
 @pytest.mark.parametrize("year", YEARS)
-@pytest.mark.parametrize("case_no", range(13))
+@pytest.mark.parametrize("case_no", range(14))
 def test_reference_case(year: int, case_no: int) -> None:
     case = _cases(year)[case_no]
     i, e = case["input"], case["expected"]
@@ -152,4 +152,28 @@ def test_festsetzung_full_kappung_note_only_when_cut() -> None:
     low = festsetzung(D(40000), ctx, "SN", D(0), [], D(0), params)
     assert not low.notes and low.kist == church_tax(low.bmg, "SN", params.church_tax)
     nw = festsetzung(D(498734), ctx, "NW", D(0), [], D(0), params)
-    assert nw.kist == church_tax(nw.bmg, "NW", params.church_tax) and not nw.notes
+    assert nw.kist == church_tax(nw.bmg, "NW", params.church_tax)
+    assert [n.code.value for n in nw.notes] == ["kist_kappung_not_modelled"]
+
+
+def test_kappung_not_modelled_note() -> None:
+    ctx25 = ReturnContext(2025, FilingStatus.SINGLE, "A")
+    ctx26 = ReturnContext(2026, FilingStatus.SINGLE, "A")
+
+    def codes(year: int, ctx: ReturnContext, state: str | None) -> list[str]:
+        f = festsetzung(D(40000), ctx, state, D(0), [], D(0), load_params(year))
+        return [n.code.value for n in f.notes]
+
+    note = "kist_kappung_not_modelled"
+    assert codes(2025, ctx25, "NW") == [note] and codes(2026, ctx26, "NW") == [note]
+    assert codes(2026, ctx26, "NI") == [note] and codes(2026, ctx26, "TH") == [note]
+    assert note not in codes(2025, ctx25, "NI")  # rate set in 2025
+    assert codes(2026, ctx26, "SN") == [] and codes(2026, ctx26, "BY") == []
+    assert codes(2026, ctx26, None) == []  # not a member
+    p = load_params(2026).church_tax
+    joint = church_tax_joint(D(1000), D(30000), MemberShare(D(1), D(1)), "NW", p)
+    assert note in [n.code.value for n in joint.notes]
+    assert note not in [
+        n.code.value
+        for n in church_tax_joint(D(1000), D(30000), MemberShare(D(1), D(1)), "BY", p).notes
+    ]

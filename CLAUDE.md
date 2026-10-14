@@ -514,8 +514,9 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   2026: SN); every other Land is NOT capped (no silent guess), the values seen in secondary sources only
   (BW / HE / NW / RP / SL on request, HB / HH / SH / BE / BB / MV / ST per Kirche) are in the params `source`.
   `church_tax(..., zve=)` and `church_tax_joint` cap; the estimate applies it by default (SN / NI / TH apply it
-  in the assessment) with the note `kist_kappung_applied` ("some Länder only on request"). Glaubensverschiedene Ehe:
-  cap = rate x member share x zvE, then the Kirchgeld comparison (order OPEN). Cases K9 to K13, scenario s10.
+  in the assessment) with the note `kist_kappung_applied`. A church member in a Land with no rate for the year
+  that is not in `none_states` gets `kist_kappung_not_modelled` (not silently uncapped). Glaubensverschiedene Ehe:
+  cap = rate x member share x zvE, then the Kirchgeld comparison (order OPEN). The cap floors to cents (K14). Cases K9 to K14, scenario s10.
 
 ## Export (rules from #21)
 

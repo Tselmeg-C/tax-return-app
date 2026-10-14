@@ -19,7 +19,13 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from app.domain.enums import DeductionNote, FilingStatus
-from app.tax.church import ChurchResult, KistMethod, MemberShare, church_tax_joint
+from app.tax.church import (
+    ChurchResult,
+    KistMethod,
+    MemberShare,
+    church_tax_joint,
+    kappung_unmodelled,
+)
 from app.tax.deductions.models import ChildInput, Note, ReturnContext, check_decimal
 from app.tax.kinder import KinderResult, guenstigerpruefung
 from app.tax.models import TaxParams
@@ -90,6 +96,8 @@ def festsetzung(
         full = church_tax(bmg, state, params.church_tax)
         capped = church_tax(bmg, state, params.church_tax, k.zve_bmg)  # Kappung (#112)
         cap_note = (Note(DeductionNote.KIST_KAPPUNG_APPLIED),) if capped < full else ()
+        if state is not None and kappung_unmodelled(state, params.church_tax):
+            cap_note = (Note(DeductionNote.KIST_KAPPUNG_NOT_MODELLED),)
         church = ChurchResult(capped, KistMethod.FULL, cap_note)
     return Festsetzung(
         kinder=k,

@@ -44,6 +44,11 @@ class ChurchResult:
     notes: tuple[Note, ...] = ()
 
 
+def kappung_unmodelled(state: str, p: ChurchTaxParams) -> bool:
+    """True if the Land may cap the KiSt but no rate is set for the year (#112): note, no guess."""
+    return state not in p.kappung.rate_by_state and state not in p.kappung.none_states
+
+
 def kirchgeld(zve_bmg: Decimal, state: str, p: ChurchTaxParams) -> Decimal | None:
     """Annual besonderes Kirchgeld, 0 below the first Stufe; `None` if the Land has no table."""
     if state not in p.rate_by_state:
@@ -79,6 +84,8 @@ def church_tax_joint(
     # comparison (the comparison is with the KiSt vom Einkommen); the order is OPEN (provisional).
     limit = kappung_limit(check_decimal(zve_bmg, "zve_bmg") * fraction, state, p)
     capped = kist if limit is None else min(kist, limit)
+    if kappung_unmodelled(state, p):
+        notes.append(Note(DeductionNote.KIST_KAPPUNG_NOT_MODELLED))
     table = kirchgeld(zve_bmg, state, p)
     if table is None:
         if state not in p.kirchgeld.no_kirchgeld_states:
@@ -88,7 +95,7 @@ def church_tax_joint(
         result = ChurchResult(table.quantize(_CENT), KistMethod.KIRCHGELD, tuple(notes))
     else:
         result = ChurchResult(capped, KistMethod.MEMBER_SHARE, tuple(notes))
-    if result.kist < max(kist, table or _ZERO):
+    if result.kist < max(kist, table or _ZERO):  # (a cut only happens where a rate is set)
         result = ChurchResult(
             result.kist, result.method, (*notes, Note(DeductionNote.KIST_KAPPUNG_APPLIED))
         )

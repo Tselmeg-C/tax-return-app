@@ -195,6 +195,7 @@ class DeductionNote(StrEnum):
     KIST_SHARE_ESTIMATED = "kist_share_estimated"  # #53: member's share split by income
     KIRCHGELD_NOT_MODELLED = "kirchgeld_not_modelled"  # #53: Land without a Kirchgeld table
     KIST_KAPPUNG_APPLIED = "kist_kappung_applied"  # #112: KiSt limited to x % of the zvE
+    KIST_KAPPUNG_NOT_MODELLED = "kist_kappung_not_modelled"  # #112: Land without a Kappung rate
 
 
 class EstimateMissing(StrEnum):
@@ -549,8 +550,11 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         _N.KIST_SHARE_ESTIMATED: "Kirchensteuer-Anteil des Mitglieds nach Einkünften geschätzt",
         _N.KIRCHGELD_NOT_MODELLED: "Besonderes Kirchgeld dieses Landes nicht berechnet",
         _N.KIST_KAPPUNG_APPLIED: (
-            "Kirchensteuer auf die Kappungsgrenze des Landes begrenzt; in manchen Ländern "
-            "nur auf Antrag bei Kirche oder Finanzamt"
+            "Kirchensteuer auf den Höchstsatz des zu versteuernden Einkommens begrenzt (Kappung)."
+        ),
+        _N.KIST_KAPPUNG_NOT_MODELLED: (
+            "Für dein Bundesland ist die Kirchensteuer-Kappung nicht berücksichtigt; sie kann "
+            "deine Kirchensteuer senken (ggf. nur auf Antrag)."
         ),
     },
     EstimateMissing: {
