@@ -482,3 +482,36 @@ scenarios:
       pflicht: {state: voluntary, reasons: []}
       what_missing: []
       notes: [vorsorge_estimated]
+
+  # #112: Sachsen caps the KiSt vom Einkommen at 3,5 % of the zvE (Bek. SMF Sachsen 2025 Nr. 1).
+  - id: s10_single_kappung_sn
+    title: "Single in Sachsen, gross wage 517.260, KiSt above the Kappung (3,5 % of the zvE)"
+    persons: {a: {kind: adult, religion: ev}}
+    profile: {filing: single, bundesland: sn, taxpayer: a}
+    employments:
+      - {person: a, steuerklasse: "1", gross_wage: "517260.00", lohnsteuer: "190000.00",
+         soli_withheld: "10000.00", rv_employee: "10000.00", kv: "6000.00", pv: "1500.00"}
+    chain:
+      - "Einkuenfte N = 517.260 - 1.230 = 516.030 = GdE"
+      - "Altersvorsorge: 10.000 + AG-Anteil 10.000 = 20.000 (<= 29.344), abzgl. AG-Anteil = 10.000 (§ 10 Abs. 1 Nr. 2, Abs. 3)"
+      - "Basiskranken: KV 6.000 x 0,96 = 5.760 + PV 1.500 = 7.260 (> 1.900, voll, § 10 Abs. 4 Satz 4); Vorsorge gesamt 17.260; Sonderausgaben Pauschbetrag 36"
+      - "zvE = 516.030 - 36 - 17.260 = 498.734 (BMF: ESt 205.183, Soli 11.285,06)"
+      - "KiSt 9 % x 205.183 = 18.466,47; Kappung 3,5 % x 498.734 = 17.455,69 (Bek. SMF Sachsen Nr. 1); 18.466,47 > 17.455,69, so 17.455,69"
+      - "Ergebnis = 190.000 + 10.000 - 205.183 - 11.285,06 - 17.455,69 = -33.923,75 (Nachzahlung)"
+    bmf: [s10_single_498734]
+    expected:
+      gde: "516030.00"
+      zve_before_children: "498734.00"
+      zve: "498734.00"
+      tarifliche_est: "205183.00"
+      ermaessigung_35a: "0.00"
+      festzusetzende_est: "205183.00"
+      soli: "11285.06"
+      kirchensteuer: "17455.69"
+      kirchensteuer_method: full
+      kindergeld_added: "0.00"
+      withheld: {lohnsteuer: "190000.00", soli: "10000.00", kirchensteuer: "0.00"}
+      refund: "-33923.75"
+      pflicht: {state: voluntary, reasons: []}
+      what_missing: []
+      notes: [kist_kappung_applied]

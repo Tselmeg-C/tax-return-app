@@ -35,6 +35,7 @@ TARIFF_CASE = {
     "s7_single_parent_entlastungsbetrag": "s7_single_27174",
     "s8_single_wage_estimate": "s8_single_46789",
     "s9_single_above_bbg_manual_kv": "s9_single_85010",
+    "s10_single_kappung_sn": "s10_single_498734",
 }
 IDS = [s["id"] for s in SCENARIOS]
 

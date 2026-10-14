@@ -144,9 +144,32 @@ class KirchgeldParams(_Frozen):
         return self
 
 
+class KappungParams(_Frozen):
+    """Cap of the KiSt vom Einkommen as a share of the zvE (#112).
+
+    `rate_by_state`: the Land caps at that share (read for the year in the Land's text).
+    `none_states`: the Land has no cap. Any other Land is NOT capped (value not confirmed).
+    """
+
+    rate_by_state: dict[str, Dec]
+    none_states: frozenset[str] = frozenset()
+
+    @model_validator(mode="after")
+    def _check(self) -> Self:
+        given = set(self.rate_by_state) | self.none_states
+        if given - STATES:
+            raise ValueError(f"kappung: unknown state {', '.join(sorted(given - STATES))}")
+        if set(self.rate_by_state) & self.none_states:
+            raise ValueError("kappung: a state cannot be in both lists")
+        if any(not 0 < r < 1 for r in self.rate_by_state.values()):
+            raise ValueError("kappung.rate_by_state: rates must be in (0, 1)")
+        return self
+
+
 class ChurchTaxParams(_Section):
     rate_by_state: dict[str, Dec]
     kirchgeld: KirchgeldParams
+    kappung: KappungParams
 
     @model_validator(mode="after")
     def _check(self) -> Self:

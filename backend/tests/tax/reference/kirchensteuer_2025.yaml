@@ -51,3 +51,33 @@
   arithmetic: "share = 30.000 / 40.000 = 3/4; KiSt = 50.000 x 0,09 x 3/4 = 3.375,00; Kirchgeld Stufe 10 = 1.860 < 3.375,00, so the member share is charged"
   input: {state: SN, bmg: "50000", zve_bmg: "200000", member: "30000", total: "40000"}
   expected: {kist: "3375.00", method: member_share, notes: [kist_share_estimated]}
+- id: K9
+  rule: church_tax_joint
+  source: "Bek. SMF Sachsen Nr. 1 (9 %; Kirchensteuer vom Einkommen hoechstens 3,5 % des zu versteuernden Einkommens, in glaubensverschiedener Ehe 3,5 % des Anteils am gemeinsamen zvE nach dem Verhaeltnis der Summe der Einkuenfte) and Nr. 3 (Kirchgeld table)"
+  arithmetic: "share = 30.000 / 60.000 = 1/2; KiSt = 10.000 x 0,09 x 1/2 = 450,00; cap = 60.000 x 1/2 x 0,035 = 1.050,00; 450,00 < 1.050,00 (below the cap); Kirchgeld Stufe 2 = 156 < 450,00"
+  input: {state: SN, bmg: "10000", zve_bmg: "60000", member: "30000", total: "60000"}
+  expected: {kist: "450.00", method: member_share, notes: [kist_share_estimated]}
+- id: K10
+  rule: church_tax_joint
+  source: "Bek. SMF Sachsen Nr. 1 (hoechstens 3,5 % des zu versteuernden Einkommens); the member earns all the income (share 1)"
+  arithmetic: "KiSt = 14.000 x 0,09 = 1.260,00; cap = 36.000 x 0,035 = 1.260,00; exactly at the cap, nothing is cut (no note); zvE 36.000 is below the first Kirchgeld Stufe (50.000)"
+  input: {state: SN, bmg: "14000", zve_bmg: "36000", member: "36000", total: "36000"}
+  expected: {kist: "1260.00", method: member_share, notes: []}
+- id: K11
+  rule: church_tax_joint
+  source: "Bek. SMF Sachsen Nr. 1 (hoechstens 3,5 % des zu versteuernden Einkommens)"
+  arithmetic: "KiSt = 16.000 x 0,09 = 1.440,00; cap = 36.000 x 0,035 = 1.260,00; 1.440,00 > 1.260,00, so 1.260,00 is charged"
+  input: {state: SN, bmg: "16000", zve_bmg: "36000", member: "36000", total: "36000"}
+  expected: {kist: "1260.00", method: member_share, notes: [kist_kappung_applied]}
+- id: K12
+  rule: church_tax_joint
+  source: "Bek. SMF Sachsen Nr. 1 (3,5 % of the member's share of the gemeinsames zvE, share = Summe der Einkuenfte ratio) and Nr. 3 (Stufe 5: 95.000 bis 107.499 = 540); cap first, then Vergleichsberechnung (OPEN order, provisional)"
+  arithmetic: "share = 1/2; KiSt = 40.000 x 0,09 x 1/2 = 1.800,00; cap = 100.000 x 1/2 x 0,035 = 1.750,00; 1.800,00 > 1.750,00 so 1.750,00; Kirchgeld 540 < 1.750,00"
+  input: {state: SN, bmg: "40000", zve_bmg: "100000", member: "30000", total: "60000"}
+  expected: {kist: "1750.00", method: member_share, notes: [kist_share_estimated, kist_kappung_applied]}
+- id: K13
+  rule: church_tax_joint
+  source: "Kirchensteuerbeschluss NRW 9 % (Erlass FinMin NRW v. 17.11.2025); NRW has no confirmed Kappung value in params (kappung unset: not capped)"
+  arithmetic: "KiSt = 16.000 x 0,09 = 1.440,00 (the same figures as K11, which would be capped in SN); no cap known for NW, so 1.440,00; zvE 36.000 is below the first Kirchgeld Stufe"
+  input: {state: NW, bmg: "16000", zve_bmg: "36000", member: "36000", total: "36000"}
+  expected: {kist: "1440.00", method: member_share, notes: []}

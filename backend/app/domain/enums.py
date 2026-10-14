@@ -194,6 +194,7 @@ class DeductionNote(StrEnum):
     VORSORGE_ESTIMATED = "vorsorge_estimated"
     KIST_SHARE_ESTIMATED = "kist_share_estimated"  # #53: member's share split by income
     KIRCHGELD_NOT_MODELLED = "kirchgeld_not_modelled"  # #53: Land without a Kirchgeld table
+    KIST_KAPPUNG_APPLIED = "kist_kappung_applied"  # #112: KiSt limited to x % of the zvE
 
 
 class EstimateMissing(StrEnum):
@@ -547,6 +548,10 @@ LABELS_DE: dict[type[StrEnum], dict[StrEnum, str]] = {
         _N.VORSORGE_ESTIMATED: "Vorsorge aus dem Bruttolohn geschätzt (vorläufig)",
         _N.KIST_SHARE_ESTIMATED: "Kirchensteuer-Anteil des Mitglieds nach Einkünften geschätzt",
         _N.KIRCHGELD_NOT_MODELLED: "Besonderes Kirchgeld dieses Landes nicht berechnet",
+        _N.KIST_KAPPUNG_APPLIED: (
+            "Kirchensteuer auf die Kappungsgrenze des Landes begrenzt; in manchen Ländern "
+            "nur auf Antrag bei Kirche oder Finanzamt"
+        ),
     },
     EstimateMissing: {
         EstimateMissing.NO_LSTB: "Lohnsteuerbescheinigung fehlt (Bruttolohn, Lohnsteuer)",

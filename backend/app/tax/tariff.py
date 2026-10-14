@@ -80,14 +80,28 @@ def solidarity_surcharge(bmg: Decimal, filing: FilingStatus, p: SoliParams) -> D
     return _floor(min(p.rate * base, p.milderung_rate * (base - freigrenze)), _CENT)
 
 
-def church_tax(bmg: Decimal, state: str | None, p: ChurchTaxParams) -> Decimal:
-    """Rate of the state × Bemessungsgrundlage, down to cents; `None` = not a member."""
+def kappung_limit(zve: Decimal, state: str, p: ChurchTaxParams) -> Decimal | None:
+    """Cap of the KiSt vom Einkommen in cents (rate x zvE, down); `None` = no cap known (#112)."""
+    rate = p.kappung.rate_by_state.get(state)
+    if rate is None:
+        return None
+    return _floor(max(_decimal(zve, "zve"), _ZERO) * rate, _CENT)
+
+
+def church_tax(
+    bmg: Decimal, state: str | None, p: ChurchTaxParams, zve: Decimal | None = None
+) -> Decimal:
+    """Rate of the state × Bemessungsgrundlage, down to cents; `None` = not a member.
+
+    With `zve` (after the Kinderfreibeträge, § 51a Abs. 2 EStG) the Land's Kappung applies."""
     base = _decimal(bmg, "bmg")
     if state is None:
         return _floor(_ZERO, _CENT)
     if state not in p.rate_by_state:
         raise ValueError(f"unknown state code: {state!r}")
-    return _floor(max(p.rate_by_state[state] * base, _ZERO), _CENT)
+    kist = _floor(max(p.rate_by_state[state] * base, _ZERO), _CENT)
+    limit = None if zve is None else kappung_limit(zve, state, p)
+    return kist if limit is None else min(kist, limit)
 
 
 def tariff_result(
