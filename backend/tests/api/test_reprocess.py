@@ -6,7 +6,7 @@ import uuid
 from datetime import timedelta
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import event, select, update
 
 from app.auth.service import create_session
 from app.db.models import AuditLog, Document, Job
@@ -184,3 +184,29 @@ async def test_metrics_and_no_filename_in_logs(t: T, json_log: Any, metric_reade
     assert "geheim" not in out and "documents.reprocess" in out
     points = metric_points(metric_reader)["belegbot.documents.reprocess"]
     assert {p.attributes["outcome"] for p in points} == {"queued", "busy"}
+
+
+async def test_bulk_locks_documents_in_id_order_after_the_advisory_lock(t: T) -> None:
+    a = await t.home()
+    docs = [await t.doc(a) for _ in range(3)]
+    ids = [d.id for d in docs]
+    seen: list[tuple[str, Any]] = []
+
+    def grab(conn: Any, cursor: Any, statement: str, params: Any, *rest: Any) -> None:
+        seen.append((statement, params))
+
+    engine = t.session.get_bind()
+    event.listen(engine, "before_cursor_execute", grab)
+    try:
+        r = await many(t, a, list(reversed(ids)))
+    finally:
+        event.remove(engine, "before_cursor_execute", grab)
+    assert r.status_code == 200
+    texts = [s for s, _ in seen]
+    adv = next(i for i, s in enumerate(texts) if "pg_advisory_xact_lock" in s)
+    counts = [i for i, s in enumerate(texts) if "audit_log" in s and "SELECT" in s]
+    assert counts and adv < min(counts)
+    locks = [p for s, p in seen if "FROM document" in s and s.rstrip().endswith("FOR UPDATE")]
+    flat = [str(x) for p in locks for x in (p if isinstance(p, (tuple, list)) else p.values())]
+    locked = [uuid.UUID(x) for x in flat if x in {str(i) for i in ids}]
+    assert locked == sorted(ids)

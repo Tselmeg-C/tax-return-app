@@ -213,4 +213,41 @@ describe("Neu verarbeiten", () => {
     );
     await screen.findByText(REPROCESS.rateLimited);
   });
+
+  it("drops selected documents that left the list before counting", async () => {
+    const items = [item("A GmbH"), item("B GmbH")];
+    serve(items, "owner");
+    renderPage();
+    for (const name of ["A GmbH", "B GmbH"]) {
+      fireEvent.click(within(await rowOf(name)).getByRole("checkbox"));
+    }
+    await screen.findByRole("button", { name: REPROCESS.selected(2) });
+    items.pop(); // B is gone after the next fetch
+    fireEvent.click(screen.getByRole("button", { name: "Relevant" }));
+    fireEvent.click(await screen.findByRole("button", { name: REPROCESS.selected(1) }));
+    expect((await screen.findByRole("dialog")).textContent).toContain(REPROCESS.confirm(1));
+  });
+
+  it("keeps the selection when the dialog is cancelled or the run fails, clears it on success", async () => {
+    const items = [item("A GmbH")];
+    let ok = false;
+    serve(items, "owner", () =>
+      ok ? json(200, { queued: [items[0]!.document_id], skipped: [] }) : json(500, {}),
+    );
+    renderPage();
+    fireEvent.click(within(await rowOf("A GmbH")).getByRole("checkbox"));
+    const start = async () => {
+      fireEvent.click(await screen.findByRole("button", { name: REPROCESS.selected(1) }));
+      return within(await screen.findByRole("dialog"));
+    };
+    fireEvent.click((await start()).getByRole("button", { name: REPROCESS.cancel }));
+    fireEvent.click((await start()).getByRole("button", { name: REPROCESS.button }));
+    await screen.findByText(REPROCESS.failed);
+    ok = true;
+    fireEvent.click((await start()).getByRole("button", { name: REPROCESS.button }));
+    await screen.findByText("1 in der Warteschlange, 0 übersprungen");
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: REPROCESS.selected(1) })).toBeNull(),
+    );
+  });
 });

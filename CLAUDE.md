@@ -516,7 +516,10 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   reuses the same prompt version's cached steps (no LLM call). Extraction rows are append-only.
 - Rate limit (3 bulk / 20 single requests per user and hour, `429` + `Retry-After`) is counted from
   `audit_log` rows whose `after` has the `reprocess` marker (`single` or `bulk:<request id>`); it
-  uses DB `now()`, not the app clock. Do not drop that marker from the audit row.
+  uses DB `now()`, not the app clock. Do not drop that marker from the audit row. `retry_after`
+  first takes `pg_advisory_xact_lock(hashtextextended('reprocess:<user id>', 0))`, so parallel
+  requests of one user serialise until the holder commits; keep it before the count and in the
+  same transaction as the audit rows.
 - Metric `belegbot.documents.reprocess{outcome}`; logs carry ids, counts and `fresh` only.
 - No ops CLI yet (follow-up issue). No eval run needed: pipeline, prompts, schema and routing are
   unchanged.

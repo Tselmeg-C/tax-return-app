@@ -15,7 +15,7 @@ from datetime import timedelta
 
 from opentelemetry import metrics
 from opentelemetry.metrics import MeterProvider
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.audit import Actor, record, snapshot
@@ -59,7 +59,14 @@ async def retry_after(session: AsyncSession, user_id: uuid.UUID, *, bulk: bool) 
 
     Counted from audit rows (no extra table): single = rows marked `single`, bulk = distinct
     request ids marked `bulk:<id>`.
+
+    Takes a per-user transaction-scoped advisory lock first: concurrent requests of one user
+    queue up until the holder commits (its audit rows are then visible to the count). The caller
+    must run this and `reprocess_documents` in one transaction.
     """
+    await session.execute(
+        text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"reprocess:{user_id}"}
+    )
     marker = AuditLog.after["reprocess"].astext
     base = (
         AuditLog.entity == "document",

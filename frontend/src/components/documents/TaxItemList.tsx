@@ -53,7 +53,7 @@ export function TaxItemList(props: {
   onReprocess?: AskReprocess;
 }) {
   const { jahr, labels, persons, owner = false, onReprocess } = props;
-  const [selected, setSelected] = useState<string[]>([]); // document ids (owner: bulk)
+  const [picked, setSelected] = useState<string[]>([]); // document ids (owner: bulk)
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<ItemFilter>("all");
   const [editing, setEditing] = useState<string | null>(null);
@@ -74,6 +74,9 @@ export function TaxItemList(props: {
     },
   });
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
+  // only documents of the current list count: stale ids (other filter / year, deleted) drop out
+  const visible = new Set(items.map((i) => i.document_id));
+  const selected = picked.filter((id) => visible.has(id));
   const withYear = filter === "attention";
   const cols = withYear ? COLS_YEAR : COLS;
 
@@ -150,8 +153,7 @@ export function TaxItemList(props: {
           <button
             type="button"
             onClick={() => {
-              onReprocess(selected, true);
-              setSelected([]);
+              onReprocess(selected, true, () => setSelected([]));
             }}
             className="rounded-md bg-primary px-3 py-1 text-primary-foreground hover:bg-primary/90"
           >
@@ -229,8 +231,10 @@ export function TaxItemList(props: {
                         (!selected.includes(doc.id) && selected.length >= MAX_BULK_REPROCESS)
                       }
                       onChange={(e) =>
-                        setSelected((s) =>
-                          e.target.checked ? [...s, doc.id] : s.filter((x) => x !== doc.id),
+                        setSelected(
+                          e.target.checked
+                            ? [...selected, doc.id]
+                            : selected.filter((x) => x !== doc.id),
                         )
                       }
                     />

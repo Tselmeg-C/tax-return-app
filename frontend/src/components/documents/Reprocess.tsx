@@ -7,7 +7,7 @@ import { DOCUMENTS_KEY, REPROCESS, reprocessDocument, reprocessMany } from "@/li
 import { TAX_ITEMS_KEY } from "@/lib/taxItems";
 
 /** What the lists get: ask for a confirmation, then queue (`bulk` = owner-only bulk endpoint). */
-export type AskReprocess = (ids: string[], bulk: boolean) => void;
+export type AskReprocess = (ids: string[], bulk: boolean, onSuccess?: () => void) => void;
 
 function problem(error: unknown): string {
   if (error instanceof ApiError) {
@@ -21,13 +21,17 @@ function problem(error: unknown): string {
 /** Confirmation dialog + request + result toast for "Neu verarbeiten" (#45). */
 export function useReprocess(onDone?: () => void) {
   const queryClient = useQueryClient();
-  const [asked, setAsked] = useState<{ ids: string[]; bulk: boolean } | null>(null);
+  const [asked, setAsked] = useState<{
+    ids: string[];
+    bulk: boolean;
+    onSuccess?: () => void;
+  } | null>(null);
   const [fresh, setFresh] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const ask: AskReprocess = (ids, bulk) => {
+  const ask: AskReprocess = (ids, bulk, onSuccess) => {
     setFresh(false);
-    setAsked({ ids, bulk });
+    setAsked({ ids, bulk, ...(onSuccess ? { onSuccess } : {}) });
   };
 
   const run = async () => {
@@ -38,6 +42,7 @@ export function useReprocess(onDone?: () => void) {
         ? await reprocessMany(asked.ids, fresh)
         : await reprocessDocument(asked.ids[0]!, fresh);
       toast.success(REPROCESS.result(result.queued.length, result.skipped.length));
+      asked.onSuccess?.();
       onDone?.();
     } catch (error) {
       toast.error(problem(error));
