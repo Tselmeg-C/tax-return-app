@@ -12,7 +12,7 @@ from decimal import Decimal
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func
 
@@ -26,6 +26,7 @@ from app.tax_items import (
     TaxItemMetrics,
     VersionConflict,
     create_manual_item,
+    delete_item,
     update_item,
 )
 from app.tax_params import supported_years
@@ -107,6 +108,11 @@ class TaxItemPatch(_Fields):
     labour_share_35a: Any = None
     year: int | None = None
     person_id: uuid.UUID | None = None
+    # Text, dates and the method are `Any` too: the service answers code + field.
+    vendor: Any = None
+    invoice_date: Any = None
+    payment_date: Any = None
+    payment_method: Any = None
 
 
 class TaxItemCreate(_Fields):
@@ -117,6 +123,11 @@ class TaxItemCreate(_Fields):
     year: int
     labour_share_35a: Any = None
     person_id: uuid.UUID | None = None
+    vendor: Any = None
+    invoice_date: Any = None
+    payment_date: Any = None
+    payment_method: Any = None
+    reason: Any = None
 
 
 def _metrics(request: Request) -> TaxItemMetrics:
@@ -202,3 +213,33 @@ async def create_tax_item(
     except Rejected as exc:
         return _rejected(exc)
     return JSONResponse(_out(result), status_code=201)
+
+
+@router.post("/tax-items", status_code=201)
+async def create_standalone_tax_item(
+    request: Request, user: SignedIn, scope: Scope, body: TaxItemCreate
+) -> JSONResponse:
+    sent = {k: getattr(body, k) for k in body.model_fields_set}
+    try:
+        result = await create_manual_item(scope, None, sent, user.user_id, _metrics(request))
+    except Rejected as exc:
+        return _rejected(exc)
+    return JSONResponse(_out(result), status_code=201)
+
+
+@router.delete("/tax-items/{item_id}", status_code=204)
+async def delete_tax_item(
+    request: Request,
+    user: SignedIn,
+    scope: Scope,
+    item_id: uuid.UUID,
+    version: Annotated[int, Query()],
+) -> Response:
+    try:
+        await delete_item(scope, item_id, version, user.user_id, _metrics(request))
+    except Rejected as exc:
+        return _rejected(exc)
+    except VersionConflict as exc:
+        current = TaxItemOut.of(exc.item, None).model_dump(mode="json")
+        return JSONResponse({"detail": "version_conflict", "tax_item": current}, status_code=409)
+    return Response(status_code=204)

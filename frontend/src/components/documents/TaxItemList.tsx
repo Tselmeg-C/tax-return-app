@@ -18,6 +18,8 @@ import {
 import { formatEur } from "@/lib/money";
 import {
   deleteConfirm,
+  deleteItemConfirm,
+  deleteTaxItem,
   documentName,
   emptyYear,
   isUncertain,
@@ -56,7 +58,8 @@ export function TaxItemList(props: {
   const [picked, setSelected] = useState<string[]>([]); // document ids (owner: bulk)
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<ItemFilter>("all");
-  const [editing, setEditing] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null); // item id, or NEW
+  const NEW = "new";
   const [notice, setNotice] = useState<string | null>(null);
   const query = useInfiniteQuery({
     queryKey: [...TAX_ITEMS_KEY, jahr, filter],
@@ -111,6 +114,22 @@ export function TaxItemList(props: {
     }
   };
 
+  const removeStandalone = async (item: TaxItemOut) => {
+    if (!window.confirm(deleteItemConfirm(item.vendor ?? ""))) return;
+    try {
+      await deleteTaxItem(item.id, item.version);
+      saved(TEXT.removed);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) return gone();
+      setNotice(
+        e instanceof ApiError && e.detail === "version_conflict"
+          ? TEXT.conflict
+          : saveError(e, item.year, labels.supported_years),
+      );
+      refresh();
+    }
+  };
+
   const remove = async (item: TaxItemOut) => {
     if (!item.document_id) return;
     const name = item.vendor ?? documentName(item.document, item.created_at);
@@ -131,7 +150,31 @@ export function TaxItemList(props: {
 
   return (
     <section className="mt-10" aria-label={`Belege ${jahr}`}>
-      <h2 className="text-2xl">Belege {jahr}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-2xl">Belege {jahr}</h2>
+        <button
+          type="button"
+          onClick={() => setEditing(editing === NEW ? null : NEW)}
+          className="rounded-md border px-3 py-1 text-sm hover:bg-secondary"
+        >
+          {TEXT.withoutDocument}
+        </button>
+      </div>
+      {editing === NEW && (
+        <div className="mt-3 min-w-0">
+          <ItemForm
+            item={null}
+            documentId={null}
+            year={jahr}
+            busy={false}
+            labels={labels}
+            persons={persons}
+            onSaved={() => saved(TEXT.created)}
+            onGone={gone}
+            onCancel={() => setEditing(null)}
+          />
+        </div>
+      )}
       <div className="mt-3 flex flex-wrap gap-2">
         {CHIPS.map(([code, text]) => (
           <button
@@ -247,7 +290,7 @@ export function TaxItemList(props: {
                   <div className="min-w-0">
                     {/* Rendered as text, never as HTML. */}
                     <p className="truncate font-medium">{item.vendor ?? file}</p>
-                    {item.vendor && (
+                    {item.vendor && doc && (
                       <p className="truncate text-xs text-muted-foreground">{file}</p>
                     )}
                   </div>
@@ -270,6 +313,7 @@ export function TaxItemList(props: {
                   )}
                   <div className="mt-1 flex flex-wrap gap-1">
                     {item.overridden_by_user && <Badge>manuell</Badge>}
+                    {!doc && <Badge>{TEXT.noDocument}</Badge>}
                     {isUncertain(item) && <Badge>unsicher</Badge>}
                     {attention && (
                       <Badge>{label(labels.attention_reasons, doc?.attention_reason)}</Badge>
@@ -323,6 +367,13 @@ export function TaxItemList(props: {
                       <ExternalLink className="h-3.5 w-3.5" /> Original öffnen
                     </a>
                   )}
+                  {!doc && (
+                    <IconButton
+                      onClick={() => void removeStandalone(item)}
+                      icon={<Trash2 className="h-3.5 w-3.5" />}
+                      text="Löschen"
+                    />
+                  )}
                   {doc && (
                     <IconButton
                       onClick={() => void remove(item)}
@@ -335,7 +386,7 @@ export function TaxItemList(props: {
                   <div className="min-w-0 sm:col-span-full">
                     <ItemForm
                       item={item}
-                      documentId={item.document_id ?? ""}
+                      documentId={item.document_id}
                       year={jahr}
                       busy={busy}
                       labels={labels}

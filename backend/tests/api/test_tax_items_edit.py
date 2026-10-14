@@ -171,7 +171,7 @@ async def test_validation(
     assert await t.audit() == []
 
 
-@pytest.mark.parametrize("key", ["anlage", "overridden_by_user", "zeile", "vendor"])
+@pytest.mark.parametrize("key", ["anlage", "overridden_by_user", "zeile", "reason"])
 async def test_non_editable_keys_refused(t: T, key: str) -> None:
     a = await t.home()
     item = await t.item(a)

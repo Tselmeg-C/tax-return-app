@@ -50,10 +50,18 @@ async def _rerun(world: World, ctx: JobContext, doc_id: uuid.UUID) -> None:
     assert again.calls == 2
 
 
-@pytest.mark.parametrize("patched", [True, False])
+@pytest.mark.parametrize(
+    ("patched", "patch"),
+    [
+        (True, {"category": "wk_fortbildung"}),
+        (True, {"vendor": "Muster Vendor", "payment_method": "cash"}),  # #61
+        (False, {}),
+    ],
+)
 async def test_override_survives_rerun(
     world: World,
     patched: bool,
+    patch: dict[str, str],
     clock: FakeClock,
     tmp_path: Path,
     migrated_database: str,
@@ -76,7 +84,7 @@ async def test_override_survives_rerun(
             r = await api.request(
                 "PATCH",
                 f"/tax-items/{item.id}",
-                json={"version": 1, "category": "wk_fortbildung"},
+                json={"version": 1, **patch},
                 cookie=cookie,
             )
         assert r.status_code == 200, r.text

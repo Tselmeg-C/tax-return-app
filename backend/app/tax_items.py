@@ -13,6 +13,7 @@ import re
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from typing import Any
 
@@ -30,6 +31,7 @@ from app.domain.enums import (
     Category,
     CategoryGroup,
     DocumentStatus,
+    PaymentMethod,
 )
 from app.tax.mapping import map_category
 from app.tax_params import mapping_table, supported_years
@@ -39,8 +41,27 @@ log = structlog.stdlib.get_logger("app.tax_items")
 MONEY_RE = re.compile(r"^-?\d{1,9}\.\d{2}$")
 ZERO = Decimal("0.00")
 MONEY_FIELDS = ("gross_amount", "deductible_amount", "labour_share_35a")
-EDITABLE = ("category", "is_relevant", *MONEY_FIELDS, "year", "person_id")
-NOT_NULL = {"category", "is_relevant", "gross_amount", "deductible_amount", "year"}
+TEXT_LIMITS = {"vendor": 200, "reason": 500}  # `reason` is create-only (not in the PATCH body)
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+DATE_FIELDS = ("invoice_date", "payment_date")
+EDITABLE = (
+    "category",
+    "is_relevant",
+    *MONEY_FIELDS,
+    "year",
+    "person_id",
+    "vendor",
+    *DATE_FIELDS,
+    "payment_method",
+)
+NOT_NULL = {
+    "category",
+    "is_relevant",
+    "gross_amount",
+    "deductible_amount",
+    "year",
+    "payment_method",
+}
 METRIC_FIELD = {"person_id": "person"}  # metric attribute value per column
 BUSY = (DocumentStatus.QUEUED, DocumentStatus.PROCESSING)
 MANUAL_REASONS = (
@@ -82,6 +103,9 @@ class TaxItemMetrics:
         self.manual_items = meter.create_counter(
             "belegbot.tax_item.manual_items", unit="{item}", description="Items added by hand"
         )
+        self.deleted = meter.create_counter(
+            "belegbot.tax_item.deleted", unit="{item}", description="Items deleted without document"
+        )
 
 
 @dataclass
@@ -96,6 +120,34 @@ def _money(field: str, value: Any) -> Decimal:
     return Decimal(value)
 
 
+def _text(field: str, value: Any) -> str | None:
+    if not isinstance(value, str) or len(value) > 4 * TEXT_LIMITS[field]:
+        raise Rejected(422, "invalid_text", field)
+    text = value.strip()
+    if len(text) > TEXT_LIMITS[field] or not text.isprintable():
+        raise Rejected(422, "invalid_text", field)
+    return text or None
+
+
+def _date(field: str, value: Any) -> date:
+    try:
+        if not isinstance(value, str) or not DATE_RE.fullmatch(value):
+            raise ValueError
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        raise Rejected(422, "invalid_date", field) from None
+    if not 2000 <= parsed.year <= 2100:
+        raise Rejected(422, "invalid_date", field)
+    return parsed
+
+
+def _method(value: Any) -> PaymentMethod:
+    try:
+        return PaymentMethod(value)
+    except ValueError:  # also an unhashable / non-string value
+        raise Rejected(422, "invalid_payment_method", "payment_method") from None
+
+
 def _merge(
     current: dict[str, Any], sent: dict[str, Any], *, known_person: Callable[[uuid.UUID], bool]
 ) -> dict[str, Any]:
@@ -105,7 +157,15 @@ def _merge(
             raise Rejected(422, "invalid_request", key)
     new = dict(current)
     for key, value in sent.items():
-        new[key] = _money(key, value) if key in MONEY_FIELDS and value is not None else value
+        if value is not None and key in MONEY_FIELDS:
+            value = _money(key, value)
+        elif value is not None and key in DATE_FIELDS:
+            value = _date(key, value)
+        elif key in TEXT_LIMITS:
+            value = None if value is None else _text(key, value)
+        elif key == "payment_method":
+            value = _method(value)
+        new[key] = value
     if (
         "year" in sent
         and new["year"] != current.get("year")
@@ -275,38 +335,52 @@ async def update_item(
 
 async def create_manual_item(
     scope: HouseholdScope,
-    document_id: uuid.UUID,
+    document_id: uuid.UUID | None,
     sent: dict[str, Any],
     user_id: uuid.UUID,
     tax_metrics: TaxItemMetrics,
 ) -> Result:
     """POST /documents/{id}/tax-items (Decision 6): an item for a document the pipeline
-    could not read. Raises `Rejected`; the session is rolled back on every refusal."""
+    could not read, or (`document_id = None`, #61) an item without any document, e.g. a lost
+    receipt (`vendor` required). Raises `Rejected`; the session is rolled back on every refusal."""
     session = scope.session
     try:
-        doc = await _lock_document(scope, document_id)
-        if doc is None:
-            raise Rejected(404, "not_found")
-        if doc.status in BUSY:
-            raise Rejected(409, "document_busy")
-        existing = await session.execute(
-            scope.select(TaxItem).with_only_columns(TaxItem.id).where(TaxItem.document_id == doc.id)
-        )
-        if existing.first() is not None:
-            raise Rejected(409, "tax_item_exists")
-        reason = doc.attention_reason
-        if doc.status is not DocumentStatus.NEEDS_ATTENTION or reason not in MANUAL_REASONS:
-            raise Rejected(409, "manual_item_not_allowed")
-        assert reason is not None
+        doc: Document | None = None
+        reason: str = "none"
+        if document_id is not None:
+            doc = await _lock_document(scope, document_id)
+            if doc is None:
+                raise Rejected(404, "not_found")
+            if doc.status in BUSY:
+                raise Rejected(409, "document_busy")
+            existing = await session.execute(
+                scope.select(TaxItem)
+                .with_only_columns(TaxItem.id)
+                .where(TaxItem.document_id == doc.id)
+            )
+            if existing.first() is not None:
+                raise Rejected(409, "tax_item_exists")
+            attention = doc.attention_reason
+            if doc.status is not DocumentStatus.NEEDS_ATTENTION or attention not in MANUAL_REASONS:
+                raise Rejected(409, "manual_item_not_allowed")
+            assert attention is not None
+            reason = attention.value
         persons = await _persons(scope, sent)
         empty: dict[str, Any] = {
             "labour_share_35a": None,
             "person_id": None,
             "anlage": None,
             "zeile": None,
+            "vendor": None,
+            "reason": None,
+            "invoice_date": None,
+            "payment_date": None,
+            "payment_method": PaymentMethod.UNKNOWN,
         }
         new = _merge(empty, sent, known_person=persons.__contains__)
-        item = TaxItem(document_id=doc.id, overridden_by_user=True, **new)
+        if doc is None and new["vendor"] is None:
+            raise Rejected(422, "vendor_required", "vendor")
+        item = TaxItem(document_id=doc.id if doc else None, overridden_by_user=True, **new)
         scope.add(item)
         await session.flush()
         actor = Actor.user(user_id)
@@ -328,14 +402,63 @@ async def create_manual_item(
             log.info("tax_item.rejected", code=exc.code)
         raise
 
-    tax_metrics.manual_items.add(1, {"attention_reason": reason.value})
+    tax_metrics.manual_items.add(1, {"attention_reason": reason})
     log.info(
         "tax_item.created_manual",
         tax_item_id=str(item.id),
-        document_id=str(doc.id),
-        attention_reason=reason.value,
+        document_id=str(doc.id) if doc else None,
+        attention_reason=reason,
     )
     return Result(item, doc)
+
+
+async def delete_item(
+    scope: HouseholdScope,
+    item_id: uuid.UUID,
+    version: int,
+    user_id: uuid.UUID,
+    tax_metrics: TaxItemMetrics,
+) -> None:
+    """DELETE (#61): only an item without a document (documents are deleted via the document).
+    Raises `Rejected` / `VersionConflict`."""
+    session = scope.session
+    try:
+        locked = scope.select(TaxItem).where(TaxItem.id == item_id).with_for_update()
+        item = (
+            await session.execute(locked.execution_options(populate_existing=True))
+        ).scalar_one_or_none()
+        if item is None:
+            raise Rejected(404, "not_found")
+        if item.document_id is not None:
+            raise Rejected(409, "delete_not_allowed")
+        if item.version != version:
+            raise VersionConflict(item, None)
+        category = item.category
+        before = snapshot(item)
+        await session.delete(item)
+        await session.flush()
+        await record(
+            session,
+            household_id=scope.household_id,
+            entity="tax_item",
+            entity_id=item_id,
+            action=AuditAction.DELETE,
+            before=before,
+            after=None,
+            actor=Actor.user(user_id),
+        )
+        await session.commit()
+    except BaseException as exc:
+        if isinstance(exc, VersionConflict):
+            session.expunge(exc.item)
+            log.info("tax_item.version_conflict", tax_item_id=str(item_id))
+        elif isinstance(exc, Rejected):
+            log.info("tax_item.rejected", code=exc.code)
+        await session.rollback()
+        raise
+
+    tax_metrics.deleted.add(1, {"category": category.value})
+    log.info("tax_item.deleted", tax_item_id=str(item_id), actor_user_id=str(user_id))
 
 
 __all__ = [
@@ -345,5 +468,6 @@ __all__ = [
     "TaxItemMetrics",
     "VersionConflict",
     "create_manual_item",
+    "delete_item",
     "update_item",
 ]
