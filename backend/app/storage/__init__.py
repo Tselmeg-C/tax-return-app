@@ -15,6 +15,7 @@ from app.storage.base import (
     StoredObject,
     document_key,
     document_prefix,
+    preview_key,
 )
 from app.storage.local import LocalVolume
 
@@ -38,5 +39,6 @@ __all__ = [
     "StoredObject",
     "document_key",
     "document_prefix",
+    "preview_key",
     "storage_from_settings",
 ]
