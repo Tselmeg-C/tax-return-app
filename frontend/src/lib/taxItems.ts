@@ -177,6 +177,8 @@ export const TEXT = {
   withoutDocument: "Ohne Beleg erfassen",
   noDocument: "ohne Beleg",
   vendorRequired: "Bitte einen Namen oder eine Beschreibung eingeben",
+  tooManyManual:
+    "Für dieses Steuerjahr sind höchstens so viele Einträge ohne Beleg möglich – das Limit ist erreicht. Bitte vorhandene Einträge zusammenfassen oder löschen.",
   text: "Bitte einen kürzeren Text ohne Sonderzeichen eingeben (höchstens 200 Zeichen)",
   date: "Bitte ein gültiges Datum wählen",
   method: "Bitte eine Zahlungsart aus der Liste wählen",
@@ -228,6 +230,8 @@ export function saveError(error: unknown, year: number, supported: number[]): st
     case "invalid_text":
     case "vendor_required":
       return error.detail === "vendor_required" ? TEXT.vendorRequired : TEXT.text;
+    case "too_many_manual_items":
+      return TEXT.tooManyManual;
     case "invalid_date":
       return TEXT.date;
     case "invalid_payment_method":

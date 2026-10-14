@@ -63,6 +63,7 @@ Anlage N 2025, Beiträge zu Berufsverbänden
 Muster Gewerkschaft
 Beleg-Nr. 00000002 · 31.01.2025 · Unbekannt
  60,00 €
+ohne Beleg
 66
 Fahrtkosten / Entfernungspauschale
 Anlage N 2025, Reisekosten bei beruflich veranlassten Auswärtstätigkeiten, Fahrtkosten
@@ -71,6 +72,7 @@ Anlage N 2025, Reisekosten bei beruflich veranlassten Auswärtstätigkeiten, Fah
 Muster Bahn
 Beleg-Nr. 00000001 · 05.05.2025 · Unbekannt
  100,00 €
+ohne Beleg
 Summe Anlage N
  160,00 €
 belegbot · Steuerjahr 2025 · Seite 2 von 2

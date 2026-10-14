@@ -130,6 +130,18 @@ describe("ItemForm #61 fields", () => {
     });
   });
 
+  it("shows the cap message when the server refuses a document-less item (#128)", async () => {
+    mockFetch(() => json(422, { detail: "too_many_manual_items", field: "year" }));
+    form(null, null);
+    fireEvent.change(screen.getByLabelText("Brutto"), { target: { value: "50,00" } });
+    fireEvent.change(screen.getByLabelText("Absetzbar"), { target: { value: "50,00" } });
+    fireEvent.change(screen.getByLabelText("Name / Beschreibung"), {
+      target: { value: "Quittung" },
+    });
+    fireEvent.click(screen.getByText("Speichern"));
+    expect(await screen.findByText(TEXT.tooManyManual)).toBeInTheDocument();
+  });
+
   it("maps server codes to German texts without echoing values", async () => {
     mockFetch(() => json(422, { detail: "invalid_date", field: "payment_date" }));
     form(ITEM, "d-1");

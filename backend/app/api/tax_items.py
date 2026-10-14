@@ -221,7 +221,14 @@ async def create_standalone_tax_item(
 ) -> JSONResponse:
     sent = {k: getattr(body, k) for k in body.model_fields_set}
     try:
-        result = await create_manual_item(scope, None, sent, user.user_id, _metrics(request))
+        result = await create_manual_item(
+            scope,
+            None,
+            sent,
+            user.user_id,
+            _metrics(request),
+            request.app.state.settings.manual_items_max,
+        )
     except Rejected as exc:
         return _rejected(exc)
     return JSONResponse(_out(result), status_code=201)
