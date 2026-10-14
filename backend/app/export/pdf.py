@@ -319,6 +319,8 @@ def _group_rows(
             extra.append(f"Lohnanteil {_eur(line.labour_35a)}")
         if line.unreviewed:
             extra.append("ungeprüft")
+        if line.document_id is None:
+            extra.append("ohne Beleg")
         rows.append(
             [
                 "",

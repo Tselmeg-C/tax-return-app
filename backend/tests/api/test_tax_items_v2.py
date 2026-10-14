@@ -274,3 +274,46 @@ async def test_no_value_leaks(
     ]
     assert '"tax_item.created_manual"' in logs and '"tax_item.deleted"' in logs
     assert tag not in audit and tag not in logs and not [v for v in attrs if tag in v]
+
+
+def cap(t: T, n: int) -> None:
+    app = t.api.app
+    app.state.settings = app.state.settings.model_copy(update={"manual_items_max": n})
+
+
+async def test_standalone_items_are_capped_per_household_and_year(t: T) -> None:
+    """#128: the cap counts document-less items of one year; other years / households / items
+    with a document are unaffected; the error carries a code and the field name only."""
+    from sqlalchemy import event
+
+    a, b = await t.home(), await t.home()
+    cap(t, 3)
+    await t.item(a)  # an item with a document does not count
+    for _ in range(3):
+        assert (await post(t, a, new_item())).status_code == 201
+    r = await post(t, a, new_item(vendor="Geheim GmbH"))
+    assert r.status_code == 422
+    assert r.json() == {"detail": "too_many_manual_items", "field": "year"}
+    assert "Geheim" not in r.text
+    assert (await post(t, a, new_item(year=2026))).status_code == 201
+    assert (await post(t, b, new_item())).status_code == 201
+
+    seen: list[str] = []
+
+    def grab(conn: Any, cursor: Any, statement: str, params: Any, *rest: Any) -> None:
+        seen.append(statement)
+
+    engine = t.session.get_bind()
+    event.listen(engine, "before_cursor_execute", grab)
+    try:
+        await post(t, b, new_item())
+    finally:
+        event.remove(engine, "before_cursor_execute", grab)
+    adv = next(i for i, s in enumerate(seen) if "pg_advisory_xact_lock" in s)
+    count = next(i for i, s in enumerate(seen) if "count(" in s and "tax_item" in s)
+    insert = next(i for i, s in enumerate(seen) if "INSERT INTO tax_item" in s)
+    assert adv < count < insert
+
+
+async def test_cap_default_is_200(t: T) -> None:
+    assert t.api.app.state.settings.manual_items_max == 200

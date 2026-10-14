@@ -20,6 +20,7 @@ from typing import Any
 import structlog
 from opentelemetry import metrics
 from opentelemetry.metrics import MeterProvider
+from sqlalchemy import func, text
 
 from app.db.audit import Actor, record, snapshot
 from app.db.models import Document, Person, TaxItem
@@ -339,6 +340,7 @@ async def create_manual_item(
     sent: dict[str, Any],
     user_id: uuid.UUID,
     tax_metrics: TaxItemMetrics,
+    manual_max: int = 200,
 ) -> Result:
     """POST /documents/{id}/tax-items (Decision 6): an item for a document the pipeline
     could not read, or (`document_id = None`, #61) an item without any document, e.g. a lost
@@ -380,6 +382,19 @@ async def create_manual_item(
         new = _merge(empty, sent, known_person=persons.__contains__)
         if doc is None and new["vendor"] is None:
             raise Rejected(422, "vendor_required", "vendor")
+        if doc is None:
+            # per household: parallel requests queue up here until the holder commits (#128)
+            await session.execute(
+                text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"),
+                {"k": f"manual_items:{scope.household_id}"},
+            )
+            n = await session.scalar(
+                scope.select(TaxItem)
+                .with_only_columns(func.count())
+                .where(TaxItem.document_id.is_(None), TaxItem.year == new["year"])
+            )
+            if (n or 0) >= manual_max:
+                raise Rejected(422, "too_many_manual_items", "year")
         item = TaxItem(document_id=doc.id if doc else None, overridden_by_user=True, **new)
         scope.add(item)
         await session.flush()

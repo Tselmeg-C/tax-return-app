@@ -33,6 +33,7 @@ README = (
     "belegbot: Belege fuer die Steuererklaerung\r\n"
     "Diese Datei ist eine unverbindliche Belegsammlung, keine Steuerberatung.\r\n"
     "uebersicht.csv listet jeden Beleg mit Betrag, Zeile und Dateiname in diesem Archiv.\r\n"
+    "Zeilen mit 'ohne Beleg' im Hinweis haben keine Datei (Eigenbeleg ohne Dokument).\r\n"
     "Dateinamen: <Anlage>_<Zeile>_<Datum>_<Lieferant>.<Endung>.\r\n"
     "Alle Angaben vor der Abgabe pruefen; massgeblich ist der Bescheid des Finanzamts.\r\n"
 )

@@ -46,6 +46,8 @@ def csv_bytes(data: ExportData, files: dict[str, str] | None = None) -> bytes:
             hints.append("ungeprüft")
         if r.not_computed:
             hints.append("nicht_berechnet")
+        if r.document_id is None:
+            hints.append("ohne Beleg")
         if r.zeile is None:
             hints.append("Zeile nicht zugeordnet")
         writer.writerow(

@@ -113,3 +113,17 @@ def test_entry_names_pattern_collisions_and_shared_documents() -> None:
     assert manual.item_id not in names
     assert [o.item_id for o in owners] == [a.item_id, b.item_id, nozeile.item_id]
     assert entry_name(line(6, mime_type="text/evil")).endswith(".bin")
+
+
+def test_csv_marks_document_less_lines_but_not_missing_originals() -> None:
+    """#128: no document -> Hinweis 'ohne Beleg'; a line whose file is missing (no entry in
+    `files`) keeps an empty column and no such hint (FEHLT.txt covers it)."""
+    rows = list(
+        csv.reader(
+            io.StringIO(csv_bytes(data_of(line(1, document_id=None), line(2))).decode("utf-8-sig")),
+            delimiter=";",
+        )
+    )
+    hint, name = HEADER.index("Hinweis"), HEADER.index("Datei im ZIP")
+    assert "ohne Beleg" in rows[1][hint] and rows[1][name] == ""
+    assert rows[2][hint] == "" and rows[2][name] == ""

@@ -318,6 +318,10 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
 - Money is a dot-decimal string on the wire (`^-?\d{1,9}\.\d{2}$`); the frontend parses
   German input with `parseEuroInput` (`frontend/src/lib/money.ts`). Error bodies are a code
   plus the field name, never the sent value.
+- Document-less items (`POST /tax-items`) are capped per household and year (`MANUAL_ITEMS_MAX`,
+  default 200, `422 too_many_manual_items`, field `year`); counted under a per-household advisory
+  lock in the creating transaction (#128). The first PATCH of an item flips `overridden_by_user`
+  (part of the inputs hash), so an extra `estimate` snapshot row may appear: by design.
 - Never log, trace or meter override values (amounts, vendor, `reason`, names): log events
   carry ids, field names and codes only.
 - Audit rows never hold `tax_item.vendor` / `reason` (`REDACTED_COLUMNS` in `app/db/audit.py`; the changed-field keys stay).
@@ -524,6 +528,8 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   mime type, collisions `_2`), one file per document, originals only through `Storage.open`, a
   missing one is listed in `FEHLT.txt` + `X-Export-Missing` and never aborts. Cap
   `EXPORT_ZIP_MAX_MB` (default 500) -> `413 export_too_large` before any byte.
+- Lines without a document carry "ohne Beleg" (CSV / `uebersicht.csv` Hinweis, PDF line text,
+  LIESMICH); a line whose original is missing keeps an empty file column and only `FEHLT.txt` (#128).
 - Kapitalerträge / Vermietung items are listed under "Nicht in der Schätzung" (CSV hint
   `nicht_berechnet`), never in the estimate. Fixed download names, `Cache-Control: no-store`.
 - Logs: `export.built` with `year, format, items, bytes, missing` only. PDF / CSV changes need

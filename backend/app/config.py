@@ -141,6 +141,11 @@ class Settings(BaseSettings):
         le=200,
         validation_alias=AliasChoices("REPROCESS_BULK_MAX", "reprocess_bulk_max"),
     )
+    manual_items_max: int = Field(  # #128: document-less tax items per household and year
+        default=200,
+        ge=1,
+        validation_alias=AliasChoices("MANUAL_ITEMS_MAX", "manual_items_max"),
+    )
     job_max_attempts: int = Field(
         default=5,
         ge=1,

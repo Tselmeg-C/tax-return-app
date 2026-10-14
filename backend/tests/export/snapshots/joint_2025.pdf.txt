@@ -96,6 +96,7 @@ zugeordnet
 Muster Zweitwohnung
 Beleg-Nr. 0000000a · 15.01.2025 · Unbekannt
  100,00 €
+ohne Beleg
 Summe Anlage N
  315,50 €
 Anlage Sonderausgaben
@@ -107,6 +108,7 @@ Anlage Sonderausgaben 2025, Zuwendungen an Empfänger im Inland
 Muster Verein
 Beleg-Nr. 00000005 · 02.11.2025 · Unbekannt
  25,00 €
+ohne Beleg
 Summe Anlage Sonderausgaben
  25,00 €
 Anlage Außergewöhnliche Belastungen
@@ -118,6 +120,7 @@ Anlage Außergewöhnliche Belastungen 2025, Krankheitskosten (Summe der Aufwendu
 Muster Apotheke
 Beleg-Nr. 0000000b · 01.04.2025 · Karte
  60,00 €
+ohne Beleg
 Summe Anlage Außergewöhnliche Belastungen
  60,00 €
 Anlage Haushaltsnahe Aufwendungen
