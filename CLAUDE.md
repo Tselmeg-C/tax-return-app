@@ -322,6 +322,15 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   carry ids, field names and codes only.
 - Audit rows never hold `tax_item.vendor` / `reason` (`REDACTED_COLUMNS` in `app/db/audit.py`; the changed-field keys stay).
 - The UI takes enum labels only from `GET /meta/labels` (no copy of `LABELS_DE` in the frontend).
+- #61: PATCH also takes `vendor` (trimmed, max 200), `invoice_date`, `payment_date` (ISO, 2000..2100)
+  and `payment_method`; they are stored only (`year`, `is_relevant`, `deductible_amount` are never
+  re-derived; a payment year != tax year is a UI hint only). `payment_method` is a tax input
+  (`cash` drops a § 35a item), vendor / dates stay out of the estimate hash. Codes: `invalid_text`,
+  `invalid_date`, `invalid_payment_method`, `vendor_required`, `delete_not_allowed`. Text, dates and
+  method are `Any` in the request models so the service answers code + field. `POST /tax-items`
+  (no document, `vendor` required) and `DELETE /tax-items/{id}?version=` (only `document_id IS NULL`,
+  else `409 delete_not_allowed`) go through `create_manual_item(document_id=None)` / `delete_item`.
+  `tax_item.vendor` / `reason` are redacted in audit rows (`REDACTED_COLUMNS`).
 
 ## Household and profile (rules from #13)
 

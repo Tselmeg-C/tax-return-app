@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ApiError } from "@/lib/api";
 import { parseEuroInput, toEuroInput } from "@/lib/money";
 import {
+  createStandaloneTaxItem,
   createTaxItem,
   HOUSEHOLD_GROUP,
   patchTaxItem,
@@ -22,6 +23,10 @@ interface Draft {
   labour: string;
   year: number;
   person: string; // "" = Haushalt
+  vendor: string;
+  invoice: string; // yyyy-mm-dd from <input type="date">, "" = none
+  payment: string;
+  method: string;
 }
 
 const draftOf = (item: TaxItemOut): Draft => ({
@@ -32,6 +37,10 @@ const draftOf = (item: TaxItemOut): Draft => ({
   labour: toEuroInput(item.labour_share_35a),
   year: item.year,
   person: item.person_id ?? "",
+  vendor: item.vendor ?? "",
+  invoice: item.invoice_date ?? "",
+  payment: item.payment_date ?? "",
+  method: item.payment_method,
 });
 
 const isZero = (text: string) => {
@@ -45,7 +54,7 @@ const isZero = (text: string) => {
  */
 export function ItemForm(props: {
   item: TaxItemOut | null;
-  documentId: string;
+  documentId: string | null; // null = an item without a document (#61)
   year: number;
   busy: boolean;
   labels: Labels;
@@ -67,6 +76,10 @@ export function ItemForm(props: {
           labour: "",
           year: props.year,
           person: "",
+          vendor: "",
+          invoice: "",
+          payment: "",
+          method: "unknown",
         },
   );
   const [deductibleTouched, setDeductibleTouched] = useState(Boolean(base));
@@ -105,7 +118,16 @@ export function ItemForm(props: {
       setError(TEXT.amount);
       return;
     }
+    const vendor = draft.vendor.trim() || null;
+    if (!base && !props.documentId && !vendor) {
+      setError(TEXT.vendorRequired);
+      return;
+    }
     const fields: ItemFields = {
+      vendor,
+      invoice_date: draft.invoice || null,
+      payment_date: draft.payment || null,
+      payment_method: draft.method,
       category: draft.category,
       is_relevant: draft.is_relevant,
       gross_amount: gross,
@@ -124,7 +146,11 @@ export function ItemForm(props: {
         }
         props.onSaved(await patchTaxItem(base.id, base.version, changed));
       } else {
-        props.onSaved(await createTaxItem(props.documentId, fields));
+        props.onSaved(
+          await (props.documentId
+            ? createTaxItem(props.documentId, fields)
+            : createStandaloneTaxItem(fields)),
+        );
       }
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) return props.onGone();
@@ -221,6 +247,54 @@ export function ItemForm(props: {
             />
           </label>
         )}
+        <label className={field}>
+          {props.documentId ? "Anbieter" : "Name / Beschreibung"}
+          <input
+            className={input}
+            type="text"
+            maxLength={200}
+            value={draft.vendor}
+            onChange={(e) => set({ vendor: e.target.value })}
+          />
+        </label>
+        <label className={field}>
+          Rechnungsdatum
+          <input
+            className={input}
+            type="date"
+            value={draft.invoice}
+            onChange={(e) => set({ invoice: e.target.value })}
+          />
+        </label>
+        <label className={field}>
+          Zahlungsdatum
+          <input
+            className={input}
+            type="date"
+            value={draft.payment}
+            onChange={(e) => set({ payment: e.target.value })}
+          />
+          {draft.payment && Number(draft.payment.slice(0, 4)) !== draft.year && (
+            <span className="text-xs text-muted-foreground">{TEXT.paymentYear}</span>
+          )}
+        </label>
+        <label className={field}>
+          Zahlungsart
+          <select
+            className={input}
+            value={draft.method}
+            onChange={(e) => set({ method: e.target.value })}
+          >
+            {labels.payment_methods.map((m) => (
+              <option key={m.code} value={m.code}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+          {household && draft.method === "cash" && (
+            <span className="text-xs text-muted-foreground">{TEXT.cashHint}</span>
+          )}
+        </label>
         <label className={field}>
           Steuerjahr
           <select

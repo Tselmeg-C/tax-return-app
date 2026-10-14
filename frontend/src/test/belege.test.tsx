@@ -52,7 +52,10 @@ const LABELS: Labels = {
     { code: "multiple_documents", label: "Mehrere Belege in einer Datei" },
     { code: "doc_type_not_supported", label: "Dokumentart wird noch nicht ausgewertet" },
   ],
-  payment_methods: [{ code: "unknown", label: "Unbekannt" }],
+  payment_methods: [
+    { code: "unknown", label: "Unbekannt" },
+    { code: "cash", label: "Bar" },
+  ],
   doc_types: [{ code: "generic_bill", label: "Rechnung / Beleg" }],
   supported_years: [2025, 2026],
 };
@@ -472,6 +475,10 @@ describe("Hochgeladene Belege on the Belege page", () => {
       labour_share_35a: null,
       year: 2025,
       person_id: null,
+      vendor: null,
+      invoice_date: null,
+      payment_date: null,
+      payment_method: "unknown",
     });
     expect(await screen.findByText(TEXT.created)).toBeInTheDocument();
   });

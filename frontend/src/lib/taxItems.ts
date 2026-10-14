@@ -68,6 +68,10 @@ export interface ItemFields {
   labour_share_35a: string | null;
   year: number;
   person_id: string | null;
+  vendor: string | null;
+  invoice_date: string | null;
+  payment_date: string | null;
+  payment_method: string;
 }
 
 export const HOUSEHOLD_GROUP = "haushaltsnahe";
@@ -111,6 +115,18 @@ export function createTaxItem(documentId: string, fields: ItemFields): Promise<T
   return apiFetch(`/documents/${encodeURIComponent(documentId)}/tax-items`, {
     method: "POST",
     json: fields,
+  });
+}
+
+/** POST /tax-items (#61): an item without a document; `vendor` is required. */
+export function createStandaloneTaxItem(fields: ItemFields): Promise<TaxItemOut> {
+  return apiFetch("/tax-items", { method: "POST", json: fields });
+}
+
+/** DELETE /tax-items/{id}?version= (only items without a document). */
+export function deleteTaxItem(id: string, version: number): Promise<void> {
+  return apiFetch(`/tax-items/${encodeURIComponent(id)}?version=${version}`, {
+    method: "DELETE",
   });
 }
 
@@ -158,7 +174,20 @@ export const TEXT = {
   loadError: "Belege konnten nicht geladen werden.",
   retry: "Erneut versuchen",
   processed: "Beleg verarbeitet",
+  withoutDocument: "Ohne Beleg erfassen",
+  noDocument: "ohne Beleg",
+  vendorRequired: "Bitte einen Namen oder eine Beschreibung eingeben",
+  text: "Bitte einen kürzeren Text ohne Sonderzeichen eingeben (höchstens 200 Zeichen)",
+  date: "Bitte ein gültiges Datum wählen",
+  method: "Bitte eine Zahlungsart aus der Liste wählen",
+  paymentYear: "Zahlungsjahr weicht vom Steuerjahr ab",
+  cashHint: "Barzahlung wird bei haushaltsnahen Aufwendungen (§35a) nicht berücksichtigt",
+  removed: "Beleg gelöscht",
+  deleteNotAllowed: "Belege mit Datei werden über die Datei gelöscht",
 } as const;
+
+export const deleteItemConfirm = (name: string) =>
+  `Eintrag „${name}“ löschen? Das kann nicht rückgängig gemacht werden.`;
 
 export const HINTS: Record<string, string> = {
   multiple_documents: "Bitte jede Rechnung einzeln hochladen – oder die Werte manuell erfassen.",
@@ -196,6 +225,15 @@ export function saveError(error: unknown, year: number, supported: number[]): st
       return TEXT.categoryIrrelevant;
     case "person_not_allowed":
       return TEXT.householdOnly;
+    case "invalid_text":
+    case "vendor_required":
+      return error.detail === "vendor_required" ? TEXT.vendorRequired : TEXT.text;
+    case "invalid_date":
+      return TEXT.date;
+    case "invalid_payment_method":
+      return TEXT.method;
+    case "delete_not_allowed":
+      return TEXT.deleteNotAllowed;
     case "unknown_person":
       return TEXT.unknownPerson;
     default:
