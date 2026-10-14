@@ -18,7 +18,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from app.domain.enums import FilingStatus
+from app.domain.enums import DeductionNote, FilingStatus
 from app.tax.church import ChurchResult, KistMethod, MemberShare, church_tax_joint
 from app.tax.deductions.models import ChildInput, Note, ReturnContext, check_decimal
 from app.tax.kinder import KinderResult, guenstigerpruefung
@@ -87,7 +87,10 @@ def festsetzung(
     if church_member is not None and state is not None and filing is FilingStatus.JOINT:
         church = church_tax_joint(bmg, k.zve_bmg, church_member, state, params.church_tax)
     else:
-        church = ChurchResult(church_tax(bmg, state, params.church_tax), KistMethod.FULL)
+        full = church_tax(bmg, state, params.church_tax)
+        capped = church_tax(bmg, state, params.church_tax, k.zve_bmg)  # Kappung (#112)
+        cap_note = (Note(DeductionNote.KIST_KAPPUNG_APPLIED),) if capped < full else ()
+        church = ChurchResult(capped, KistMethod.FULL, cap_note)
     return Festsetzung(
         kinder=k,
         tarifliche_est_without_kindergeld=without_kg,

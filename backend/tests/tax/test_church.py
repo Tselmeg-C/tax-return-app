@@ -35,7 +35,7 @@ def test_every_supported_year_has_cases() -> None:
 
 
 @pytest.mark.parametrize("year", YEARS)
-@pytest.mark.parametrize("case_no", range(8))
+@pytest.mark.parametrize("case_no", range(13))
 def test_reference_case(year: int, case_no: int) -> None:
     case = _cases(year)[case_no]
     i, e = case["input"], case["expected"]
@@ -125,3 +125,31 @@ def test_festsetzung_default_and_both_members_are_unchanged() -> None:
         D(60000), single_ctx, "NW", D(0), [], D(0), params, MemberShare(D(1), D(2))
     )
     assert single.kist_method is KistMethod.FULL  # only a joint return is split
+
+
+def test_kappung_params_only_for_texts_read() -> None:
+    k25, k26 = (load_params(y).church_tax.kappung for y in (2025, 2026))
+    assert k25.rate_by_state == {"SN": D("0.035"), "NI": D("0.035"), "TH": D("0.035")}
+    assert k26.rate_by_state == {"SN": D("0.035")}  # NI / TH 2026 texts not read: not capped
+    assert k25.none_states == k26.none_states == {"BY"}
+
+
+def test_kappung_never_caps_a_land_without_a_value() -> None:
+    p = load_params(2026).church_tax
+    for state in ("TH", "NW", "BW", "BY"):  # TH 2026 unread, NW / BW on request, BY none
+        assert church_tax(D(1_000_000), state, p, D(100)) == church_tax(D(1_000_000), state, p)
+    assert church_tax(D(1000), "SN", p, D(10000)) == D("90.00")  # 350 cap > 90
+    assert church_tax(D(100000), "SN", p, D(100000)) == D("3500.00")  # 9000 -> 3,5 % of the zvE
+    assert church_tax(D(100000), "SN", p, D(-5)) == 0  # loss: nothing to cap against, no negative
+
+
+def test_festsetzung_full_kappung_note_only_when_cut() -> None:
+    params = load_params(2025)
+    ctx = ReturnContext(2025, FilingStatus.SINGLE, "A")
+    high = festsetzung(D(498734), ctx, "SN", D(0), [], D(0), params)
+    assert high.kist == D("17455.69")
+    assert [n.code.value for n in high.notes] == ["kist_kappung_applied"]
+    low = festsetzung(D(40000), ctx, "SN", D(0), [], D(0), params)
+    assert not low.notes and low.kist == church_tax(low.bmg, "SN", params.church_tax)
+    nw = festsetzung(D(498734), ctx, "NW", D(0), [], D(0), params)
+    assert nw.kist == church_tax(nw.bmg, "NW", params.church_tax) and not nw.notes

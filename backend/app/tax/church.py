@@ -17,6 +17,7 @@ from enum import StrEnum
 from app.domain.enums import DeductionNote
 from app.tax.deductions.models import Note, check_decimal
 from app.tax.models import ChurchTaxParams
+from app.tax.tariff import kappung_limit
 
 _ZERO = Decimal(0)
 _CENT = Decimal("0.01")
@@ -74,11 +75,21 @@ def church_tax_joint(
     if _ZERO < income < total:
         notes.append(Note(DeductionNote.KIST_SHARE_ESTIMATED))
     kist = (max(base, _ZERO) * p.rate_by_state[state] * fraction).quantize(_CENT, ROUND_DOWN)
+    # Kappung (#112): rate x the member's share of the zvE. Applied before the Kirchgeld
+    # comparison (the comparison is with the KiSt vom Einkommen); the order is OPEN (provisional).
+    limit = kappung_limit(check_decimal(zve_bmg, "zve_bmg") * fraction, state, p)
+    capped = kist if limit is None else min(kist, limit)
     table = kirchgeld(zve_bmg, state, p)
     if table is None:
         if state not in p.kirchgeld.no_kirchgeld_states:
             notes.append(Note(DeductionNote.KIRCHGELD_NOT_MODELLED))
-        return ChurchResult(kist, KistMethod.MEMBER_SHARE, tuple(notes))
-    if table > kist:
-        return ChurchResult(table.quantize(_CENT), KistMethod.KIRCHGELD, tuple(notes))
-    return ChurchResult(kist, KistMethod.MEMBER_SHARE, tuple(notes))
+        result = ChurchResult(capped, KistMethod.MEMBER_SHARE, tuple(notes))
+    elif table > capped:
+        result = ChurchResult(table.quantize(_CENT), KistMethod.KIRCHGELD, tuple(notes))
+    else:
+        result = ChurchResult(capped, KistMethod.MEMBER_SHARE, tuple(notes))
+    if result.kist < max(kist, table or _ZERO):
+        result = ChurchResult(
+            result.kist, result.method, (*notes, Note(DeductionNote.KIST_KAPPUNG_APPLIED))
+        )
+    return result

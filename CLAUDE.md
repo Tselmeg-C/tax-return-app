@@ -504,11 +504,18 @@ meta-tests in `backend/tests/domain/` check most of these rules automatically.
   `kirchgeld_not_modelled`. A new Land needs its Kirchgeld text read first (source in `source`).
 - What is confirmed and what not is in the params `source` (per Land, per year); the section stays
   `provisional: true`. Open: BW / BE / BB / MV / ST / HB / HH / HE / RP / SL / SH / TH tables, NW and NI
-  2026 (Erlass not read), 8 % for BW / BY from secondary sources only. Out: Kappung #112,
-  part-year #113, Witwensplitting #114, § 26a #115.
+  2026 (Erlass not read), 8 % for BW / BY from secondary sources only. Out: part-year #113, Witwensplitting #114, § 26a #115.
 - Reference cases `tests/tax/reference/kirchensteuer_{year}.yaml` (hand-computed) +
   `tests/tax/test_church.py` (Stufe boundaries for SN / NW / NI). The Kirchenlohnsteuer already
   withheld is part of the refund sum, never netted inside the engine.
+
+- Kappung (#112): `church_tax.kappung` = `rate_by_state` (share of the zvE after the Kinderfreibeträge, § 51a
+  Abs. 2) + `none_states` (BY). Only a Land whose text for THAT year was read has a rate (2025: SN, NI, TH;
+  2026: SN); every other Land is NOT capped (no silent guess), the values seen in secondary sources only
+  (BW / HE / NW / RP / SL on request, HB / HH / SH / BE / BB / MV / ST per Kirche) are in the params `source`.
+  `church_tax(..., zve=)` and `church_tax_joint` cap; the estimate applies it by default (SN / NI / TH apply it
+  in the assessment) with the note `kist_kappung_applied` ("some Länder only on request"). Glaubensverschiedene Ehe:
+  cap = rate x member share x zvE, then the Kirchgeld comparison (order OPEN). Cases K9 to K13, scenario s10.
 
 ## Export (rules from #21)
 
